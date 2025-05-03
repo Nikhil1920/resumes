@@ -1,0 +1,57 @@
+<script lang="ts">
+    import { goto } from "$app/navigation";
+    import ResumeExperienceInput from "@/components/ResumeExperienceInput.svelte";
+    import {
+        defaultResumeExperience,
+        type ResumeExperienceType,
+    } from "@/types/profile";
+    import { updateProfileStep } from "@/utils";
+
+    let { data } = $props();
+
+    let experience_entries = $state<ResumeExperienceType[]>(
+        data.profile.experience
+    );
+
+    $effect(() => {
+        if (experience_entries.length === 0) {
+            experience_entries = [defaultResumeExperience];
+        }
+        if (experience_entries[experience_entries.length - 1].title !== "") {
+            experience_entries.push(defaultResumeExperience);
+        }
+    });
+
+    const handleSubmit = (e: Event) => {
+        e.preventDefault();
+        localStorage.setItem(
+            data.profile.meta.id,
+            JSON.stringify({
+                ...data.profile,
+                experience: experience_entries,
+            })
+        );
+        updateProfileStep(data.profile.meta.id, "education");
+        goto(`/create-resume/${data.profile.meta.id}/education`, {
+            invalidateAll: true,
+        });
+    };
+</script>
+
+Hi {data.profile.personal_info.name}!
+<p>Enter your experience details</p>
+{#each experience_entries as experience, i}
+    <ResumeExperienceInput bind:experience={experience_entries[i]} />
+    <button
+        class="btn btn-error"
+        onclick={() => {
+            experience_entries.splice(i, 1);
+        }}
+    >
+        Remove
+    </button>
+{/each}
+
+<button type="button" class="btn btn-primary" onclick={handleSubmit}
+    >Next: Education</button
+>

@@ -51,7 +51,7 @@
     Create New Resume
 </button>
 {#each profiles as profile}
-    <div class="card card-border bg-base-100 w-96">
+    <div class="card card-border bg-base-200 w-96">
         <div class="card-body">
             <h2 class="card-title">{profile.name || "Unnamed"}</h2>
             <p>

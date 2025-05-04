@@ -1,5 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import CreateResumeNavigationLinks from "@/components/CreateResumeNavigationLinks.svelte";
     import ResumeProjectInput from "@/components/ResumeProjectInput.svelte";
     import {
         defaultResumeProject,
@@ -36,6 +37,10 @@
     };
 </script>
 
+<CreateResumeNavigationLinks
+    profile_id={data.profile.meta.id}
+    active_step="projects"
+/>
 Hi {data.profile.personal_info.name}!
 <p>Enter your Projects details</p>
 {#each project_entries as project, i}

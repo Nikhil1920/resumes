@@ -1,5 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import CreateResumeNavigationLinks from "@/components/CreateResumeNavigationLinks.svelte";
     import ResumeExperienceInput from "@/components/ResumeExperienceInput.svelte";
     import {
         defaultResumeExperience,
@@ -37,6 +38,11 @@
         });
     };
 </script>
+
+<CreateResumeNavigationLinks
+    profile_id={data.profile.meta.id}
+    active_step="experience"
+/>
 
 Hi {data.profile.personal_info.name}!
 <p>Enter your experience details</p>

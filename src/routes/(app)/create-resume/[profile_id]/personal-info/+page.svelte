@@ -1,5 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import CreateResumeNavigationLinks from "@/components/CreateResumeNavigationLinks.svelte";
     import { defaultResumePersonalInfo } from "@/types/profile";
     import { updateProfileStep } from "@/utils";
 
@@ -24,6 +25,11 @@
         });
     };
 </script>
+
+<CreateResumeNavigationLinks
+    profile_id={data.profile.meta.id}
+    active_step="personal-info"
+/>
 
 <h1>Enter Your Details</h1>
 

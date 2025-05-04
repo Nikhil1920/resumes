@@ -1,5 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import CreateResumeNavigationLinks from "@/components/CreateResumeNavigationLinks.svelte";
     import ResumeSkillInput from "@/components/ResumeSkillInput.svelte";
     import { defaultResumeSkill, type ResumeSkillType } from "@/types/profile";
     import { updateProfileStep } from "@/utils";
@@ -33,6 +34,11 @@
         });
     };
 </script>
+
+<CreateResumeNavigationLinks
+    profile_id={data.profile.meta.id}
+    active_step="skills"
+/>
 
 Hi {data.profile.personal_info.name}!
 <p>Enter your Skills details</p>

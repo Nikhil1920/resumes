@@ -55,6 +55,7 @@ export const defaultResumeExperience: ResumeExperienceType = {
 
 export interface ResumeEducationType {
     institution: string;
+    location: string;
     degree: string;
     start_date: string;
     end_date: string;
@@ -63,6 +64,7 @@ export interface ResumeEducationType {
 
 export const defaultResumeEducation: ResumeEducationType = {
     institution: "",
+    location: "",
     degree: "",
     start_date: "",
     end_date: "",

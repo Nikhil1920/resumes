@@ -28,7 +28,7 @@
             })
         );
         updateProfileStep(data.profile.meta.id, "skills");
-        goto(`/create-resume/${data.profile.meta.id}/skills`, {
+        goto(`/templates/tenali/${data.profile.meta.id}`, {
             invalidateAll: true,
         });
     };

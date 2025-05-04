@@ -227,7 +227,7 @@
     .container {
         /* font-family: sans-serif; */
         /* Changed from default serif for better screen readability */
-        line-height: 1.4;
+        /* line-height: 1.4; */
         margin: 40px auto;
         /* Added auto margin for centering */
         max-width: 800px;
@@ -237,23 +237,13 @@
         color: #333;
     }
 
-    h1,
-    h2,
-    h3,
-    p,
-    ul,
-    li {
-        margin: 0;
-        padding: 0;
-    }
-
     .header {
         text-align: center;
         /* margin-bottom: 20px; */
     }
 
     .header h1 {
-        font-size: 2em;
+        font-size: 2.5em;
         /* Approximates \Huge */
         font-weight: bold;
         /* text-transform: uppercase; */
@@ -285,31 +275,31 @@
     }
 
     section h2 {
-        font-size: 1.3em;
+        font-size: 1.2em;
         font-weight: bold;
-        text-transform: uppercase;
+        text-transform: capitalize;
         /* Approximates \scshape */
         letter-spacing: 1px;
         /* Added spacing for uppercase */
         border-bottom: 1px solid black;
         padding-bottom: 2px;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
     }
 
     ul.section-list {
         list-style: none;
-        padding-left: 0;
+        padding-left: 10px;
     }
 
     ul.section-list > li {
-        /* margin-bottom: 15px; */
+        margin-bottom: 8px;
         /* Space between entries */
     }
 
     .subheading {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 5px;
+        /* margin-bottom: 5px; */
         /* Space before bullet points */
     }
 
@@ -334,8 +324,6 @@
         list-style: disc;
         /* Standard bullets */
         padding-left: 20px;
-        /* Indent bullet points */
-        margin-top: 5px;
     }
 
     ul.item-list li {
@@ -347,13 +335,12 @@
 
     .skills-list ul {
         list-style: none;
-        padding-left: 0;
+        padding-left: 10px;
     }
 
     .skills-list li {
         font-size: 0.95em;
-        /* Approximates \small */
-        margin-bottom: 5px;
+        margin-bottom: 2px;
     }
 
     .skills-list strong {
@@ -373,7 +360,7 @@
     .project-heading {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 5px;
+        /* margin-bottom: 5px; */
         font-size: 0.95em;
         /* Approximates \small */
     }

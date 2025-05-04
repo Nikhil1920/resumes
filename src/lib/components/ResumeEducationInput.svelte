@@ -3,8 +3,10 @@
 
     interface ResumeEducationInputProps {
         education: ResumeEducationType;
+        removeEntry: () => void;
     }
-    let { education = $bindable() }: ResumeEducationInputProps = $props();
+    let { education = $bindable(), removeEntry }: ResumeEducationInputProps =
+        $props();
 </script>
 
 <div class="card">
@@ -38,5 +40,9 @@
             class="textarea textarea-bordered w-full mb-4"
             bind:value={education.description}
         ></textarea>
+        <div class="card-actions justify-end">
+            <button class="btn btn-warning" onclick={removeEntry}>Remove</button
+            >
+        </div>
     </div>
 </div>

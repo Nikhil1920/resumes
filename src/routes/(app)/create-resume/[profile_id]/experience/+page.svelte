@@ -41,15 +41,12 @@
 Hi {data.profile.personal_info.name}!
 <p>Enter your experience details</p>
 {#each experience_entries as experience, i}
-    <ResumeExperienceInput bind:experience={experience_entries[i]} />
-    <button
-        class="btn btn-error"
-        onclick={() => {
+    <ResumeExperienceInput
+        bind:experience={experience_entries[i]}
+        removeEntry={() => {
             experience_entries.splice(i, 1);
         }}
-    >
-        Remove
-    </button>
+    />
 {/each}
 
 <button type="button" class="btn btn-primary" onclick={handleSubmit}

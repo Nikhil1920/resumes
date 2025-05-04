@@ -39,15 +39,12 @@
 Hi {data.profile.personal_info.name}!
 <p>Enter your Projects details</p>
 {#each project_entries as project, i}
-    <ResumeProjectInput bind:project={project_entries[i]} />
-    <button
-        class="btn btn-error"
-        onclick={() => {
+    <ResumeProjectInput
+        bind:project={project_entries[i]}
+        removeEntry={() => {
             project_entries.splice(i, 1);
         }}
-    >
-        Remove
-    </button>
+    />
 {/each}
 
 <button type="button" class="btn btn-primary" onclick={handleSubmit}>

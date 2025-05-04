@@ -3,8 +3,10 @@
 
     interface ResumeProjectInputProps {
         project: ResumeProjectType;
+        removeEntry: () => void;
     }
-    let { project = $bindable() }: ResumeProjectInputProps = $props();
+    let { project = $bindable(), removeEntry }: ResumeProjectInputProps =
+        $props();
 </script>
 
 <div class="card">
@@ -32,5 +34,10 @@
             class="input input-bordered w-full mb-4"
             bind:value={project.end_date}
         />
+        <div class="card-actions justify-end">
+            <button class="btn btn-warning" onclick={removeEntry}>
+                Remove
+            </button>
+        </div>
     </div>
 </div>

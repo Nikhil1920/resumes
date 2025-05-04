@@ -3,8 +3,10 @@
 
     interface ResumeExperienceInputProps {
         experience: ResumeExperienceType;
+        removeEntry: () => void;
     }
-    let { experience = $bindable() }: ResumeExperienceInputProps = $props();
+    let { experience = $bindable(), removeEntry }: ResumeExperienceInputProps =
+        $props();
 </script>
 
 <div class="card">
@@ -39,5 +41,15 @@
             class="input input-bordered w-full mb-4"
             bind:value={experience.end_date}
         />
+        <textarea
+            placeholder="Description"
+            class="textarea textarea-bordered w-full mb-4"
+            bind:value={experience.description}
+        ></textarea>
+        <div class="card-actions justify-end">
+            <button class="btn btn-warning" onclick={removeEntry}>
+                Remove
+            </button>
+        </div>
     </div>
 </div>

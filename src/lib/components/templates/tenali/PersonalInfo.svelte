@@ -20,7 +20,7 @@
         {/if}
         {#each personal_info.title_links as link, i}
             <a href={link.url}>{link.title}</a>
-            {#if personal_info.title_links.length != i}
+            {#if personal_info.title_links.length != i + 1}
                 <span>|</span>
             {/if}
         {/each}

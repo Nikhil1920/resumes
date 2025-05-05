@@ -64,4 +64,14 @@
             color: black;
         }
     }
+
+    .editor-wrapper :global {
+        .ql-editor {
+            min-height: 100px;
+            max-height: 200px;
+        }
+        .ql-tooltip {
+            z-index: 9999;
+        }
+    }
 </style>

@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { ResumeExperienceType } from "@/types/profile";
+    import QuillEditor from "./QuillEditor.svelte";
 
     interface ResumeExperienceInputProps {
         experience: ResumeExperienceType;
@@ -41,11 +42,7 @@
             class="input input-bordered w-full mb-4"
             bind:value={experience.end_date}
         />
-        <textarea
-            placeholder="Description"
-            class="textarea textarea-bordered w-full mb-4"
-            bind:value={experience.description}
-        ></textarea>
+        <QuillEditor bind:value={experience.description} />
         <div class="card-actions justify-end">
             <button class="btn btn-warning" onclick={removeEntry}>
                 Remove

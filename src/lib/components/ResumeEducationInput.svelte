@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { ResumeEducationType } from "@/types/profile";
+    import QuillEditor from "./QuillEditor.svelte";
 
     interface ResumeEducationInputProps {
         education: ResumeEducationType;
@@ -35,11 +36,10 @@
             class="input input-bordered w-full mb-4"
             bind:value={education.end_date}
         />
-        <textarea
+        <QuillEditor
             placeholder="Description"
-            class="textarea textarea-bordered w-full mb-4"
             bind:value={education.description}
-        ></textarea>
+        ></QuillEditor>
         <div class="card-actions justify-end">
             <button class="btn btn-warning" onclick={removeEntry}>Remove</button
             >

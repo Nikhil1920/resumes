@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { ResumeProjectType } from "@/types/profile";
+    import QuillEditor from "./QuillEditor.svelte";
 
     interface ResumeProjectInputProps {
         project: ResumeProjectType;
@@ -17,11 +18,10 @@
             class="input input-bordered w-full mb-4"
             bind:value={project.title}
         />
-        <textarea
-            placeholder="Description"
-            class="textarea textarea-bordered w-full mb-4"
+        <QuillEditor
             bind:value={project.description}
-        ></textarea>
+            placeholder="Description"
+        />
         <input
             type="text"
             placeholder="Start Date"

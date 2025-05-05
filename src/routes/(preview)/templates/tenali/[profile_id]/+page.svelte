@@ -61,9 +61,9 @@
                         </div>
 
                         {#if experience.description}
-                            <ul class="item-list">
-                                {experience.description}
-                            </ul>
+                            <div class="description">
+                                {@html experience.description}
+                            </div>
                         {/if}
                     </li>
                 {/each}
@@ -101,9 +101,9 @@
                             {/if}
                         </div>
                         {#if project.description}
-                            <ul class="item-list">
-                                {project.description}
-                            </ul>
+                            <div class="description">
+                                {@html project.description}
+                            </div>
                         {/if}
                     </li>
                 {/each}
@@ -179,21 +179,18 @@
         /* Slightly lighter text for details */
     }
 
-    ul.item-list {
-        list-style: disc;
-        /* Standard bullets */
+    .description {
         padding-left: 20px;
     }
 
-    ul.item-list li {
-        font-size: 0.95em;
-        /* Approximates \small */
-        /* margin-bottom: 5px; */
-        /* Space between bullet points */
-    }
+    .container :global {
+        .description ul {
+            list-style: disc;
+        }
 
-    em {
-        font-style: italic;
+        em {
+            font-style: italic;
+        }
     }
 
     /* Specific styling for Project headings which combine bold and italic */

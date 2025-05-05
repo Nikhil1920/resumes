@@ -50,7 +50,7 @@ export const defaultResumeExperience: ResumeExperienceType = {
     location: "",
     start_date: "",
     end_date: "",
-    description: "",
+    description: "<ul><li></li></ul>",
 };
 
 export interface ResumeEducationType {
@@ -81,7 +81,7 @@ export interface ResumeProjectType {
 }
 export const defaultResumeProject: ResumeProjectType = {
     title: "",
-    description: "",
+    description: "<ul><li></li></ul>",
     skills: [],
     start_date: "",
     end_date: "",

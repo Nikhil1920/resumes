@@ -23,10 +23,9 @@
             // check if value !== internal
             console.log("value", value);
             console.log("internal", internal);
-            quill.clipboard.dangerouslyPasteHTML(
-                (internal = value || ""),
-                "silent"
-            );
+            internal = value || "";
+            const delta = quill.clipboard.convert({ html: value || "" });
+            quill.setContents(delta);
         }
     });
 
@@ -42,12 +41,12 @@
             placeholder: placeholder,
             theme: "snow",
         });
-        quill.enable(false);
-        quill.clipboard.dangerouslyPasteHTML(value || "", "silent");
+
+        const delta = quill.clipboard.convert({ html: value || "" });
+        quill.setContents(delta);
 
         quill.on("text-change", onTextChange);
 
-        quill.enable();
         return () => {
             quill.off("text-change", onTextChange);
         };

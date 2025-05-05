@@ -25,11 +25,20 @@
 
     const handleSubmit = (e: Event) => {
         e.preventDefault();
+        let validExperience = experience_entries.filter(
+            (experience) => experience.title !== ""
+        );
+        validExperience = validExperience.map((experience) => {
+            if (experience.description === "<ul><li></li></ul>") {
+                experience.description = "";
+            }
+            return experience;
+        });
         localStorage.setItem(
             data.profile.meta.id,
             JSON.stringify({
                 ...data.profile,
-                experience: experience_entries,
+                experience: validExperience,
             })
         );
         updateProfileStep(data.profile.meta.id, "education");

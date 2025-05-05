@@ -23,11 +23,20 @@
 
     const handleSubmit = (e: Event) => {
         e.preventDefault();
+        let validProjects = project_entries.filter(
+            (project) => project.title !== ""
+        );
+        validProjects = validProjects.map((project) => {
+            if (project.description === "<ul><li></li></ul>") {
+                project.description = "";
+            }
+            return project;
+        });
         localStorage.setItem(
             data.profile.meta.id,
             JSON.stringify({
                 ...data.profile,
-                projects: project_entries,
+                projects: validProjects,
             })
         );
         updateProfileStep(data.profile.meta.id, "skills");

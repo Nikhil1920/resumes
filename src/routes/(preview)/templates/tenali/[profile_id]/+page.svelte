@@ -5,6 +5,14 @@
     let { data } = $props();
 </script>
 
+<div
+    class="print:hidden w-full flex justify-around items-center bg-gray-100 p-4"
+    id="styled"
+>
+    <button onclick={() => window.print()} class="btn btn-primary">
+        Print
+    </button>
+</div>
 <div class="container">
     <PersonalInfo personal_info={data.profile.personal_info} />
     {#if data.profile.education.length > 0}

@@ -10,34 +10,27 @@
         $props();
 </script>
 
-<div class="card">
-    <div class="card-body">
-        <input
-            type="text"
-            placeholder="Project Name"
-            class="input input-bordered w-full mb-4"
-            bind:value={project.title}
-        />
-        <QuillEditor
-            bind:value={project.description}
-            placeholder="Description"
-        />
-        <input
-            type="text"
-            placeholder="Start Date"
-            class="input input-bordered w-full mb-4"
-            bind:value={project.start_date}
-        />
-        <input
-            type="text"
-            placeholder="End Date"
-            class="input input-bordered w-full mb-4"
-            bind:value={project.end_date}
-        />
-        <div class="card-actions justify-end">
-            <button class="btn btn-warning" onclick={removeEntry}>
-                Remove
-            </button>
-        </div>
+<div class="my-4">
+    <input
+        type="text"
+        placeholder="Project Name"
+        class="input input-bordered w-full mb-4"
+        bind:value={project.title}
+    />
+    <QuillEditor bind:value={project.description} placeholder="Description" />
+    <input
+        type="text"
+        placeholder="Start Date"
+        class="input input-bordered w-full mb-4"
+        bind:value={project.start_date}
+    />
+    <input
+        type="text"
+        placeholder="End Date"
+        class="input input-bordered w-full mb-4"
+        bind:value={project.end_date}
+    />
+    <div class="flex justify-end my-2">
+        <button class="btn btn-warning" onclick={removeEntry}> Remove </button>
     </div>
 </div>

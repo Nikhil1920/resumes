@@ -9,31 +9,31 @@
     let { link = $bindable(), removeEntry }: Props = $props();
 </script>
 
-<fieldset class="fieldset flex flex-row gap-2 items-end">
-    <div>
-        <label for="link-title" class="label">Display Name</label>
+<fieldset class="fieldset flex flex-row gap-2 items-end w-full">
+    <div class="w-full">
+        <label for="link-title" class="fieldset-legend">Display Name</label>
         <input
             type="text"
             id="link-title"
-            class="input"
+            class="input w-full"
             placeholder="LinkedIn"
             required={link.url !== ""}
             bind:value={link.title}
         />
     </div>
 
-    <div>
-        <label for="link-value" class="label">URL</label>
+    <div class="w-full">
+        <label for="link-value" class="fieldset-legend">URL</label>
         <input
             type="text"
             id="link-value"
-            class="input"
+            class="input w-full"
             placeholder="https://www.linkedin.com/in/johncena/"
             bind:value={link.url}
         />
     </div>
 
-    <button type="button" class="btn btn-error" onclick={removeEntry}>
+    <button type="button" class="btn btn-warning" onclick={removeEntry}>
         <span class="sr-only">Remove Link</span>
         <svg
             xmlns="http://www.w3.org/2000/svg"

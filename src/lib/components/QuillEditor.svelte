@@ -53,7 +53,7 @@
     });
 </script>
 
-<div class="editor-wrapper">
+<div class="editor-wrapper mb-4">
     <div bind:this={editor}></div>
 </div>
 

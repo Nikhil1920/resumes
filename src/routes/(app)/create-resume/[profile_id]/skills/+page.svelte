@@ -42,9 +42,7 @@
             })
         );
         updateProfileStep(data.profile.meta.id, "skills");
-        goto(`/templates/tenali/${data.profile.meta.id}`, {
-            invalidateAll: true,
-        });
+        window.location.href = `/templates/tenali/${data.profile.meta.id}`;
     };
 </script>
 

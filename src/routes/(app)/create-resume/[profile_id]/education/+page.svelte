@@ -26,7 +26,8 @@
     const handleSubmit = (e: Event) => {
         e.preventDefault();
         let validEducation = education_entries.filter(
-            (education) => education.institution !== ""
+            (education) =>
+                education.institution !== "" && education.degree !== ""
         );
         validEducation = validEducation.map((education) => {
             if (education.description === "<ul><li></li></ul>") {

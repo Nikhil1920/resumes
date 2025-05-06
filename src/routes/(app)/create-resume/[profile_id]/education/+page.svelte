@@ -39,7 +39,7 @@
             data.profile.meta.id,
             JSON.stringify({
                 ...data.profile,
-                education: education_entries,
+                education: validEducation,
             })
         );
         updateProfileStep(data.profile.meta.id, "projects");

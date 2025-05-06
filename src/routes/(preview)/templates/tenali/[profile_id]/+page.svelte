@@ -1,6 +1,8 @@
 <script lang="ts">
     import PersonalInfo from "@/components/templates/tenali/PersonalInfo.svelte";
     import Skills from "@/components/templates/tenali/Skills.svelte";
+    import SilentPDF from "@/utils/index.js";
+    import { Capacitor } from "@capacitor/core";
 
     let { data } = $props();
 </script>
@@ -9,9 +11,31 @@
     class="print:hidden w-full flex justify-around items-center bg-gray-100 p-4"
     id="styled"
 >
-    <button onclick={() => window.print()} class="btn btn-primary">
-        Print
-    </button>
+    <a href="/" class="btn btn-ghost"> Back </a>
+    {#if Capacitor.getPlatform() === "web"}
+        <button onclick={() => window.print()} class="btn btn-primary">
+            Print
+        </button>
+    {:else}
+        <button
+            onclick={() =>
+                SilentPDF.download({
+                    value: `/templates/tenali/${data.profile.meta.id}`,
+                })}
+            class="btn btn-secondary"
+        >
+            Download
+        </button>
+        <button
+            onclick={() =>
+                SilentPDF.share({
+                    value: `/templates/tenali/${data.profile.meta.id}`,
+                })}
+            class="btn btn-primary"
+        >
+            Share
+        </button>
+    {/if}
 </div>
 <div class="container">
     <PersonalInfo personal_info={data.profile.personal_info} />

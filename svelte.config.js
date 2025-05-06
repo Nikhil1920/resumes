@@ -5,7 +5,7 @@ const config = {
     preprocess: vitePreprocess(),
     kit: {
         adapter: adapter({
-            fallback: "404.html",
+            fallback: "index.html",
         }),
         alias: {
             "@": "./src/lib",

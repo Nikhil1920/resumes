@@ -1,9 +1,9 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: 'com.byanr.resumes',
-  appName: 'PDF Resume Maker By ANR',
-  webDir: 'dist'
+    appId: "com.byanr.resumes",
+    appName: "PDF Resume Maker By ANR",
+    webDir: "build",
 };
 
 export default config;

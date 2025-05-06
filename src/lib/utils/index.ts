@@ -32,3 +32,14 @@ export const updateProfileStep = (profileId: string, step: string) => {
         }
     }
 };
+
+import { registerPlugin } from "@capacitor/core";
+
+export interface SilentPDFPluginType {
+    download(options: { value: string }): Promise<{ value: string }>;
+    share(options: { value: string }): Promise<{ value: string }>;
+}
+
+const SilentPDF = registerPlugin<SilentPDFPluginType>("SilentPDF");
+
+export default SilentPDF;

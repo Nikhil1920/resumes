@@ -110,32 +110,4 @@ public class SilentPDFPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDeleg
                 completion(nil)
             }
         }
-        
-    
-    @available(iOS 14.0, *)
-    func createPDFUsingModernAPI(completion: @escaping (URL?) -> Void) {
-        let tempDir = FileManager.default.temporaryDirectory
-        let fileName = "webpage-\(Date().timeIntervalSince1970).pdf"
-        let fileURL = tempDir.appendingPathComponent(fileName)
-        
-        let configuration = WKPDFConfiguration()
-        guard let webView = self.bridge?.webView else { completion(nil); return }
-        webView.createPDF(configuration: configuration) { result in
-            switch result {
-            case .success(let data):
-                do {
-                    try data.write(to: fileURL)
-                    completion(fileURL)
-                } catch {
-                    print("Failed to write PDF data: \(error)")
-                    completion(nil)
-                }
-            case .failure(let error):
-                print("PDF creation failed: \(error)")
-                completion(nil)
-            }
-        }
-        completion(nil)
-    }
-    
 }

@@ -3,18 +3,50 @@
 
     interface ResumeSkillsInputProps {
         skill: ResumeSkillType;
+        categories: string[];
         removeSkill: () => void;
     }
-    let { skill = $bindable(), removeSkill }: ResumeSkillsInputProps = $props();
+    let {
+        skill = $bindable(),
+        categories,
+        removeSkill,
+    }: ResumeSkillsInputProps = $props();
+
+    let validCategories = $derived(() => {
+        return categories.filter((category) => category !== "");
+    });
+
+    $effect(() => {
+        if (validCategories().length === 0) {
+            skill.category = "";
+        }
+        if (skill.category && !validCategories().includes(skill.category)) {
+            skill.category = "";
+        }
+    });
 </script>
 
-<div class="flex flex-row gap-2">
+<div class="flex flex-row gap-2 mb-4">
     <input
         type="text"
         placeholder="Skill Name"
-        class="input input-bordered w-full mb-4"
+        class="input input-bordered w-full"
         bind:value={skill.name}
     />
+    {#if validCategories().length > 0}
+        <select
+            name=""
+            id=""
+            bind:value={skill.category}
+            class="select select-bordered w-full"
+        >
+            <option value=""> Select Category </option>
+            {#each validCategories() as category}
+                <option value={category}>{category}</option>
+            {/each}
+        </select>
+    {/if}
+
     <button type="button" class="btn btn-warning" onclick={removeSkill}>
         <span class="sr-only">Remove Skill</span>
         <svg

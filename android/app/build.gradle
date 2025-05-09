@@ -1,6 +1,10 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 android {
+    kotlinOptions {
+        jvmTarget = '21'
+    }
     namespace "com.byanr.resumes"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
@@ -43,6 +47,7 @@ dependencies {
 }
 
 apply from: 'capacitor.build.gradle'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 try {
     def servicesJSON = file('google-services.json')

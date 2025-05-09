@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">PDF Resume Maker By ANR</string>
-    <string name="title_activity_main">PDF Resume Maker By ANR</string>
+    <string name="app_name">Resume Maker 9000</string>
+    <string name="title_activity_main">Resume Maker 9000</string>
     <string name="package_name">com.byanr.resumes</string>
     <string name="custom_url_scheme">com.byanr.resumes</string>
 </resources>

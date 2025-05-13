@@ -19,7 +19,12 @@ public class PdfPrint {
         printAdapter.onLayout(null, printAttributes, null, new PrintDocumentAdapter.LayoutResultCallback() {
             @Override
             public void onLayoutFinished(PrintDocumentInfo info, boolean changed) {
-                printAdapter.onWrite(new PageRange[] { PageRange.ALL_PAGES }, getOutputFile(path, fileName),
+                ParcelFileDescriptor outputFileDescriptor = getOutputFile(path, fileName);
+                if (outputFileDescriptor == null) {
+                    callback.onFailure("Failed to create output file");
+                    return;
+                }
+                printAdapter.onWrite(new PageRange[] { PageRange.ALL_PAGES }, outputFileDescriptor,
                         new CancellationSignal(), new PrintDocumentAdapter.WriteResultCallback() {
                             @Override
                             public void onWriteFinished(PageRange[] pages) {
@@ -39,11 +44,13 @@ public class PdfPrint {
     }
 
     private ParcelFileDescriptor getOutputFile(File path, String fileName) {
-        if (!path.exists()) {
-            path.mkdirs();
-        }
-        File file = new File(path, fileName);
         try {
+            if (!path.exists()) {
+                if (!path.mkdirs()) {
+                    Log.e(TAG, "Unable to Create required folder");
+                }
+            }
+            File file = new File(path, fileName);
             file.createNewFile();
             return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_WRITE);
         } catch (Exception e) {

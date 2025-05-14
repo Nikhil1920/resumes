@@ -16,7 +16,7 @@
             type="text"
             id="link-title"
             class="input w-full"
-            placeholder="LinkedIn"
+            placeholder="link title"
             required={link.url !== ""}
             bind:value={link.title}
         />
@@ -28,7 +28,7 @@
             type="text"
             id="link-value"
             class="input w-full"
-            placeholder="https://www.linkedin.com/in/johncena/"
+            placeholder="link address"
             bind:value={link.url}
         />
     </div>

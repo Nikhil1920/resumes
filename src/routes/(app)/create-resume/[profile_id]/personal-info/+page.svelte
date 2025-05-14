@@ -2,8 +2,11 @@
     import { goto } from "$app/navigation";
     import CreateResumeNavigationLinks from "@/components/CreateResumeNavigationLinks.svelte";
     import ResumeLinkInput from "@/components/ResumeLinkInput.svelte";
-    import { defaultResumePersonalInfo } from "@/types/profile";
-    import { updateProfileStep } from "@/utils";
+    import {
+        defaultResumePersonalInfo,
+        type ResumePersonalInfoType,
+    } from "@/types/profile";
+    import { updateProfileName, updateProfileStep } from "@/utils";
 
     let { data } = $props();
     let personalInfo = $state({
@@ -28,24 +31,36 @@
         }
     });
 
-    const handleSubmit = (e: Event) => {
-        e.preventDefault();
-        let validLinks = personalInfo.title_links.filter(
+    const updateData = (
+        newData: ResumePersonalInfoType,
+        navigateToNextStep: boolean = false
+    ) => {
+        let validLinks = newData.title_links.filter(
             (link) => link.title !== "" && link.url !== ""
         );
-        personalInfo.title_links = validLinks;
+        newData.title_links = validLinks;
         localStorage.setItem(
             data.profile.meta.id,
             JSON.stringify({
                 ...data.profile,
-                personal_info: personalInfo,
+                personal_info: newData,
             })
         );
-        updateProfileStep(data.profile.meta.id, "experience");
-        goto(`/create-resume/${data.profile.meta.id}/experience`, {
-            invalidateAll: true,
-        });
+        updateProfileStep(
+            data.profile.meta.id,
+            navigateToNextStep ? "experience" : "personal-info"
+        );
+        if (navigateToNextStep) {
+            goto(`/create-resume/${data.profile.meta.id}/experience`, {
+                invalidateAll: true,
+            });
+        }
     };
+
+    $effect(() => {
+        console.log("Updating personal info");
+        updateData({ ...personalInfo });
+    });
 </script>
 
 <CreateResumeNavigationLinks
@@ -55,15 +70,21 @@
 
 <h1>Enter Your Details</h1>
 
-<form onsubmit={handleSubmit} class="form">
+<div>
     <fieldset class="fieldset">
         <legend class="fieldset-legend">Name *</legend>
         <input
             type="text"
             class="input"
-            placeholder="John Cena"
+            placeholder="Ex: John Cena"
             required
             bind:value={personalInfo.name}
+            onchange={() => {
+                updateProfileName(
+                    data.profile.meta.id,
+                    personalInfo.name + "'s Resume"
+                );
+            }}
         />
         <p class="label">Please enter your full name</p>
     </fieldset>
@@ -73,7 +94,7 @@
         <input
             type="email"
             class="input"
-            placeholder="jcena@example.com"
+            placeholder="Ex: jcena@example.com"
             bind:value={personalInfo.email}
         />
     </fieldset>
@@ -83,7 +104,7 @@
         <input
             type="tel"
             class="input"
-            placeholder="+91 9876543210"
+            placeholder="Ex: +91 9876543210"
             bind:value={personalInfo.phone}
         />
     </fieldset>
@@ -97,5 +118,13 @@
         />
     {/each}
 
-    <button type="submit" class="btn btn-primary">Next: Experience</button>
-</form>
+    <button
+        type="button"
+        class="btn btn-primary"
+        onclick={() => {
+            updateData(personalInfo, true);
+        }}
+    >
+        Next: Experience
+    </button>
+</div>

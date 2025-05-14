@@ -11,7 +11,13 @@
     class="print:hidden w-full flex justify-around items-center bg-gray-100 p-4"
     id="styled"
 >
-    <a href="/" class="btn btn-ghost"> Back </a>
+    <a
+        href={`/create-resume/${data.profile.meta.id}/skills`}
+        data-sveltekit-preload-data="false"
+        class="btn btn-ghost"
+    >
+        Back
+    </a>
     {#if Capacitor.getPlatform() === "web"}
         <button onclick={() => window.print()} class="btn btn-primary">
             Print

@@ -31,8 +31,7 @@
         }
     });
 
-    const handleSubmit = (e: Event) => {
-        e.preventDefault();
+    const updateData = (navigateToNextStep: boolean = false) => {
         let skills = skill_entries.filter((skill) => skill.name);
         localStorage.setItem(
             data.profile.meta.id,
@@ -42,18 +41,26 @@
             })
         );
         updateProfileStep(data.profile.meta.id, "skills");
-        window.location.href = `/templates/tenali/${data.profile.meta.id}`;
+        if (navigateToNextStep) {
+            window.location.href = `/templates/tenali/${data.profile.meta.id}`;
+        }
     };
+
+    $effect(() => {
+        skill_entries;
+        updateData();
+    });
 </script>
 
 <CreateResumeNavigationLinks
     profile_id={data.profile.meta.id}
     active_step="skills"
 />
-<h1>
-    Hi {data.profile.personal_info.name}!
-</h1>
-<h2>Enter your Skills Categories below</h2>
+<h2 class="text-2xl font-bold">Hi {data.profile.personal_info.name}!</h2>
+<h2 class="my-4">
+    Enter the categories of your skills. For example, Programming Languages,
+    Frameworks, Tools, etc. (Optional)
+</h2>
 {#each skill_categories as category, i}
     <ResumeSkillCategoryInput
         bind:category={skill_categories[i]}
@@ -63,7 +70,7 @@
     />
 {/each}
 
-<h2 class="mt-2 mb-4">Enter your Skills details</h2>
+<h2 class="mt-2 mb-4">Enter your Skills</h2>
 {#each skill_entries as skill, i}
     <ResumeSkillInput
         bind:skill={skill_entries[i]}
@@ -74,6 +81,12 @@
     />
 {/each}
 
-<button type="button" class="btn btn-primary" onclick={handleSubmit}>
+<button
+    type="button"
+    class="btn btn-primary mt-4"
+    onclick={() => {
+        updateData(true);
+    }}
+>
     Next: View Your Resume
 </button>

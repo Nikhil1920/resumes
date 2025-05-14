@@ -8,7 +8,7 @@
         $props();
 </script>
 
-<div class="breadcrumbs text-sm">
+<div class="breadcrumbs text-sm mb-4">
     <ul>
         <li>
             <a

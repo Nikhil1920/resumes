@@ -120,7 +120,7 @@
 
     <button
         type="button"
-        class="btn btn-primary"
+        class="btn btn-primary mt-4"
         onclick={() => {
             updateData(personalInfo, true);
         }}

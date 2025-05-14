@@ -21,8 +21,7 @@
         }
     });
 
-    const handleSubmit = (e: Event) => {
-        e.preventDefault();
+    const updateData = (navigateToNextStep: boolean = false) => {
         let validProjects = project_entries.filter(
             (project) => project.title !== ""
         );
@@ -39,28 +38,52 @@
                 projects: validProjects,
             })
         );
-        updateProfileStep(data.profile.meta.id, "skills");
-        goto(`/create-resume/${data.profile.meta.id}/skills`, {
-            invalidateAll: true,
-        });
+        updateProfileStep(
+            data.profile.meta.id,
+            navigateToNextStep ? "skills" : "projects"
+        );
+        if (navigateToNextStep) {
+            goto(`/create-resume/${data.profile.meta.id}/skills`, {
+                invalidateAll: true,
+            });
+        }
     };
+    $effect(() => {
+        project_entries;
+        updateData();
+    });
 </script>
 
 <CreateResumeNavigationLinks
     profile_id={data.profile.meta.id}
     active_step="projects"
 />
-Hi {data.profile.personal_info.name}!
-<p>Enter your Projects details</p>
+<h2 class="text-2xl font-bold">Hi {data.profile.personal_info.name}!</h2>
+<p class="my-4">
+    You can add your projects here. You can add as many as you want.
+    <br />
+    You can also add a description with a link to the project.
+    <br />
+    Add your personal projects, academic projects and open source contributions.
+</p>
 {#each project_entries as project, i}
-    <ResumeProjectInput
-        bind:project={project_entries[i]}
-        removeEntry={() => {
-            project_entries.splice(i, 1);
-        }}
-    />
+    <div class="my-4">
+        <h3 class="text-lg font-bold">Project {i + 1}</h3>
+        <ResumeProjectInput
+            bind:project={project_entries[i]}
+            removeEntry={() => {
+                project_entries.splice(i, 1);
+            }}
+        />
+    </div>
 {/each}
 
-<button type="button" class="btn btn-primary" onclick={handleSubmit}>
+<button
+    type="button"
+    class="btn btn-primary"
+    onclick={() => {
+        updateData(true);
+    }}
+>
     Next: Skills
 </button>

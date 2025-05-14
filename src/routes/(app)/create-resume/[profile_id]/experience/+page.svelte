@@ -23,8 +23,7 @@
         }
     });
 
-    const handleSubmit = (e: Event) => {
-        e.preventDefault();
+    const updateData = (navigateToNextStep: boolean = false) => {
         let validExperience = experience_entries.filter(
             (experience) => experience.title !== ""
         );
@@ -41,11 +40,21 @@
                 experience: validExperience,
             })
         );
-        updateProfileStep(data.profile.meta.id, "education");
-        goto(`/create-resume/${data.profile.meta.id}/education`, {
-            invalidateAll: true,
-        });
+        updateProfileStep(
+            data.profile.meta.id,
+            navigateToNextStep ? "education" : "experience"
+        );
+        if (navigateToNextStep) {
+            goto(`/create-resume/${data.profile.meta.id}/education`, {
+                invalidateAll: true,
+            });
+        }
     };
+
+    $effect(() => {
+        experience_entries;
+        updateData();
+    });
 </script>
 
 <CreateResumeNavigationLinks
@@ -53,17 +62,29 @@
     active_step="experience"
 />
 
-Hi {data.profile.personal_info.name}!
-<p>Enter your experience details</p>
+<h2 class="text-2xl font-bold">Hi {data.profile.personal_info.name}!</h2>
+<p>
+    Enter your experience details. Add your work experience, internships, and
+    volunteer work.
+</p>
 {#each experience_entries as experience, i}
-    <ResumeExperienceInput
-        bind:experience={experience_entries[i]}
-        removeEntry={() => {
-            experience_entries.splice(i, 1);
-        }}
-    />
+    <div class="my-4">
+        <h3 class="text-xl font-bold">Experience {i + 1}</h3>
+        <ResumeExperienceInput
+            bind:experience={experience_entries[i]}
+            removeEntry={() => {
+                experience_entries.splice(i, 1);
+            }}
+        />
+    </div>
 {/each}
 
-<button type="button" class="btn btn-primary" onclick={handleSubmit}
-    >Next: Education</button
+<button
+    type="button"
+    class="btn btn-primary"
+    onclick={() => {
+        updateData(true);
+    }}
 >
+    Next: Education
+</button>

@@ -23,8 +23,7 @@
         }
     });
 
-    const handleSubmit = (e: Event) => {
-        e.preventDefault();
+    const updateData = (navigateToNextStep: boolean = false) => {
         let validEducation = education_entries.filter(
             (education) =>
                 education.institution !== "" && education.degree !== ""
@@ -42,11 +41,21 @@
                 education: validEducation,
             })
         );
-        updateProfileStep(data.profile.meta.id, "projects");
-        goto(`/create-resume/${data.profile.meta.id}/projects`, {
-            invalidateAll: true,
-        });
+        updateProfileStep(
+            data.profile.meta.id,
+            navigateToNextStep ? "projects" : "education"
+        );
+        if (navigateToNextStep) {
+            goto(`/create-resume/${data.profile.meta.id}/projects`, {
+                invalidateAll: true,
+            });
+        }
     };
+
+    $effect(() => {
+        education_entries;
+        updateData();
+    });
 </script>
 
 <CreateResumeNavigationLinks
@@ -54,17 +63,28 @@
     active_step="education"
 />
 
-Hi {data.profile.personal_info.name}!
+<h2 class="text-2xl font-bold">Hi {data.profile.personal_info.name}!</h2>
 <p>Enter your Education details</p>
 {#each education_entries as education, i}
-    <ResumeEducationInput
-        bind:education={education_entries[i]}
-        removeEntry={() => {
-            education_entries.splice(i, 1);
-        }}
-    />
+    <div class="my-4">
+        <h3>
+            Education {i + 1}
+        </h3>
+        <ResumeEducationInput
+            bind:education={education_entries[i]}
+            removeEntry={() => {
+                education_entries.splice(i, 1);
+            }}
+        />
+    </div>
 {/each}
 
-<button type="button" class="btn btn-primary" onclick={handleSubmit}>
+<button
+    type="button"
+    class="btn btn-primary"
+    onclick={() => {
+        updateData(true);
+    }}
+>
     Next: Projects
 </button>

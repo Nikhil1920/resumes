@@ -12,17 +12,21 @@
     <h1>{personal_info.name || "Your Name"}</h1>
     <div class="contact-info">
         {#if personal_info.phone}
-            {personal_info.phone} <span>|</span>
+            {personal_info.phone}
         {/if}
         {#if personal_info.email}
-            <a href={`mailto:${personal_info.email}`}>{personal_info.email}</a>
-            <span>|</span>
+            {#if personal_info.phone}
+                <span> | </span>
+            {/if}
+            <a href={`mailto:${personal_info.email}`} class="link"
+                >{personal_info.email}</a
+            >
         {/if}
         {#each personal_info.title_links as link, i}
-            <a href={link.url}>{link.title}</a>
-            {#if personal_info.title_links.length != i + 1}
-                <span>|</span>
+            {#if i > 0 || personal_info.phone || personal_info.email}
+                <span> | </span>
             {/if}
+            <a href={link.url} class="link">{link.title}</a>
         {/each}
     </div>
 </header>
@@ -32,12 +36,6 @@
         font-size: 0.9em;
         /* Approximates \small */
         margin-bottom: 10px;
-    }
-
-    .header .contact-info a {
-        color: #007bff;
-        /* Standard link blue */
-        text-decoration: underline;
     }
 
     .header .contact-info span {

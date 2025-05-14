@@ -4,4 +4,6 @@
     import "./preview.css";
 </script>
 
-{@render children()}
+<div data-theme="light">
+    {@render children()}
+</div>

@@ -42,9 +42,10 @@
         } else if (profiles.length === 1) {
             goto(`/create-resume/${profiles[0].id}/${profiles[0].step}`);
         } else {
-            goto("/profiles");
+            goto("/");
         }
     });
 </script>
 
-Redirecting <a href="/profiles">Click here</a> if you are not redirected automatically.
+Redirecting <a href="/" class="link link-primary">Click here</a> if you are not redirected
+automatically.

@@ -73,7 +73,8 @@
         <ResumeEducationInput
             bind:education={education_entries[i]}
             removeEntry={() => {
-                education_entries.splice(i, 1);
+                confirm(`Are you sure you want to remove entry ${i + 1}?`) &&
+                    education_entries.splice(i, 1);
             }}
         />
     </div>

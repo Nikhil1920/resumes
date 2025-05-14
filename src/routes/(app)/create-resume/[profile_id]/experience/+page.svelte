@@ -73,7 +73,8 @@
         <ResumeExperienceInput
             bind:experience={experience_entries[i]}
             removeEntry={() => {
-                experience_entries.splice(i, 1);
+                confirm(`Are you sure you want to remove entry ${i + 1}?`) &&
+                    experience_entries.splice(i, 1);
             }}
         />
     </div>

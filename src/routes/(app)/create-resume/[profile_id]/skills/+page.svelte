@@ -65,7 +65,8 @@
     <ResumeSkillCategoryInput
         bind:category={skill_categories[i]}
         removeEntry={() => {
-            skill_categories.splice(i, 1);
+            confirm(`Are you sure you want to remove entry ${i + 1}?`) &&
+                skill_categories.splice(i, 1);
         }}
     />
 {/each}
@@ -76,7 +77,8 @@
         bind:skill={skill_entries[i]}
         categories={skill_categories}
         removeSkill={() => {
-            skill_entries.splice(i, 1);
+            confirm(`Are you sure you want to remove entry ${i + 1}?`) &&
+                skill_entries.splice(i, 1);
         }}
     />
 {/each}

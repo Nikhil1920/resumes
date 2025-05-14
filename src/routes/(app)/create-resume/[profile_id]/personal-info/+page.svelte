@@ -113,7 +113,8 @@
         <ResumeLinkInput
             bind:link={personalInfo.title_links[i]}
             removeEntry={() => {
-                personalInfo.title_links.splice(i, 1);
+                confirm(`Are you sure you want to remove entry ${i + 1}?`) &&
+                    personalInfo.title_links.splice(i, 1);
             }}
         />
     {/each}

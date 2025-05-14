@@ -72,7 +72,8 @@
         <ResumeProjectInput
             bind:project={project_entries[i]}
             removeEntry={() => {
-                project_entries.splice(i, 1);
+                confirm(`Are you sure you want to remove entry ${i + 1}?`) &&
+                    project_entries.splice(i, 1);
             }}
         />
     </div>

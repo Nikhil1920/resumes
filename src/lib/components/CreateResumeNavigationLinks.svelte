@@ -28,5 +28,13 @@
         <li>
             <a href={`/create-resume/${profile_id}/skills`}> Skills </a>
         </li>
+        <li>
+            <a
+                href={`/templates/tenali/${profile_id}`}
+                data-sveltekit-reload="true"
+            >
+                Preview
+            </a>
+        </li>
     </ul>
 </div>

@@ -1,4 +1,4 @@
-import type { ProfileMetaDataType } from "@/types/profile";
+import type { ProfileMetaDataType, ProfileType } from "@/types/profile";
 
 export const generateId = (length: number): string => {
     const characters =
@@ -28,6 +28,18 @@ export const updateProfileStep = (profileId: string, step: string) => {
                 profiles[profileIndex].step = step;
                 profiles[profileIndex].last_updated = new Date().toISOString();
                 localStorage.setItem("profiles", JSON.stringify(profiles));
+
+                const newMetaData = profiles[profileIndex];
+                const fullProfileString = localStorage.getItem(profileId);
+                if (fullProfileString) {
+                    let fullProfile: ProfileType =
+                        JSON.parse(fullProfileString);
+                    fullProfile.meta = newMetaData;
+                    localStorage.setItem(
+                        profileId,
+                        JSON.stringify(fullProfile)
+                    );
+                }
             }
         }
     }
@@ -46,6 +58,18 @@ export const updateProfileName = (profileId: string, name: string) => {
                 profiles[profileIndex].name = name;
                 profiles[profileIndex].last_updated = new Date().toISOString();
                 localStorage.setItem("profiles", JSON.stringify(profiles));
+
+                const newMetaData = profiles[profileIndex];
+                const fullProfileString = localStorage.getItem(profileId);
+                if (fullProfileString) {
+                    let fullProfile: ProfileType =
+                        JSON.parse(fullProfileString);
+                    fullProfile.meta = newMetaData;
+                    localStorage.setItem(
+                        profileId,
+                        JSON.stringify(fullProfile)
+                    );
+                }
             }
         }
     } else {

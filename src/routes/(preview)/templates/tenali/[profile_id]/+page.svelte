@@ -12,7 +12,7 @@
     id="styled"
 >
     <a
-        href={`/create-resume/${data.profile.meta.id}/skills`}
+        href={`/create-resume/${data.profile.meta.id}/${data.profile.meta.step}`}
         data-sveltekit-preload-data="false"
         class="btn btn-ghost"
     >

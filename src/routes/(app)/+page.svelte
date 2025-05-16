@@ -48,39 +48,96 @@
     };
 </script>
 
-<h1 class="font-bold text-4xl mb-8">Welcome to Resume Maker 9000</h1>
-
-<div class="flex flex-col gap-4">
-    <button onclick={createNewResume} class="btn btn-primary">
-        Create New Resume
-    </button>
-
-    {#if profiles.length > 0}
-        <h2 class="font-semibold text-2xl">Saved Profiles</h2>
-        {#each profiles as profile}
-            <div class="card card-border bg-base-200 max-w-96">
-                <div class="card-body">
-                    <h2 class="card-title">{profile.name || "Unnamed"}</h2>
-                    <p>
-                        {profile.description}
-                        <br />
-                        <strong>Last Updated</strong>: {new Date(
-                            profile.last_updated
-                        ).toLocaleString()}
-                    </p>
-                    <div class="card-actions justify-end">
-                        <a
-                            href={`/create-resume/${profile.id}/${profile.step}`}
-                            class="btn btn-primary">View</a
-                        >
-                    </div>
-                </div>
-            </div>
-        {/each}
-    {/if}
+<div>
+    <h1 class="font-bold text-4xl">Resume Maker 9000</h1>
+    <p class="mt-4">
+        Create a professional resume in minutes with our easy-to-use resume
+        builder. No sign-up required, just fill in the details and download your
+        resume as a PDF.
+    </p>
+    <p class="mt-4">
+        <strong>Note:</strong> Your data is stored locally on your device. No personal
+        information is shared or stored on our servers. This ensures your privacy
+        and security while using our app.
+    </p>
 </div>
 
-<div class="mt-8">
+<div class="my-8 w-full">
+    <button onclick={createNewResume} class="btn btn-primary">
+        Create a New Resume
+    </button>
+</div>
+
+{#if profiles.length > 0}
+    <div class="my-8">
+        <h2 class="font-semibold text-2xl">Saved Profiles</h2>
+        <p class="text-sm mt-4">
+            Click on the "View" button to edit your saved profiles.
+        </p>
+        <div class="flex flex-col gap-4 my-4">
+            {#each profiles as profile}
+                <div class="card card-border bg-base-200 max-w-96">
+                    <div class="card-body">
+                        <h2 class="card-title">
+                            {profile.name || "Unnamed"}
+                        </h2>
+                        <p>
+                            {profile.description}
+                            <br />
+                            <strong>Last Updated</strong>: {new Date(
+                                profile.last_updated
+                            ).toLocaleString()}
+                        </p>
+                        <div class="card-actions justify-end">
+                            <a
+                                href={`/create-resume/${profile.id}/${profile.step}`}
+                                class="btn btn-primary">View</a
+                            >
+                        </div>
+                    </div>
+                </div>
+            {/each}
+        </div>
+        {#if Capacitor.getPlatform() !== "web"}
+            <p>
+                If you enjoy using Resume Maker 9000, Please consider {#if Capacitor.getPlatform() === "android"}
+                    <a
+                        href="https://play.google.com/store/apps/details?id=com.byanr.resumes"
+                        aria-label="Rate Resume Maker 9000 on Play Store"
+                    >
+                        Rating us on Play Store
+                    </a>
+                {:else if Capacitor.getPlatform() === "ios"}
+                    <a
+                        href="https://apps.apple.com/us/app/resume-maker-9000-pdf-cvs/id6745529858"
+                        aria-label="Rate Resume Maker 9000 on App Store"
+                    >
+                        Rating us on App Store
+                    </a>
+                {/if}
+                to help us reach more users and improve the app.
+            </p>
+        {/if}
+    </div>
+    <div class="my-8">
+        <h2 class="font-semibold text-2xl">Contact Us</h2>
+        <p class="text-sm mt-4">
+            We are always looking to improve Resume Maker 9000 and provide the
+            best experience for our users. If you have any questions, feedback,
+            or suggestions, please feel free to <a
+                href="mailto:anr.appcontact+resume_maker_9000@gmail.com"
+                class="link link-primary no-underline"
+            >
+                <strong>contact us</strong>
+            </a>
+            <br />
+            <br />
+            We value your feedback and are committed to improving Resume Maker 9000.
+        </p>
+    </div>
+{/if}
+
+<div class="my-8">
     <h2 class="font-semibold text-2xl">How to use Resume Maker 9000</h2>
     <ul class="list-disc list-outside ms-4 mt-4">
         <li>
@@ -114,7 +171,7 @@
     </ul>
 </div>
 {#if Capacitor.getPlatform() === "web"}
-    <div class="flex flex-col mt-8">
+    <div class="flex flex-col my-8">
         <h2 class="font-semibold text-2xl">
             Download the mobile app available for Android and iOS
         </h2>
@@ -141,7 +198,48 @@
             </a>
         </div>
     </div>
-    <div class="mt-8">
+    <div class="my-8">
+        <h2 class="font-semibold text-2xl">About Resume Maker 9000</h2>
+        <div class="flex flex-col gap-4 mt-4">
+            <p>
+                Resume Maker 9000 is designed to help you create a professional
+                resume quickly and easily. Whether you're a student, recent
+                graduate, or experienced professional, our app provides the
+                tools you need to showcase your skills and experience
+                effectively.
+            </p>
+            <p>
+                With a user-friendly interface and step-by-step guidance, you
+                can fill in your information under each section and see a
+                preview of your resume instantly. Once you're satisfied with
+                your resume, you can download it as a PDF or you can get the
+                Resume Maker 9000 mobile app and share your resume pdf directly
+                from the app.
+            </p>
+            <p>
+                Resume Maker 9000 is completely free and does not require any
+                sign-up or account creation. You can create as many resumes as
+                you need without any limitations.
+            </p>
+            <p>
+                We are committed to providing a secure and private experience
+                for our users. Your data is stored locally on your device, and
+                we do not collect or share any personal information. This means
+                you can create and manage your resumes with confidence, knowing
+                that your information is safe and secure.
+            </p>
+            <p>
+                If you have any questions or feedback, please feel free to reach
+                out to us. We are always looking for ways to improve our app and
+                provide the best experience for our users.
+            </p>
+            <p>
+                Thank you for choosing Resume Maker 9000. We hope you find it
+                helpful in your job search and career development.
+            </p>
+        </div>
+    </div>
+    <div class="my-8">
         <h2 class="font-bold text-2xl">Why choose Resume Maker 9000</h2>
         <ul class="list-disc list-outside ms-4 space-y-1 mt-4">
             <li>

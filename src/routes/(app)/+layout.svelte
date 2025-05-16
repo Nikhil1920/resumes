@@ -1,8 +1,11 @@
 <script lang="ts">
+    import Seo from "@/components/Seo.svelte";
     import "./app.css";
 
     let { children } = $props();
 </script>
+
+<Seo canonical="" />
 
 <div class="navbar bg-base-100 print:hidden">
     <a class="btn btn-ghost text-xl" href="/">Home</a>

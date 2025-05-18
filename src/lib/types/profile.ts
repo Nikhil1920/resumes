@@ -180,14 +180,23 @@ export const defaultProfileConfig: ProfileConfigType = {
     template: "tenali",
 };
 
+export interface ResumeLanguageType {
+    name: string;
+    proficiency: "Basic" | "Conversational" | "Fluent" | "Native";
+}
+
 export interface ProfileType {
     meta: ProfileMetaDataType;
     config: ProfileConfigType;
     personal_info: ResumePersonalInfoType;
+    summary: string;
     experience: ResumeExperienceType[];
     education: ResumeEducationType[];
     projects: ResumeProjectType[];
     skills: ResumeSkillType[];
+    certifications: string[];
+    awards: string[];
+    languages: ResumeLanguageType[];
 }
 
 export const defaultProfile: ProfileType = {
@@ -199,8 +208,12 @@ export const defaultProfile: ProfileType = {
         phone: "",
         title_links: [],
     },
+    summary: "",
     experience: [],
     education: [],
     projects: [],
     skills: [],
+    certifications: [],
+    awards: [],
+    languages: [],
 };

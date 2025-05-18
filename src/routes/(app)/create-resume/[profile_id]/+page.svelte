@@ -89,6 +89,9 @@
                                 profile_config.categories[index] =
                                     profile_config.categories[index - 1];
                                 profile_config.categories[index - 1] = temp;
+                                profile_config.categories = [
+                                    ...profile_config.categories,
+                                ];
                             }}
                         >
                             <svg
@@ -116,6 +119,9 @@
                                 profile_config.categories[index] =
                                     profile_config.categories[index + 1];
                                 profile_config.categories[index + 1] = temp;
+                                profile_config.categories = [
+                                    ...profile_config.categories,
+                                ];
                             }}
                         >
                             <svg

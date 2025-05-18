@@ -98,8 +98,91 @@ export const defaultResumeSkill: ResumeSkillType = {
     category: "",
 };
 
+export interface ResumeCategoriesType {
+    id: string;
+    name: string;
+    description: string;
+}
+
+export const allCategories: ResumeCategoriesType[] = [
+    {
+        id: "summary",
+        name: "Profile Summary",
+        description: "A brief summary of your professional background.",
+    },
+    {
+        id: "experience",
+        name: "Experience",
+        description: "Work experience and internships.",
+    },
+    {
+        id: "education",
+        name: "Education",
+        description: "Educational background.",
+    },
+    {
+        id: "projects",
+        name: "Projects",
+        description: "Personal or professional projects.",
+    },
+    {
+        id: "skills",
+        name: "Skills",
+        description: "Technical and soft skills.",
+    },
+    {
+        id: "certifications",
+        name: "Certifications",
+        description: "Professional certifications and licenses.",
+    },
+    {
+        id: "awards",
+        name: "Awards",
+        description: "Awards and recognitions.",
+    },
+    {
+        id: "languages",
+        name: "Languages",
+        description: "Languages spoken and proficiency levels.",
+    },
+];
+
+export interface ProfileConfigType {
+    categories: ResumeCategoriesType[];
+    page_size: "A4" | "Letter";
+    template: string;
+}
+
+export const defaultProfileConfig: ProfileConfigType = {
+    categories: [
+        {
+            id: "experience",
+            name: "Experience",
+            description: "Work experience and internships.",
+        },
+        {
+            id: "education",
+            name: "Education",
+            description: "Educational background.",
+        },
+        {
+            id: "projects",
+            name: "Projects",
+            description: "Personal or professional projects.",
+        },
+        {
+            id: "skills",
+            name: "Skills",
+            description: "Technical and soft skills.",
+        },
+    ],
+    page_size: "A4",
+    template: "tenali",
+};
+
 export interface ProfileType {
     meta: ProfileMetaDataType;
+    config: ProfileConfigType;
     personal_info: ResumePersonalInfoType;
     experience: ResumeExperienceType[];
     education: ResumeEducationType[];
@@ -109,6 +192,7 @@ export interface ProfileType {
 
 export const defaultProfile: ProfileType = {
     meta: defaultProfileMetaData,
+    config: defaultProfileConfig,
     personal_info: {
         name: "",
         email: "",

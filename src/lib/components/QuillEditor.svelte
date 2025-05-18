@@ -8,14 +8,16 @@
     type Props = {
         value?: string | null;
         placeholder?: string;
+        onchange?: (value: string) => void;
     };
 
-    let { value = $bindable(), placeholder }: Props = $props();
+    let { value = $bindable(), placeholder, onchange }: Props = $props();
 
     let internal = value;
 
     function onTextChange() {
         value = internal = quill.getSemanticHTML(); // set internal
+        onchange?.(value); // call onchange
     }
 
     $effect(() => {

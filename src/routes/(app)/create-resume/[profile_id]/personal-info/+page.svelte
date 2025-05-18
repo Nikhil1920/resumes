@@ -65,10 +65,11 @@
 
 <CreateResumeNavigationLinks
     profile_id={data.profile.meta.id}
+    categories={data.profile.config.categories}
     active_step="personal-info"
 />
 
-<h1>Enter Your Details</h1>
+<h1 class="text-2xl font-bold mb-4">Enter Your Details</h1>
 
 <div>
     <fieldset class="fieldset">
@@ -109,6 +110,11 @@
         />
     </fieldset>
 
+    <h2 class="text-2xl font-bold mb-2 mt-8">Links</h2>
+    <p>
+        Add links to your linkedin, github, portfolio, or any other relevant
+        links. You can add multiple links.
+    </p>
     {#each personalInfo.title_links as link, i}
         <ResumeLinkInput
             bind:link={personalInfo.title_links[i]}
@@ -121,7 +127,7 @@
 
     <button
         type="button"
-        class="btn btn-primary mt-4"
+        class="btn btn-primary my-4"
         onclick={() => {
             updateData(personalInfo, true);
         }}

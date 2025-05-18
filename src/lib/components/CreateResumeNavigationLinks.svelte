@@ -1,11 +1,17 @@
 <script lang="ts">
+    import type { ResumeCategoriesType } from "@/types/profile";
+
     interface CreateResumeNavigationLinksProps {
         profile_id: string;
         active_step: string;
+        categories: ResumeCategoriesType[];
     }
 
-    let { profile_id, active_step }: CreateResumeNavigationLinksProps =
-        $props();
+    let {
+        profile_id,
+        active_step,
+        categories,
+    }: CreateResumeNavigationLinksProps = $props();
 </script>
 
 <div class="breadcrumbs text-sm mb-4">
@@ -16,18 +22,14 @@
                 class:link={active_step === "personal-info"}>Personal Info</a
             >
         </li>
-        <li>
-            <a href={`/create-resume/${profile_id}/experience`}>Experience</a>
-        </li>
-        <li>
-            <a href={`/create-resume/${profile_id}/education`}> Education </a>
-        </li>
-        <li>
-            <a href={`/create-resume/${profile_id}/projects`}> Projects </a>
-        </li>
-        <li>
-            <a href={`/create-resume/${profile_id}/skills`}> Skills </a>
-        </li>
+        {#each categories as category}
+            <li>
+                <a
+                    href={`/create-resume/${profile_id}/${category.id}`}
+                    class:link={active_step === category.id}>{category.name}</a
+                >
+            </li>
+        {/each}
         <li>
             <a
                 href={`/templates/tenali/${profile_id}`}

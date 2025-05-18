@@ -56,6 +56,7 @@
 
 <CreateResumeNavigationLinks
     profile_id={data.profile.meta.id}
+    categories={data.profile.config.categories}
     active_step="projects"
 />
 <h2 class="text-2xl font-bold">Hi {data.profile.personal_info.name}!</h2>

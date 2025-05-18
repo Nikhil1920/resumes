@@ -60,6 +60,7 @@
 
 <CreateResumeNavigationLinks
     profile_id={data.profile.meta.id}
+    categories={data.profile.config.categories}
     active_step="education"
 />
 

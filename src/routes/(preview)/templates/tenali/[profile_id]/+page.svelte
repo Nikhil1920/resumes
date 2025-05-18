@@ -45,111 +45,121 @@
 </div>
 <div class="container">
     <PersonalInfo personal_info={data.profile.personal_info} />
-    {#if data.profile.education.length > 0}
-        <section id="education">
-            <h2>Education</h2>
-            <ul class="section-list">
-                {#each data.profile.education as education}
-                    <li>
-                        <div class="subheading">
-                            <div>
-                                <span class="title"
-                                    >{education.institution}</span
-                                ><br />
-                                <span class="details">{education.degree}</span>
+    {#each data.profile.config.categories as category}
+        {#if category.id === "education" && data.profile.education.length > 0}
+            <section id="education">
+                <h2>{category.name}</h2>
+                <ul class="section-list">
+                    {#each data.profile.education as education}
+                        <li>
+                            <div class="subheading">
+                                <div>
+                                    <span class="title"
+                                        >{education.institution}</span
+                                    ><br />
+                                    <span class="details"
+                                        >{education.degree}</span
+                                    >
+                                </div>
+                                <div class="location-date">
+                                    {education.location}<br />
+                                    <span class="details"
+                                        >{education.start_date}
+                                        {#if education.end_date}
+                                            - {education.end_date}
+                                        {/if}</span
+                                    >
+                                </div>
                             </div>
-                            <div class="location-date">
-                                {education.location}<br />
-                                <span class="details"
-                                    >{education.start_date}
-                                    {#if education.end_date}
-                                        - {education.end_date}
-                                    {/if}</span
-                                >
-                            </div>
-                        </div>
-                    </li>
-                {/each}
-            </ul>
-        </section>
-    {/if}
+                        </li>
+                    {/each}
+                </ul>
+            </section>
+        {/if}
 
-    {#if data.profile.experience.length > 0}
-        <section id="experience">
-            <h2>Experience</h2>
-            <ul class="section-list">
-                {#each data.profile.experience as experience}
-                    <li>
-                        <div class="subheading">
-                            <div>
-                                <span class="title">{experience.title}</span><br
-                                />
-                                <span class="details">{experience.company}</span
-                                >
+        {#if category.id === "experience" && data.profile.experience.length > 0}
+            <section id="experience">
+                <h2>{category.name}</h2>
+                <ul class="section-list">
+                    {#each data.profile.experience as experience}
+                        <li>
+                            <div class="subheading">
+                                <div>
+                                    <span class="title">{experience.title}</span
+                                    ><br />
+                                    <span class="details"
+                                        >{experience.company}</span
+                                    >
+                                </div>
+                                <div class="location-date">
+                                    {experience.start_date}
+                                    {#if experience.end_date}
+                                        - {experience.end_date}
+                                    {/if}<br />
+                                    <span class="details"
+                                        >{experience.location}</span
+                                    >
+                                </div>
                             </div>
-                            <div class="location-date">
-                                {experience.start_date}
-                                {#if experience.end_date}
-                                    - {experience.end_date}
-                                {/if}<br />
-                                <span class="details"
-                                    >{experience.location}</span
-                                >
-                            </div>
-                        </div>
 
-                        {#if experience.description}
-                            <div class="description">
-                                {@html experience.description}
-                            </div>
-                        {/if}
-                    </li>
-                {/each}
-            </ul>
-        </section>
-    {/if}
-
-    {#if data.profile.projects.length > 0}
-        <section id="projects">
-            <h2>Projects</h2>
-            <ul class="section-list">
-                {#each data.profile.projects as project}
-                    <li>
-                        <div class="project-heading">
-                            <div>
-                                <span class="title">{project.title}</span>
-                                {#if project.skills.length > 0}
-                                    | <span class="tech"
-                                        >{#each project.skills as skill, i}
-                                            {skill}
-                                            {#if project.skills.length != i + 1}
-                                                ,
-                                            {/if}
-                                        {/each}
-                                    </span>
-                                {/if}
-                            </div>
-                            {#if project.start_date || project.end_date}
-                                <div class="dates">
-                                    {project.start_date}
-                                    {#if project.end_date}
-                                        - {project.end_date}
-                                    {/if}
+                            {#if experience.description}
+                                <div class="description">
+                                    {@html experience.description}
                                 </div>
                             {/if}
-                        </div>
-                        {#if project.description}
-                            <div class="description">
-                                {@html project.description}
-                            </div>
-                        {/if}
-                    </li>
-                {/each}
-            </ul>
-        </section>
-    {/if}
+                        </li>
+                    {/each}
+                </ul>
+            </section>
+        {/if}
 
-    <Skills skills={data.profile.skills} />
+        {#if category.id === "projects" && data.profile.projects.length > 0}
+            <section id="projects">
+                <h2>{category.name}</h2>
+                <ul class="section-list">
+                    {#each data.profile.projects as project}
+                        <li>
+                            <div class="project-heading">
+                                <div>
+                                    <span class="title">{project.title}</span>
+                                    {#if project.skills.length > 0}
+                                        | <span class="tech"
+                                            >{#each project.skills as skill, i}
+                                                {skill}
+                                                {#if project.skills.length != i + 1}
+                                                    ,
+                                                {/if}
+                                            {/each}
+                                        </span>
+                                    {/if}
+                                </div>
+                                {#if project.start_date || project.end_date}
+                                    <div class="dates">
+                                        {project.start_date}
+                                        {#if project.end_date}
+                                            - {project.end_date}
+                                        {/if}
+                                    </div>
+                                {/if}
+                            </div>
+                            {#if project.description}
+                                <div class="description">
+                                    {@html project.description}
+                                </div>
+                            {/if}
+                        </li>
+                    {/each}
+                </ul>
+            </section>
+        {/if}
+
+        {#if category.id === "skills"}
+            <Skills
+                skills={data.profile.skills}
+                section_title={category.name}
+            />
+        {/if}
+    {/each}
 </div>
 
 <style>

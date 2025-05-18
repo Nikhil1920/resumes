@@ -3,9 +3,10 @@
 
     interface SkillsProps {
         skills: ResumeSkillType[];
+        section_title: string;
     }
 
-    let { skills }: SkillsProps = $props();
+    let { skills, section_title }: SkillsProps = $props();
     let categories: string[] = [];
     let categoryWiseSkills: { [key: string]: ResumeSkillType[] } = {};
     skills.forEach((skill) => {
@@ -19,7 +20,7 @@
 
 {#if skills.length > 0}
     <section id="skills" class="skills-list">
-        <h2>Technical Skills</h2>
+        <h2>{section_title}</h2>
         <ul>
             {#each categories as category}
                 <li>

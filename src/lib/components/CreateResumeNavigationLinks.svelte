@@ -26,15 +26,14 @@
             <li>
                 <a
                     href={`/create-resume/${profile_id}/${category.id}`}
-                    class:link={active_step === category.id}>{category.name}</a
+                    class:link={active_step === category.id}
                 >
+                    {category.name}
+                </a>
             </li>
         {/each}
         <li>
-            <a
-                href={`/templates/tenali/${profile_id}`}
-                data-sveltekit-reload="true"
-            >
+            <a href={`/templates/tenali/${profile_id}`} data-sveltekit-reload>
                 Preview
             </a>
         </li>

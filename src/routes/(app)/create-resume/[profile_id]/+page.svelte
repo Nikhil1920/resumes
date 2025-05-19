@@ -169,6 +169,7 @@
     <a
         href={`/create-resume/${data.profile.meta.id}/personal-info`}
         class="btn btn-primary my-4"
+        data-sveltekit-reload
     >
         Next: Personal Info
     </a>

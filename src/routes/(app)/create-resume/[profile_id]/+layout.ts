@@ -6,7 +6,9 @@ export const prerender = false;
 export const csr = true;
 export const load = async ({ params }) => {
     const { profile_id } = params;
-    if (!window || !window.localStorage) {
+    try {
+        window.localStorage.getItem("profiles");
+    } catch (e) {
         return {
             profile: {
                 ...defaultProfile,

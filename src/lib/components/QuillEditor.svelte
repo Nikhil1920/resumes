@@ -1,8 +1,6 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import Quill from "quill";
+    import { onDestroy, onMount } from "svelte";
     import "quill/dist/quill.snow.css";
-    let quill: Quill;
     let editor: HTMLDivElement;
 
     type Props = {
@@ -15,24 +13,9 @@
 
     let internal = value;
 
-    function onTextChange() {
-        value = internal = quill.getSemanticHTML(); // set internal
-        onchange?.(value); // call onchange
-    }
-
-    $effect(() => {
-        if (quill && value !== internal) {
-            // check if value !== internal
-            console.log("value", value);
-            console.log("internal", internal);
-            internal = value || "";
-            const delta = quill.clipboard.convert({ html: value || "" });
-            quill.setContents(delta);
-        }
-    });
-
-    onMount(() => {
-        quill = new Quill(editor, {
+    onMount(async () => {
+        const { default: Quill } = await import("quill");
+        let quill = new Quill(editor, {
             modules: {
                 toolbar: [
                     [{ list: "bullet" }],
@@ -47,11 +30,30 @@
         const delta = quill.clipboard.convert({ html: value || "" });
         quill.setContents(delta);
 
+        function onTextChange() {
+            if (!quill) return;
+            value = internal = quill.getSemanticHTML(); // set internal
+            onchange?.(value); // call onchange
+        }
+
+        $effect(() => {
+            if (quill && value !== internal) {
+                // check if value !== internal
+                console.log("value", value);
+                console.log("internal", internal);
+                internal = value || "";
+                const delta = quill.clipboard.convert({ html: value || "" });
+                quill.setContents(delta);
+            }
+        });
+
         quill.on("text-change", onTextChange);
 
-        return () => {
-            quill.off("text-change", onTextChange);
-        };
+        onDestroy(() => {
+            if (quill) {
+                quill.off("text-change", onTextChange);
+            }
+        });
     });
 </script>
 

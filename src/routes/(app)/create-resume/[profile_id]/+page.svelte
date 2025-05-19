@@ -4,6 +4,7 @@
         defaultProfileConfig,
         type ProfileConfigType,
     } from "@/types/profile";
+    import { onMount } from "svelte";
 
     let { data } = $props();
 
@@ -20,14 +21,16 @@
         profile_config.categories.splice(index, 1);
     };
 
-    $effect(() => {
-        localStorage.setItem(
-            data.profile.meta.id,
-            JSON.stringify({
-                ...data.profile,
-                config: profile_config,
-            })
-        );
+    onMount(() => {
+        $effect(() => {
+            localStorage.setItem(
+                data.profile.meta.id,
+                JSON.stringify({
+                    ...data.profile,
+                    config: profile_config,
+                })
+            );
+        });
     });
 </script>
 

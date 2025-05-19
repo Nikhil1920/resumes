@@ -17,7 +17,7 @@
         goto(`/create-resume/${data.profile.meta.id}`, { invalidateAll: true });
     }
 
-    let project_entries = $state<ResumeProjectType[]>(data.profile.projects);
+    let project_entries = $state(data.profile.projects);
 
     $effect(() => {
         if (project_entries.length === 0) {

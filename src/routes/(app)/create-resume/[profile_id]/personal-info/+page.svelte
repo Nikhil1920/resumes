@@ -13,32 +13,32 @@
         ...defaultResumePersonalInfo,
         ...data.profile.personal_info,
     });
+    let title_links = $state(data.profile.personal_info.title_links);
+    let valid_links = $derived(
+        title_links.filter((link) => link.title !== "" && link.url !== "")
+    );
 
     $effect(() => {
-        if (personalInfo.title_links.length === 0) {
-            personalInfo.title_links.push({
+        if (title_links.length === 0) {
+            title_links.push({
                 title: "",
                 url: "",
             });
         }
-        if (
-            personalInfo.title_links[personalInfo.title_links.length - 1].title
-        ) {
-            personalInfo.title_links.push({
+        if (title_links[title_links.length - 1].title) {
+            title_links.push({
                 title: "",
                 url: "",
             });
         }
     });
 
-    const updateData = (
-        newData: ResumePersonalInfoType,
-        navigateToNextStep: boolean = false
-    ) => {
-        let validLinks = newData.title_links.filter(
-            (link) => link.title !== "" && link.url !== ""
-        );
-        newData.title_links = validLinks;
+    const updateData = (navigateToNextStep: boolean = false) => {
+        let newData = {
+            ...personalInfo,
+            title_links: valid_links,
+        };
+        console.log("Updating profile data");
         localStorage.setItem(
             data.profile.meta.id,
             JSON.stringify({
@@ -46,20 +46,30 @@
                 personal_info: newData,
             })
         );
-        updateProfileStep(
-            data.profile.meta.id,
-            navigateToNextStep ? "experience" : "personal-info"
-        );
-        if (navigateToNextStep) {
-            goto(`/create-resume/${data.profile.meta.id}/experience`, {
+        if (data.profile.config.categories.length === 0 && navigateToNextStep) {
+            goto(`/templates/tenali/${data.profile.meta.id}`, {
                 invalidateAll: true,
             });
+            return;
+        }
+        updateProfileStep(
+            data.profile.meta.id,
+            navigateToNextStep
+                ? data.profile.config.categories[0].id
+                : "personal-info"
+        );
+        if (navigateToNextStep) {
+            goto(
+                `/create-resume/${data.profile.meta.id}/${data.profile.config.categories[0].id}`,
+                {
+                    invalidateAll: true,
+                }
+            );
         }
     };
 
     $effect(() => {
-        console.log("Updating personal info");
-        updateData({ ...personalInfo });
+        updateData();
     });
 </script>
 
@@ -115,23 +125,41 @@
         Add links to your linkedin, github, portfolio, or any other relevant
         links. You can add multiple links.
     </p>
-    {#each personalInfo.title_links as link, i}
+    {#each title_links as link, i}
         <ResumeLinkInput
-            bind:link={personalInfo.title_links[i]}
+            bind:link={title_links[i]}
             removeEntry={() => {
                 confirm(`Are you sure you want to remove entry ${i + 1}?`) &&
-                    personalInfo.title_links.splice(i, 1);
+                    title_links.splice(i, 1);
             }}
         />
     {/each}
 
-    <button
-        type="button"
-        class="btn btn-primary my-4"
-        onclick={() => {
-            updateData(personalInfo, true);
-        }}
-    >
-        Next: Experience
-    </button>
+    <div class="flex justify-between my-4">
+        {#if data.profile.config.categories.length === 0}
+            <a
+                href={`/templates/tenali/${data.profile.meta.id}`}
+                class="btn btn-primary my-4"
+                data-sveltekit-reload
+            >
+                Preview
+            </a>
+        {:else}
+            <button
+                type="button"
+                class="btn btn-primary"
+                onclick={() => {
+                    updateData(true);
+                }}
+            >
+                Next: {data.profile.config.categories[0].name}
+            </button>
+        {/if}
+        <a
+            href={"/create-resume/" + data.profile.meta.id}
+            class="btn btn-secondary"
+        >
+            Configure Your Resume
+        </a>
+    </div>
 </div>

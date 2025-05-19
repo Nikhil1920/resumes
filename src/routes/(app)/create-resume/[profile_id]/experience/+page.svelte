@@ -10,6 +10,13 @@
 
     let { data } = $props();
 
+    const currentCategoryIndex = data.profile.config.categories.findIndex(
+        (category) => category.id === "experience"
+    );
+    if (currentCategoryIndex === -1) {
+        goto(`/create-resume/${data.profile.meta.id}`, { invalidateAll: true });
+    }
+
     let experience_entries = $state<ResumeExperienceType[]>(
         data.profile.experience
     );
@@ -45,9 +52,12 @@
             navigateToNextStep ? "education" : "experience"
         );
         if (navigateToNextStep) {
-            goto(`/create-resume/${data.profile.meta.id}/education`, {
-                invalidateAll: true,
-            });
+            goto(
+                `/create-resume/${data.profile.meta.id}/${data.profile.config.categories[currentCategoryIndex + 1].id}`,
+                {
+                    invalidateAll: true,
+                }
+            );
         }
     };
 
@@ -81,12 +91,22 @@
     </div>
 {/each}
 
-<button
-    type="button"
-    class="btn btn-primary"
-    onclick={() => {
-        updateData(true);
-    }}
->
-    Next: Education
-</button>
+{#if currentCategoryIndex === data.profile.config.categories.length - 1}
+    <a
+        href={`/templates/tenali/${data.profile.meta.id}`}
+        class="btn btn-primary my-4"
+        data-sveltekit-reload
+    >
+        Preview
+    </a>
+{:else}
+    <button
+        type="button"
+        class="btn btn-primary mt-4"
+        onclick={() => {
+            updateData(true);
+        }}
+    >
+        Next: {data.profile.config.categories[currentCategoryIndex + 1].name}
+    </button>
+{/if}

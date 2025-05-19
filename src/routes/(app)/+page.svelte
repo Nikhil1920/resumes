@@ -44,7 +44,7 @@
                 meta: { ...defaultProfile.meta, id: newId },
             })
         );
-        goto(`/create-resume/${newId}/personal-info`);
+        goto(`/create-resume/${newId}`);
     };
 </script>
 

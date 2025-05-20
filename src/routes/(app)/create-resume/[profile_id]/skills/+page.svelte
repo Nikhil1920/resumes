@@ -71,11 +71,14 @@
     categories={data.profile.config.categories}
     active_step="skills"
 />
-<h2 class="text-2xl font-bold">Hi {data.profile.personal_info.name}!</h2>
-<h2 class="my-4">
+<p class="text-sm">Hi {data.profile.personal_info.name}!</p>
+<h2 class="text-2xl font-bold mb-4">
+    List your skills, tools, and technologies you are familiar with.
+</h2>
+<p class="my-4">
     Enter the categories of your skills. For example, Programming Languages,
     Frameworks, Tools, etc. (Optional)
-</h2>
+</p>
 {#each skill_categories as category, i}
     <ResumeSkillCategoryInput
         bind:category={skill_categories[i]}

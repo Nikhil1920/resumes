@@ -74,8 +74,8 @@
     active_step="education"
 />
 
-<h2 class="text-2xl font-bold">Hi {data.profile.personal_info.name}!</h2>
-<p>Enter your Education details</p>
+<p class="text-sm">Hi {data.profile.personal_info.name}!</p>
+<h1 class="text-2xl font-bold mb-4">Enter your Education details</h1>
 {#each education_entries as education, i}
     <div class="my-4">
         <h3>

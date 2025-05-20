@@ -69,9 +69,12 @@
     categories={data.profile.config.categories}
     active_step="projects"
 />
-<h2 class="text-2xl font-bold">Hi {data.profile.personal_info.name}!</h2>
+<p class="text-sm">Hi {data.profile.personal_info.name}!</p>
+<h2 class="text-2xl font-bold mb-4">
+    List your projects, open source contributions, and personal work.
+</h2>
 <p class="my-4">
-    You can add your projects here. You can add as many as you want.
+    You can add your projects here.
     <br />
     You can also add a description with a link to the project.
     <br />

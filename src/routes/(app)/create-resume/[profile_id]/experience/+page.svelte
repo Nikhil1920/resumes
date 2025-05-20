@@ -71,10 +71,11 @@
     active_step="experience"
 />
 
-<h2 class="text-2xl font-bold">Hi {data.profile.personal_info.name}!</h2>
+<p class="text-sm">Hi {data.profile.personal_info.name}!</p>
+<h2 class="text-2xl font-bold mb-4">Enter your work experience details</h2>
 <p>
-    Enter your experience details. Add your work experience, internships, and
-    volunteer work.
+    List all your work experience, internships, and volunteer work related to
+    the job you are applying for. You can add multiple entries.
 </p>
 {#each experience_entries as experience, i}
     <div class="my-4">

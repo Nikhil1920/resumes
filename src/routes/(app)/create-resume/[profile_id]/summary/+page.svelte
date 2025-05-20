@@ -13,7 +13,7 @@
         goto(`/create-resume/${data.profile.meta.id}`, { invalidateAll: true });
     }
 
-    let summary = $state<string>(data.profile.summary);
+    let summary = $state(data.profile.summary || "");
 
     let debounceTimeout: ReturnType<typeof setTimeout>;
     function debouncedOnChange() {

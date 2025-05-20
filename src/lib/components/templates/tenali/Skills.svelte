@@ -35,15 +35,3 @@
         </ul>
     </section>
 {/if}
-
-<style>
-    .skills-list ul {
-        list-style: none;
-        padding-left: 10px;
-    }
-
-    .skills-list li {
-        font-size: 0.95em;
-        margin-bottom: 2px;
-    }
-</style>

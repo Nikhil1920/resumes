@@ -158,6 +158,47 @@
                 skills={data.profile.skills}
                 section_title={category.name}
             />
+        {:else if category.id === "certifications" && data.profile.certifications.length > 0}
+            <section id="certifications">
+                <h2>{category.name}</h2>
+                <div class="description">
+                    <ul>
+                        {#each data.profile.certifications as certification}
+                            <li>
+                                {certification}
+                            </li>
+                        {/each}
+                    </ul>
+                </div>
+            </section>
+        {:else if category.id === "awards" && data.profile.awards.length > 0}
+            <section id="awards">
+                <h2>{category.name}</h2>
+                <div class="description">
+                    {@html data.profile.awards}
+                </div>
+            </section>
+        {:else if category.id === "languages" && data.profile.languages.length > 0}
+            <section id="languages">
+                <h2>{category.name}</h2>
+                <div class="description">
+                    <ul>
+                        {#each data.profile.languages as language}
+                            <li>
+                                {language.proficiency}
+                                {language.name}
+                            </li>
+                        {/each}
+                    </ul>
+                </div>
+            </section>
+        {:else if category.id === "summary" && "summary" in data.profile && data.profile.summary.length > 0}
+            <section id="summary">
+                <h2>{category.name}</h2>
+                <div class="description">
+                    {@html data.profile.summary}
+                </div>
+            </section>
         {/if}
     {/each}
 </div>
@@ -227,17 +268,27 @@
         /* Slightly lighter text for details */
     }
 
-    .description {
-        padding-left: 20px;
-    }
-
     .container :global {
+        .description p {
+            padding-left: 10px;
+        }
         .description ul {
             list-style: disc;
+            padding-left: 20px;
         }
 
         em {
             font-style: italic;
+        }
+
+        .skills-list ul {
+            list-style: none;
+            padding-left: 10px;
+        }
+
+        .skills-list li {
+            font-size: 0.95em;
+            margin-bottom: 2px;
         }
     }
 

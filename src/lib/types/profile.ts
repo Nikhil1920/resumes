@@ -182,7 +182,7 @@ export const defaultProfileConfig: ProfileConfigType = {
 
 export interface ResumeLanguageType {
     name: string;
-    proficiency: "Basic" | "Conversational" | "Fluent" | "Native";
+    proficiency: "Basic" | "Conversational" | "Proficient" | "Fluent";
 }
 
 export interface ProfileType {

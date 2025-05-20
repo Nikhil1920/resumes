@@ -34,12 +34,31 @@
     let debounceTimeout: ReturnType<typeof setTimeout>;
     function debouncedOnChange() {
         clearTimeout(debounceTimeout);
+        let knownLanguages: string[] = [];
+        let cleanedLanguages = languages
+            .map((language) => {
+                return {
+                    name: language.name.trim(),
+                    proficiency: language.proficiency,
+                };
+            })
+            .filter((language) => {
+                if (language.name !== "") {
+                    if (!knownLanguages.includes(language.name)) {
+                        knownLanguages.push(language.name);
+                        return true;
+                    }
+                    return false;
+                }
+                return false;
+            });
+        cleanedLanguages = Array.from(new Set(cleanedLanguages));
         debounceTimeout = setTimeout(() => {
             localStorage.setItem(
                 data.profile.meta.id,
                 JSON.stringify({
                     ...data.profile,
-                    languages: Array.from(new Set(languages)),
+                    languages: cleanedLanguages,
                 })
             );
             updateProfileStep(data.profile.meta.id, "languages");
@@ -73,8 +92,8 @@
         >
             <option value="Basic">Basic</option>
             <option value="Conversational">Conversational</option>
+            <option value="Proficient">Proficient</option>
             <option value="Fluent">Fluent</option>
-            <option value="Native">Native</option>
         </select>
     </div>
 {/each}

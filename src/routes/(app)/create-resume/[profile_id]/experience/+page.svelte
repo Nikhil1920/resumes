@@ -17,9 +17,7 @@
         goto(`/create-resume/${data.profile.meta.id}`, { invalidateAll: true });
     }
 
-    let experience_entries = $state<ResumeExperienceType[]>(
-        data.profile.experience
-    );
+    let experience_entries = $state(data.profile.experience || []);
 
     $effect(() => {
         if (experience_entries.length === 0) {

@@ -15,10 +15,12 @@
         goto(`/create-resume/${data.profile.meta.id}`, { invalidateAll: true });
     }
 
-    let skill_categories = $state<string[]>(
-        Array.from(new Set(data.profile.skills.map((skill) => skill.category)))
+    let skill_categories = $state(
+        Array.from(
+            new Set(data.profile.skills.map((skill) => skill.category))
+        ) || []
     );
-    let skill_entries = $state<ResumeSkillType[]>(data.profile.skills);
+    let skill_entries = $state(data.profile.skills || []);
 
     $effect(() => {
         if (skill_entries.length === 0) {

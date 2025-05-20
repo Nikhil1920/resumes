@@ -17,8 +17,8 @@
         goto(`/create-resume/${data.profile.meta.id}`, { invalidateAll: true });
     }
 
-    let education_entries = $state<ResumeEducationType[]>(
-        data.profile.education
+    let education_entries: ResumeEducationType[] = $state(
+        data.profile.education || []
     );
 
     $effect(() => {

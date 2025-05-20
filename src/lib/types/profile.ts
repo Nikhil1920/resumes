@@ -195,7 +195,7 @@ export interface ProfileType {
     projects: ResumeProjectType[];
     skills: ResumeSkillType[];
     certifications: string[];
-    awards: string[];
+    awards: string;
     languages: ResumeLanguageType[];
 }
 
@@ -214,6 +214,6 @@ export const defaultProfile: ProfileType = {
     projects: [],
     skills: [],
     certifications: [],
-    awards: [],
+    awards: "<ul><li></li></ul>",
     languages: [],
 };

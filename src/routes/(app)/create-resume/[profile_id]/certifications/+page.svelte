@@ -26,12 +26,16 @@
     let debounceTimeout: ReturnType<typeof setTimeout>;
     function debouncedOnChange() {
         clearTimeout(debounceTimeout);
+        let cleanedCertifications = certifications
+            .map((certification) => certification.trim())
+            .filter((certification) => certification !== "");
+
         debounceTimeout = setTimeout(() => {
             localStorage.setItem(
                 data.profile.meta.id,
                 JSON.stringify({
                     ...data.profile,
-                    certifications: Array.from(new Set(certifications)),
+                    certifications: Array.from(new Set(cleanedCertifications)),
                 })
             );
             updateProfileStep(data.profile.meta.id, "certifications");

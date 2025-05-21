@@ -217,3 +217,22 @@ export const defaultProfile: ProfileType = {
     awards: "<ul><li></li></ul>",
     languages: [],
 };
+
+export const demoProfile: ProfileType = {
+    meta: { ...defaultProfileMetaData, name: "John Cena", id: "demo" },
+    config: { ...defaultProfileConfig, categories: allCategories },
+    personal_info: {
+        name: "",
+        email: "",
+        phone: "",
+        title_links: [],
+    },
+    summary: "",
+    experience: [],
+    education: [],
+    projects: [],
+    skills: [],
+    certifications: [],
+    awards: "<ul><li></li></ul>",
+    languages: [],
+};

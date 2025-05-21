@@ -1,23 +1,38 @@
-import { defaultProfile, type ProfileType } from "@/types/profile.js";
+import {
+    defaultProfile,
+    demoProfile,
+    type ProfileType,
+} from "@/types/profile.js";
 import { error } from "@sveltejs/kit";
 
-export const ssr = false;
-export const prerender = false;
-export const csr = true;
+export const ssr = true;
+export const prerender = true;
+// export const csr = true;
 export const load = async ({ params }) => {
     const { profile_id } = params;
+    let noLocalStorage = false;
     try {
         window.localStorage.getItem("profiles");
     } catch (e) {
-        return {
-            profile: {
-                ...defaultProfile,
-                meta: {
-                    ...defaultProfile.meta,
-                    id: profile_id,
-                },
-            },
-        };
+        noLocalStorage = true;
+    }
+    if (noLocalStorage || ["demo"].includes(profile_id)) {
+        switch (profile_id) {
+            case "demo":
+                return {
+                    profile: demoProfile,
+                };
+            default:
+                return {
+                    profile: {
+                        ...defaultProfile,
+                        meta: {
+                            ...defaultProfile.meta,
+                            id: profile_id,
+                        },
+                    },
+                };
+        }
     }
     const profileString = localStorage.getItem(profile_id);
     if (!profileString) {

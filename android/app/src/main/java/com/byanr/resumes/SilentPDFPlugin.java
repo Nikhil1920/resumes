@@ -164,6 +164,8 @@ public class SilentPDFPlugin extends Plugin {
                             Intent shareIntent = new Intent(Intent.ACTION_SEND);
                             shareIntent.setType("application/pdf");
                             shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                            shareIntent.putExtra(Intent.EXTRA_TEXT,
+                                    "Made with Resume Maker 9000. Make your own Resume for free at https://resumes.byanr.com?from=mobile");
                             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                             getContext().startActivity(Intent.createChooser(shareIntent, "Share PDF via"));
                         }

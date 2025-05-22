@@ -53,8 +53,10 @@ public class SilentPDFPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDeleg
 
             DispatchQueue.main.async {
                 // Create and present UIActivityViewController on main thread
+                let message =
+                    "Made with Resume Maker 9000. Make your own Resume for free at https://resumes.byanr.com?from=mobile"
                 let activityViewController = UIActivityViewController(
-                    activityItems: [pdfURL],
+                    activityItems: [pdfURL, message],
                     applicationActivities: nil
                 )
 

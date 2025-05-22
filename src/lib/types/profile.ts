@@ -218,7 +218,7 @@ export const defaultProfile: ProfileType = {
     projects: [],
     skills: [],
     certifications: [],
-    awards: "<ul><li></li></ul>",
+    awards: "",
     languages: [],
 };
 
@@ -237,6 +237,6 @@ export const demoProfile: ProfileType = {
     projects: [],
     skills: [],
     certifications: [],
-    awards: "<ul><li></li></ul>",
+    awards: "",
     languages: [],
 };

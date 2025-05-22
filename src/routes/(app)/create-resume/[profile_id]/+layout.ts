@@ -16,7 +16,7 @@ export const load = async ({ params }) => {
     } catch (e) {
         noLocalStorage = true;
     }
-    if (noLocalStorage || ["demo"].includes(profile_id)) {
+    if (noLocalStorage) {
         switch (profile_id) {
             case "demo":
                 return {
@@ -25,7 +25,7 @@ export const load = async ({ params }) => {
             default:
                 return {
                     profile: {
-                        ...defaultProfile,
+                        ...demoProfile,
                         meta: {
                             ...defaultProfile.meta,
                             id: profile_id,
@@ -36,6 +36,12 @@ export const load = async ({ params }) => {
     }
     const profileString = localStorage.getItem(profile_id);
     if (!profileString) {
+        if (["demo"].includes(profile_id)) {
+            return {
+                profile: demoProfile,
+            };
+        }
+
         throw error(404, "Profile not found");
     }
     try {

@@ -151,6 +151,8 @@ export interface ProfileConfigType {
     categories: ResumeCategoriesType[];
     page_size: "A4" | "Letter";
     template: string;
+    title_font: string;
+    body_font: string;
 }
 
 export const defaultProfileConfig: ProfileConfigType = {
@@ -178,6 +180,8 @@ export const defaultProfileConfig: ProfileConfigType = {
     ],
     page_size: "A4",
     template: "tenali",
+    title_font: "Arial",
+    body_font: "Arial",
 };
 
 export interface ResumeLanguageType {

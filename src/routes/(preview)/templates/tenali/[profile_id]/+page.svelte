@@ -5,10 +5,46 @@
     import { Capacitor } from "@capacitor/core";
 
     let { data } = $props();
+
+    let selectedTitleFont = $state(data.profile.config.title_font || "Cambria");
+    let selectedBodyFont = $state(data.profile.config.body_font || "Gill Sans");
+    let titleFonts: string[] = [
+        "Cambria",
+        "Cochin",
+        "Georgia",
+        "Times",
+        "Times New Roman",
+        "Arial",
+        "Garamond",
+        "Gill Sans",
+    ];
+    let bodyFonts: string[] = [
+        "Gill Sans",
+        "Gill Sans MT",
+        "Calibri",
+        "Trebuchet MS",
+        "Arial",
+        "Garamond",
+        "Gill Sans",
+    ];
+
+    const updateFontChoices = () => {
+        localStorage.setItem(
+            data.profile.meta.id,
+            JSON.stringify({
+                ...data.profile,
+                config: {
+                    ...data.profile.config,
+                    title_font: selectedTitleFont,
+                    body_font: selectedBodyFont,
+                },
+            })
+        );
+    };
 </script>
 
 <div
-    class="print:hidden w-full flex justify-around items-center bg-gray-100 p-4"
+    class="print:hidden w-full flex flex-wrap gap-4 justify-around items-center bg-gray-100 p-4"
     id="styled"
 >
     <a
@@ -43,12 +79,60 @@
         </button>
     {/if}
 </div>
-<div class="container">
+<div
+    class="print:hidden w-full flex flex-wrap gap-4 justify-around items-center bg-gray-100 p-4"
+    id="styled"
+>
+    <div>
+        <label for="title-font-selection" class="text-sm">
+            Pick a Font for Titles
+        </label>
+        <select
+            id="title-font-selection"
+            name="title-font-selection"
+            class="select"
+            bind:value={selectedTitleFont}
+            onchange={updateFontChoices}
+        >
+            <option value="" disabled selected> Select Font </option>
+            {#each titleFonts as font}
+                <option value={font}>
+                    {font}
+                </option>
+            {/each}
+        </select>
+    </div>
+    <div>
+        <label for="body-font-selection" class="text-sm">
+            Pick a Font for Body
+        </label>
+        <select
+            id="body-font-selection"
+            class="select"
+            bind:value={selectedBodyFont}
+            onchange={updateFontChoices}
+        >
+            <option value="" disabled selected> Select Font </option>
+            {#each bodyFonts as font}
+                <option value={font}>
+                    {font}
+                </option>
+            {/each}
+        </select>
+    </div>
+</div>
+<div
+    class="container"
+    style={`
+    --title-font: ${selectedTitleFont};
+    --body-font: ${selectedBodyFont};
+`}
+>
     <PersonalInfo personal_info={data.profile.personal_info} />
     {#each data.profile.config.categories as category}
         {#if category.id === "education" && data.profile.education.length > 0}
             <section id="education">
-                <h2>{category.name}</h2>
+                <h2 class="section-title">{category.name}</h2>
                 <ul class="section-list">
                     {#each data.profile.education as education}
                         <li>
@@ -79,7 +163,7 @@
 
         {#if category.id === "experience" && data.profile.experience.length > 0}
             <section id="experience">
-                <h2>{category.name}</h2>
+                <h2 class="section-title">{category.name}</h2>
                 <ul class="section-list">
                     {#each data.profile.experience as experience}
                         <li>
@@ -115,7 +199,7 @@
 
         {#if category.id === "projects" && data.profile.projects.length > 0}
             <section id="projects">
-                <h2>{category.name}</h2>
+                <h2 class="section-title">{category.name}</h2>
                 <ul class="section-list">
                     {#each data.profile.projects as project}
                         <li>
@@ -160,7 +244,7 @@
             />
         {:else if category.id === "certifications" && data.profile.certifications.length > 0}
             <section id="certifications">
-                <h2>{category.name}</h2>
+                <h2 class="section-title">{category.name}</h2>
                 <div class="description">
                     <ul>
                         {#each data.profile.certifications as certification}
@@ -173,14 +257,14 @@
             </section>
         {:else if category.id === "awards" && data.profile.awards.length > 0}
             <section id="awards">
-                <h2>{category.name}</h2>
+                <h2 class="section-title">{category.name}</h2>
                 <div class="description">
                     {@html data.profile.awards}
                 </div>
             </section>
         {:else if category.id === "languages" && data.profile.languages.length > 0}
             <section id="languages">
-                <h2>{category.name}</h2>
+                <h2 class="section-title">{category.name}</h2>
                 <div class="description">
                     <ul>
                         {#each data.profile.languages as language}
@@ -194,7 +278,7 @@
             </section>
         {:else if category.id === "summary" && "summary" in data.profile && data.profile.summary.length > 0}
             <section id="summary">
-                <h2>{category.name}</h2>
+                <h2 class="section-title">{category.name}</h2>
                 <div class="description">
                     {@html data.profile.summary}
                 </div>
@@ -205,8 +289,8 @@
 
 <style>
     .container {
-        /* font-family: sans-serif; */
-        /* Changed from default serif for better screen readability */
+        font-family: var(--body-font), "Gill Sans", "Gill Sans MT", Calibri,
+            "Trebuchet MS", sans-serif;
         /* line-height: 1.4; */
         margin: 40px auto;
         /* Added auto margin for centering */
@@ -216,6 +300,11 @@
         font-size: 11pt;
         /* Added padding */
         color: #333;
+    }
+
+    .container :global(.section-title) {
+        font-family: var(--title-font), Cambria, Cochin, Georgia, Times,
+            "Times New Roman", serif;
     }
 
     .container :global(section) {

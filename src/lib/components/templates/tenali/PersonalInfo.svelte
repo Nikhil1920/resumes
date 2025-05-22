@@ -9,7 +9,7 @@
 </script>
 
 <header class="header">
-    <h1>{personal_info.name || "Your Name"}</h1>
+    <h1 class="section-title">{personal_info.name || "Your Name"}</h1>
     <div class="contact-info">
         {#if personal_info.phone}
             {personal_info.phone}

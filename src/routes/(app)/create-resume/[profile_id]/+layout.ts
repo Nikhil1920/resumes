@@ -50,7 +50,10 @@ export const load = async ({ params }) => {
             throw error(404, "Profile not found");
         }
         return {
-            profile,
+            profile: {
+                ...defaultProfile,
+                ...profile,
+            },
         };
     } catch (e) {
         throw error(500, "Error parsing profile data");

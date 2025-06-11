@@ -1,4 +1,8 @@
-import type { ProfileMetaDataType, ProfileType } from "@/types/profile";
+import type {
+    ProfileMetaDataType,
+    ProfileType,
+    ResumeCategoriesType,
+} from "@/types/profile";
 
 export const generateId = (length: number): string => {
     const characters =
@@ -87,3 +91,25 @@ export interface SilentPDFPluginType {
 const SilentPDF = registerPlugin<SilentPDFPluginType>("SilentPDF");
 
 export default SilentPDF;
+
+export const task_category_key = Symbol("category");
+
+export type TCategoryData = {
+    [task_category_key]: true;
+    categoryId: ResumeCategoriesType["id"];
+};
+
+export const is_category_data = (
+    data: Record<string | symbol, unknown>
+): data is TCategoryData => {
+    return data[task_category_key] === true;
+};
+
+export const get_category_data = (
+    task: ResumeCategoriesType
+): TCategoryData => {
+    return {
+        [task_category_key]: true,
+        categoryId: task.id,
+    };
+};

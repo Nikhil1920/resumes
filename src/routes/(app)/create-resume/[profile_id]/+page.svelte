@@ -1,4 +1,5 @@
 <script lang="ts">
+    import ResumeCategoriesList from "@/components/drag-and-drop/ResumeCategoriesList.svelte";
     import {
         allCategories,
         defaultProfileConfig,
@@ -42,6 +43,7 @@
         remove sections change their order. You can also change the Sections
         names.
     </p>
+    <ResumeCategoriesList bind:categories={profile_config.categories} />
     {#each profile_config.categories as category, index}
         <div class="card bg-base-200 max-w-96 mb-4">
             <div class="card-body">

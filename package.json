@@ -13,17 +13,17 @@
         "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
     },
     "devDependencies": {
-        "@capacitor/cli": "^7.2.0",
+        "@capacitor/cli": "^7.3.0",
         "@sveltejs/adapter-static": "^3.0.8",
-        "@sveltejs/kit": "^2.20.7",
-        "@sveltejs/vite-plugin-svelte": "^5.0.3",
-        "@tailwindcss/vite": "^4.1.5",
-        "daisyui": "^5.0.32",
-        "svelte": "^5.28.2",
-        "svelte-check": "^4.1.6",
-        "tailwindcss": "^4.1.5",
+        "@sveltejs/kit": "^2.21.4",
+        "@sveltejs/vite-plugin-svelte": "^5.1.0",
+        "@tailwindcss/vite": "^4.1.10",
+        "daisyui": "^5.0.43",
+        "svelte": "^5.33.19",
+        "svelte-check": "^4.2.1",
+        "tailwindcss": "^4.1.10",
         "typescript": "^5.8.3",
-        "vite": "^6.3.4"
+        "vite": "^6.3.5"
     },
     "pnpm": {
         "onlyBuiltDependencies": [
@@ -31,9 +31,12 @@
         ]
     },
     "dependencies": {
-        "@capacitor/android": "^7.2.0",
-        "@capacitor/core": "^7.2.0",
-        "@capacitor/ios": "^7.2.0",
+        "@atlaskit/pragmatic-drag-and-drop": "^1.7.2",
+        "@atlaskit/pragmatic-drag-and-drop-flourish": "^2.0.3",
+        "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.1.0",
+        "@capacitor/android": "^7.3.0",
+        "@capacitor/core": "^7.3.0",
+        "@capacitor/ios": "^7.3.0",
         "quill": "^2.0.3"
     }
 }

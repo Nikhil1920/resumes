@@ -3,15 +3,12 @@
         attachClosestEdge,
         extractClosestEdge,
     } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
+    import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
     import type { Edge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/types";
     import {
         draggable,
         dropTargetForElements,
     } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-    import { pointerOutsideOfPreview } from "@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview";
-    import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
-    import DragHandle from "./DragHandle.svelte";
-    import DragPreview from "./DragPreview.svelte";
 
     interface CategoryState {
         type: "idle" | "preview" | "is-dragging" | "is-dragging-over";
@@ -19,7 +16,6 @@
         closestEdge?: Edge | null;
     }
 
-    import Portal from "./Portal.svelte";
     import type { ResumeCategoriesType } from "@/types/profile";
     import { get_category_data, is_category_data } from "@/utils";
     import DropIndicator from "./DropIndicator.svelte";
@@ -35,81 +31,69 @@
 
     let element: HTMLDivElement | undefined;
     const idle: CategoryState = { type: "idle" };
-    let state = $state(idle);
+    let dnd_state = $state(idle);
 
     $effect(() => {
         if (element === undefined) return;
-        draggable({
-            element,
-            getInitialData() {
-                // return getCategoryData(category)
-                return get_category_data(category);
-            },
-            onGenerateDragPreview({ nativeSetDragImage }) {
-                setCustomNativeDragPreview({
-                    nativeSetDragImage,
-                    getOffset: pointerOutsideOfPreview({
-                        x: "16px",
-                        y: "8px",
-                    }),
-                    render({ container }) {
-                        state = { type: "preview", container };
-                    },
-                });
-            },
-            onDragStart() {
-                state = { type: "is-dragging" };
-            },
-            onDrop() {
-                state = idle;
-            },
-        });
 
-        dropTargetForElements({
-            element,
-            canDrop({ source }) {
-                // not allowing dropping on yourself
-                if (source.element === element) {
-                    return false;
-                }
-                // only allowing categorys to be dropped on me
-                return is_category_data(source.data);
-                // return source.element.hasAttribute('data-category-id')
-            },
-            getData({ input }) {
-                const data = get_category_data(category);
-                return attachClosestEdge(data, {
-                    element: element!,
-                    input,
-                    allowedEdges: ["top", "bottom"],
-                });
-            },
-            getIsSticky() {
-                return true;
-            },
-            onDragEnter({ self }) {
-                const closestEdge = extractClosestEdge(self.data);
-                state = { type: "is-dragging-over", closestEdge };
-            },
-            onDrag({ self }) {
-                const closestEdge = extractClosestEdge(self.data);
+        return combine(
+            draggable({
+                element,
+                getInitialData() {
+                    return get_category_data(category);
+                },
+                onDragStart() {
+                    dnd_state = { type: "is-dragging" };
+                },
+                onDrop() {
+                    dnd_state = idle;
+                },
+            }),
+            dropTargetForElements({
+                element,
+                canDrop({ source }) {
+                    // not allowing dropping on yourself
+                    if (source.element === element) {
+                        return false;
+                    }
+                    // only allowing categorys to be dropped on me
+                    return is_category_data(source.data);
+                },
+                getData({ input }) {
+                    const data = get_category_data(category);
+                    return attachClosestEdge(data, {
+                        element: element!,
+                        input,
+                        allowedEdges: ["top", "bottom"],
+                    });
+                },
+                getIsSticky() {
+                    return true;
+                },
+                onDragEnter({ self }) {
+                    const closestEdge = extractClosestEdge(self.data);
+                    dnd_state = { type: "is-dragging-over", closestEdge };
+                },
+                onDrag({ self }) {
+                    const closestEdge = extractClosestEdge(self.data);
 
-                // Only need to update state if nothing has changed.
-                // Prevents re-rendering.
-                if (
-                    state.type !== "is-dragging-over" ||
-                    state.closestEdge !== closestEdge
-                ) {
-                    state = { type: "is-dragging-over", closestEdge };
-                }
-            },
-            onDragLeave() {
-                state = idle;
-            },
-            onDrop() {
-                state = idle;
-            },
-        });
+                    // Only need to update dnd_state if nothing has changed.
+                    // Prevents re-rendering.
+                    if (
+                        dnd_state.type !== "is-dragging-over" ||
+                        dnd_state.closestEdge !== closestEdge
+                    ) {
+                        dnd_state = { type: "is-dragging-over", closestEdge };
+                    }
+                },
+                onDragLeave() {
+                    dnd_state = idle;
+                },
+                onDrop() {
+                    dnd_state = idle;
+                },
+            })
+        );
     });
 </script>
 
@@ -118,7 +102,7 @@
         class="card bg-base-200 max-w-96 mb-4"
         data-category-id={category.id}
         bind:this={element}
-        class:opacity-40={state.type === "is-dragging"}
+        class:opacity-40={dnd_state.type === "is-dragging"}
     >
         <div class="card-body">
             <h3 class="card-title">
@@ -153,9 +137,6 @@
 
             <p>{category.description}</p>
             <div class="card-actions justify-between">
-                <!-- Change order -->
-                <DragHandle />
-
                 <button
                     class="btn btn-warning"
                     aria-label="Remove section"
@@ -176,28 +157,50 @@
                         />
                     </svg>
                 </button>
+                <button
+                    aria-label="drag"
+                    style="cursor: grab;"
+                    class="btn btn-neutral"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-6 h-6"
+                    >
+                        <path
+                            d="M9 5C9.82843 5 10.5 5.67157 10.5 6.5C10.5 7.32843 9.82843 8 9 8C8.17157 8 7.5 7.32843 7.5 6.5C7.5 5.67157 8.17157 5 9 5Z"
+                            fill="#202945"
+                        />
+                        <path
+                            d="M9 10.5C9.82843 10.5 10.5 11.1716 10.5 12C10.5 12.8284 9.82843 13.5 9 13.5C8.17157 13.5 7.5 12.8284 7.5 12C7.5 11.1716 8.17157 10.5 9 10.5Z"
+                            fill="#202945"
+                        />
+                        <path
+                            d="M10.5 17.5C10.5 16.6716 9.82843 16 9 16C8.17157 16 7.5 16.6716 7.5 17.5C7.5 18.3284 8.17157 19 9 19C9.82843 19 10.5 18.3284 10.5 17.5Z"
+                            fill="#202945"
+                        />
+                        <path
+                            d="M15 5C15.8284 5 16.5 5.67157 16.5 6.5C16.5 7.32843 15.8284 8 15 8C14.1716 8 13.5 7.32843 13.5 6.5C13.5 5.67157 14.1716 5 15 5Z"
+                            fill="#202945"
+                        />
+                        <path
+                            d="M15 10.5C15.8284 10.5 16.5 11.1716 16.5 12C16.5 12.8284 15.8284 13.5 15 13.5C14.1716 13.5 13.5 12.8284 13.5 12C13.5 11.1716 14.1716 10.5 15 10.5Z"
+                            fill="#202945"
+                        />
+                        <path
+                            d="M16.5 17.5C16.5 16.6716 15.8284 16 15 16C14.1716 16 13.5 16.6716 13.5 17.5C13.5 18.3284 14.1716 19 15 19C15.8284 19 16.5 18.3284 16.5 17.5Z"
+                            fill="#202945"
+                        />
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
-    <!-- <div
-        data-category-id={category.id}
-        bind:this={element}
-        class:opacity-40={state.type === "is-dragging"}
-        class={`flex text-sm bg-white 
-                flex-row items-center 
-                border border-solid rounded p-2 pl-0 
-                hover:bg-slate-100 hover:cursor-grab`}
-    >
-        <DragHandle />
-        <span class="truncate flex-grow flex-shrink">{category.name}</span>
-    </div> -->
 
-    {#if state.type === "is-dragging-over" && state.closestEdge}
-        <DropIndicator edge={state.closestEdge} gap={"8px"} />
+    {#if dnd_state.type === "is-dragging-over" && dnd_state.closestEdge}
+        <DropIndicator edge={dnd_state.closestEdge} gap={"8px"} />
     {/if}
 </div>
-{#if state.type === "preview"}
-    <Portal target={state.container}>
-        <DragPreview {category} />
-    </Portal>
-{/if}

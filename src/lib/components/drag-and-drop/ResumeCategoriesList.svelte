@@ -6,6 +6,8 @@
     import { reorderWithEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/util/reorder-with-edge";
     import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
     import ResumeCategoriesListElement from "./ResumeCategoriesListElement.svelte";
+    import { autoScrollWindowForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
+    import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 
     type Props = {
         categories: ResumeCategoriesType[];
@@ -21,54 +23,61 @@
     };
 
     $effect(() => {
-        return monitorForElements({
-            canMonitor({ source }) {
-                return is_category_data(source.data);
-            },
-            onDrop({ location, source }) {
-                const target = location.current.dropTargets[0];
-                if (!target) {
-                    return;
-                }
+        if (categories.length === 0) {
+            return;
+        }
 
-                const sourceData = source.data;
-                const targetData = target.data;
+        return combine(
+            monitorForElements({
+                canMonitor({ source }) {
+                    return is_category_data(source.data);
+                },
+                onDrop({ location, source }) {
+                    const target = location.current.dropTargets[0];
+                    if (!target) {
+                        return;
+                    }
 
-                if (
-                    !is_category_data(sourceData) ||
-                    !is_category_data(targetData)
-                ) {
-                    return;
-                }
+                    const sourceData = source.data;
+                    const targetData = target.data;
 
-                const indexOfSource = categories.findIndex(
-                    (task) => task.id === sourceData.categoryId
-                );
-                const indexOfTarget = categories.findIndex(
-                    (task) => task.id === targetData.categoryId
-                );
+                    if (
+                        !is_category_data(sourceData) ||
+                        !is_category_data(targetData)
+                    ) {
+                        return;
+                    }
 
-                if (indexOfTarget < 0 || indexOfSource < 0) {
-                    return;
-                }
+                    const indexOfSource = categories.findIndex(
+                        (task) => task.id === sourceData.categoryId
+                    );
+                    const indexOfTarget = categories.findIndex(
+                        (task) => task.id === targetData.categoryId
+                    );
 
-                const closestEdgeOfTarget = extractClosestEdge(targetData);
+                    if (indexOfTarget < 0 || indexOfSource < 0) {
+                        return;
+                    }
 
-                categories = reorderWithEdge({
-                    list: categories,
-                    startIndex: indexOfSource,
-                    indexOfTarget,
-                    closestEdgeOfTarget,
-                    axis: "vertical",
-                });
-                const element = document.querySelector(
-                    `[data-task-id="${sourceData.categoryId}"]`
-                );
-                if (element instanceof HTMLElement) {
-                    triggerPostMoveFlash(element);
-                }
-            },
-        });
+                    const closestEdgeOfTarget = extractClosestEdge(targetData);
+
+                    categories = reorderWithEdge({
+                        list: categories,
+                        startIndex: indexOfSource,
+                        indexOfTarget,
+                        closestEdgeOfTarget,
+                        axis: "vertical",
+                    });
+                    const element = document.querySelector(
+                        `[data-task-id="${sourceData.categoryId}"]`
+                    );
+                    if (element instanceof HTMLElement) {
+                        triggerPostMoveFlash(element);
+                    }
+                },
+            }),
+            autoScrollWindowForElements()
+        );
     });
 </script>
 

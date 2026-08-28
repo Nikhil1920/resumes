@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import type {
     ProfileMetaDataType,
     ProfileType,
@@ -21,7 +22,7 @@ export const generateProfileId = (): string => {
 };
 
 export const updateProfileStep = (profileId: string, step: string) => {
-    if (window && window.localStorage) {
+    if (browser && window && window.localStorage) {
         const profilesString = localStorage.getItem("profiles");
         if (profilesString) {
             const profiles: ProfileMetaDataType[] = JSON.parse(profilesString);

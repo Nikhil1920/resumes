@@ -2,74 +2,55 @@
     import { goto } from "$app/navigation";
     import CreateResumeNavigationLinks from "@/components/CreateResumeNavigationLinks.svelte";
     import ResumeProjectInput from "@/components/ResumeProjectInput.svelte";
-    import {
-        defaultResumeProject,
-        type ResumeProjectType,
-    } from "@/types/profile";
+    import { currentProfile } from "@/global_state.svelte";
+    import { defaultResumeProject } from "@/types/profile";
     import { updateProfileStep } from "@/utils";
 
-    let { data } = $props();
-
-    const currentCategoryIndex = data.profile.config.categories.findIndex(
-        (category) => category.id === "projects"
-    );
+    const currentCategoryIndex =
+        currentProfile.data.config.categories.findIndex(
+            (category) => category.id === "projects"
+        );
     if (currentCategoryIndex === -1) {
-        goto(`/create-resume/${data.profile.meta.id}`, { invalidateAll: true });
+        goto(`/create-resume/${currentProfile.data.meta.id}`, {
+            invalidateAll: true,
+        });
     }
 
-    let project_entries = $state(data.profile.projects);
-
     $effect(() => {
-        if (project_entries.length === 0) {
-            project_entries = [defaultResumeProject];
+        if (currentProfile.data.projects.length === 0) {
+            currentProfile.data.projects = [defaultResumeProject];
         }
-        if (project_entries[project_entries.length - 1].title !== "") {
-            project_entries.push(defaultResumeProject);
+        if (
+            currentProfile.data.projects[
+                currentProfile.data.projects.length - 1
+            ].title !== ""
+        ) {
+            currentProfile.data.projects.push(defaultResumeProject);
         }
     });
 
     const updateData = (navigateToNextStep: boolean = false) => {
-        let validProjects = project_entries.filter(
-            (project) => project.title !== ""
-        );
-        validProjects = validProjects.map((project) => {
-            if (project.description === "<ul><li></li></ul>") {
-                project.description = "";
-            }
-            return project;
-        });
-        localStorage.setItem(
-            data.profile.meta.id,
-            JSON.stringify({
-                ...data.profile,
-                projects: validProjects,
-            })
-        );
         updateProfileStep(
-            data.profile.meta.id,
+            currentProfile.data.meta.id,
             navigateToNextStep ? "skills" : "projects"
         );
         if (navigateToNextStep) {
             goto(
-                `/create-resume/${data.profile.meta.id}/${data.profile.config.categories[currentCategoryIndex + 1].id}`,
+                `/create-resume/${currentProfile.data.meta.id}/${currentProfile.data.config.categories[currentCategoryIndex + 1].id}`,
                 {
                     invalidateAll: true,
                 }
             );
         }
     };
-    $effect(() => {
-        project_entries;
-        updateData();
-    });
 </script>
 
 <CreateResumeNavigationLinks
-    profile_id={data.profile.meta.id}
-    categories={data.profile.config.categories}
+    profile_id={currentProfile.data.meta.id}
+    categories={currentProfile.data.config.categories}
     active_step="projects"
 />
-<p class="text-sm">Hi {data.profile.personal_info.name}!</p>
+<p class="text-sm">Hi {currentProfile.data.personal_info.name}!</p>
 <h2 class="text-2xl font-bold mb-4">
     List your projects, open source contributions, and personal work.
 </h2>
@@ -80,22 +61,22 @@
     <br />
     Add your personal projects, academic projects and open source contributions.
 </p>
-{#each project_entries as project, i}
+{#each currentProfile.data.projects as project, i}
     <div class="my-4">
         <h3 class="text-lg font-bold">Project {i + 1}</h3>
         <ResumeProjectInput
-            bind:project={project_entries[i]}
+            bind:project={currentProfile.data.projects[i]}
             removeEntry={() => {
                 confirm(`Are you sure you want to remove entry ${i + 1}?`) &&
-                    project_entries.splice(i, 1);
+                    currentProfile.data.projects.splice(i, 1);
             }}
         />
     </div>
 {/each}
 
-{#if currentCategoryIndex === data.profile.config.categories.length - 1}
+{#if currentCategoryIndex === currentProfile.data.config.categories.length - 1}
     <a
-        href={`/templates/tenali/${data.profile.meta.id}`}
+        href={`/templates/tenali/${currentProfile.data.meta.id}`}
         class="btn btn-primary my-4"
         data-sveltekit-reload
     >
@@ -109,6 +90,7 @@
             updateData(true);
         }}
     >
-        Next: {data.profile.config.categories[currentCategoryIndex + 1].name}
+        Next: {currentProfile.data.config.categories[currentCategoryIndex + 1]
+            .name}
     </button>
 {/if}

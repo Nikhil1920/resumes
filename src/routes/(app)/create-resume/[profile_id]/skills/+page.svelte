@@ -5,22 +5,24 @@
     import ResumeSkillInput from "@/components/ResumeSkillInput.svelte";
     import { defaultResumeSkill, type ResumeSkillType } from "@/types/profile";
     import { updateProfileStep } from "@/utils";
+    import { currentProfile } from "@/global_state.svelte";
 
-    let { data } = $props();
-
-    const currentCategoryIndex = data.profile.config.categories.findIndex(
-        (category) => category.id === "skills"
-    );
+    const currentCategoryIndex =
+        currentProfile.data.config.categories.findIndex(
+            (category) => category.id === "skills"
+        );
     if (currentCategoryIndex === -1) {
-        goto(`/create-resume/${data.profile.meta.id}`, { invalidateAll: true });
+        goto(`/create-resume/${currentProfile.data.meta.id}`, {
+            invalidateAll: true,
+        });
     }
 
     let skill_categories = $state(
         Array.from(
-            new Set(data.profile.skills.map((skill) => skill.category))
+            new Set(currentProfile.data.skills.map((skill) => skill.category))
         ) || []
     );
-    let skill_entries = $state(data.profile.skills || []);
+    let skill_entries = $state(currentProfile.data.skills || []);
 
     $effect(() => {
         if (skill_entries.length === 0) {
@@ -43,16 +45,16 @@
     const updateData = (navigateToNextStep: boolean = false) => {
         let skills = skill_entries.filter((skill) => skill.name);
         localStorage.setItem(
-            data.profile.meta.id,
+            currentProfile.data.meta.id,
             JSON.stringify({
-                ...data.profile,
+                ...currentProfile.data,
                 skills: skills,
             })
         );
-        updateProfileStep(data.profile.meta.id, "skills");
+        updateProfileStep(currentProfile.data.meta.id, "skills");
         if (navigateToNextStep) {
             goto(
-                `/create-resume/${data.profile.meta.id}/${data.profile.config.categories[currentCategoryIndex + 1].id}`,
+                `/create-resume/${currentProfile.data.meta.id}/${currentProfile.data.config.categories[currentCategoryIndex + 1].id}`,
                 {
                     invalidateAll: true,
                 }
@@ -67,11 +69,11 @@
 </script>
 
 <CreateResumeNavigationLinks
-    profile_id={data.profile.meta.id}
-    categories={data.profile.config.categories}
+    profile_id={currentProfile.data.meta.id}
+    categories={currentProfile.data.config.categories}
     active_step="skills"
 />
-<p class="text-sm">Hi {data.profile.personal_info.name}!</p>
+<p class="text-sm">Hi {currentProfile.data.personal_info.name}!</p>
 <h2 class="text-2xl font-bold mb-4">
     List your skills, tools, and technologies you are familiar with.
 </h2>
@@ -101,9 +103,9 @@
     />
 {/each}
 
-{#if currentCategoryIndex === data.profile.config.categories.length - 1}
+{#if currentCategoryIndex === currentProfile.data.config.categories.length - 1}
     <a
-        href={`/templates/tenali/${data.profile.meta.id}`}
+        href={`/templates/tenali/${currentProfile.data.meta.id}`}
         class="btn btn-primary my-4"
         data-sveltekit-reload
     >
@@ -117,6 +119,7 @@
             updateData(true);
         }}
     >
-        Next: {data.profile.config.categories[currentCategoryIndex + 1].name}
+        Next: {currentProfile.data.config.categories[currentCategoryIndex + 1]
+            .name}
     </button>
 {/if}

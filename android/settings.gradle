@@ -1,3 +1,8 @@
+plugins {
+    // Auto-provisions the JDK required by the daemon JVM criteria (Capacitor 8 needs Java 21).
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
 include ':app'
 include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')

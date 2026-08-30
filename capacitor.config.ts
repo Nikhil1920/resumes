@@ -5,9 +5,6 @@ const config: CapacitorConfig = {
     appName: "Resume Maker 9000",
     // TanStack Start writes the browser bundle to build/client.
     webDir: "build/client",
-    android: {
-        adjustMarginsForEdgeToEdge: "force",
-    },
 };
 
 export default config;

@@ -40,21 +40,16 @@ class PluginViewController: CAPBridgeViewController {
     private func setupWebViewPadding() {
         guard let webView = self.webView else { return }
 
-        // Fallback to a safe way to get the window and safe area insets
-        var topPadding: CGFloat = 0
-        var bottomPadding: CGFloat = 0
-        var leftPadding: CGFloat = 0
-        var rightPadding: CGFloat = 0
+        // Resolve the key window through scenes, falling back to the view's own window
+        let window = view.window ?? UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow }
 
-        if #available(iOS 13.0, *) {
-            let window = view.window ?? UIApplication.shared.windows.first { $0.isKeyWindow }
-            topPadding = window?.safeAreaInsets.top ?? 0
-            bottomPadding = window?.safeAreaInsets.bottom ?? 0
-            leftPadding = window?.safeAreaInsets.left ?? 0
-            rightPadding = window?.safeAreaInsets.right ?? 0
-        } else {
-            topPadding = UIApplication.shared.statusBarFrame.height
-        }
+        let topPadding = window?.safeAreaInsets.top ?? 0
+        let bottomPadding = window?.safeAreaInsets.bottom ?? 0
+        let leftPadding = window?.safeAreaInsets.left ?? 0
+        let rightPadding = window?.safeAreaInsets.right ?? 0
 
         webView.frame.origin = CGPoint(x: leftPadding, y: topPadding)
         webView.frame.size = CGSize(width: UIScreen.main.bounds.width - leftPadding - rightPadding, height: UIScreen.main.bounds.height - topPadding - bottomPadding)

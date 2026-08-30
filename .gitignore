@@ -2,11 +2,22 @@ node_modules
 
 # Output
 .output
+/dist
+/build
+/coverage
+/.svelte-kit
+/.tanstack
 .vercel
 .netlify
 .wrangler
-/.svelte-kit
-/build
+
+# Capacitor and local tooling
+.capacitor
+.vite
+*.tsbuildinfo
+
+# Local PDF verification output
+/tmp
 
 # OS
 .DS_Store

@@ -6,6 +6,7 @@ node_modules
 /build
 /coverage
 /.svelte-kit
+/.tanstack
 .vercel
 .netlify
 .wrangler

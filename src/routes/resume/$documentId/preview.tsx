@@ -5,6 +5,11 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ResumePreview, toResumePreviewModel, type ResumePreviewModel } from '@/features/resume-preview'
+import {
+  downloadNativeResumePdf,
+  isNativeResumePlatform,
+  shareNativeResumePdf,
+} from '@/features/resume-preview/native-pdf'
 import { useResumeActions, useResumeWorkspace } from '@/features/resume-workspace/store'
 
 export const Route = createFileRoute('/resume/$documentId/preview')({
@@ -84,8 +89,24 @@ function ResumePreviewRoute() {
     if (typeof window !== 'undefined') window.print()
   }, [])
 
+  const download = React.useCallback(() => {
+    if (!isNativeResumePlatform()) {
+      print()
+      return
+    }
+    void downloadNativeResumePdf().catch(() => {
+      toast.error('The PDF could not be downloaded.')
+    })
+  }, [print])
+
   const share = React.useCallback(() => {
     if (!model || typeof window === 'undefined') return
+    if (isNativeResumePlatform()) {
+      void shareNativeResumePdf().catch(() => {
+        toast.error('The PDF could not be shared.')
+      })
+      return
+    }
     void shareResume(model)
   }, [model])
 
@@ -100,7 +121,7 @@ function ResumePreviewRoute() {
       onEdit={goToEditor}
       onModelChange={updateModel}
       onPrint={print}
-      onDownload={print}
+      onDownload={download}
       onExportJson={exportJson}
       onShare={share}
     />

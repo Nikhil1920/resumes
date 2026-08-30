@@ -11,6 +11,7 @@ import {
   type WorkspaceSnapshot,
 } from '@/features/resume-workspace/model'
 import { useResumeActions, useResumeWorkspace } from '@/features/resume-workspace/store'
+import { downloadJsonFile } from '@/lib/download-json'
 
 export const Route = createFileRoute('/')({
   component: DashboardRoute,
@@ -202,7 +203,7 @@ function DashboardRoute() {
       toast.error('That resume is no longer available.')
       return
     }
-    downloadJson(`resume-${documentId}.json`, payload)
+    downloadJsonFile(`resume-${documentId}.json`, payload)
     toast.success('Resume JSON downloaded.')
   }, [actions])
 
@@ -242,16 +243,4 @@ function DashboardRoute() {
       onImportResume={importResume}
     />
   )
-}
-
-function downloadJson(filename: string, payload: string) {
-  if (typeof window === 'undefined') return
-  const blob = new Blob([payload], { type: 'application/json;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = filename
-  anchor.click()
-  anchor.remove()
-  window.setTimeout(() => URL.revokeObjectURL(url), 0)
 }

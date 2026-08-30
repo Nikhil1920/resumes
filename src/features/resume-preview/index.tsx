@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useMemo } from 'react'
 
 import { sanitizeRichText } from '../resume-workspace/rich-text'
+import { downloadJsonFile } from '@/lib/download-json'
 import './preview.css'
 
 /** The built-in section identifiers are deliberately stable: they are used for ordering and persistence. */
@@ -299,14 +300,10 @@ function RenderSection({ section }: { section: PreviewSection }) {
 }
 
 function downloadJson(model: ResumePreviewModel) {
-  if (typeof window === 'undefined') return
-  const blob = new Blob([JSON.stringify(model, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = `${model.personalInfo.name.trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'resume'}.json`
-  anchor.click()
-  URL.revokeObjectURL(url)
+  downloadJsonFile(
+    `${model.personalInfo.name.trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'resume'}.json`,
+    model,
+  )
 }
 
 function shareModel(model: ResumePreviewModel) {

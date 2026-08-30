@@ -11,6 +11,7 @@ import {
   shareNativeResumePdf,
 } from '@/features/resume-preview/native-pdf'
 import { useResumeActions, useResumeWorkspace } from '@/features/resume-workspace/store'
+import { downloadJsonFile } from '@/lib/download-json'
 
 export const Route = createFileRoute('/resume/$documentId/preview')({
   component: ResumePreviewRoute,
@@ -81,7 +82,7 @@ function ResumePreviewRoute() {
       return
     }
     const name = model.personalInfo.name.trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'resume'
-    downloadJson(`${name}.json`, payload)
+    downloadJsonFile(`${name}.json`, payload)
     toast.success('Resume JSON downloaded.')
   }, [actions, documentId, model])
 
@@ -126,18 +127,6 @@ function ResumePreviewRoute() {
       onShare={share}
     />
   )
-}
-
-function downloadJson(filename: string, payload: string) {
-  if (typeof window === 'undefined') return
-  const blob = new Blob([payload], { type: 'application/json;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = filename
-  anchor.click()
-  anchor.remove()
-  window.setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 async function shareResume(model: ResumePreviewModel) {

@@ -29,8 +29,10 @@ Useful commands:
 ```bash
 pnpm check           # TypeScript validation
 pnpm test            # Vitest tests
-pnpm build           # Production client/server build in build/client/ and build/server/
-pnpm preview         # Serve the production build locally
+pnpm build           # Web build in build/web/client/ and build/web/server/
+pnpm build:capacitor # Native webview build in build/capacitor/client/
+pnpm verify:seo      # Verify public SEO output and native content exclusion
+pnpm preview         # Serve the web production build locally
 pnpm generate-routes # Regenerate TanStack Router's routeTree.gen.ts
 ```
 
@@ -42,15 +44,16 @@ The Zustand workspace is persisted under `resume-workspace:v1`. On hydration it 
 
 The exported formats are versioned. Keep exported JSON files if you need a backup before clearing browser storage or changing devices.
 
-## Capacitor workflow
+## Web and Capacitor builds
 
-TanStack Start writes the browser bundle to `build/client/`, matching `capacitor.config.ts` (`webDir: "build/client"`). After installing the native dependencies, sync the web bundle into Android and iOS:
+The web and native artifacts are deliberately separate. `pnpm build:web` prerenders the indexable homepage and adds web-only search guides under `build/web/client/`. `pnpm build:capacitor` writes only the application artifact to `build/capacitor/client/`, matching `capacitor.config.ts`.
+
+After installing the native dependencies, build and sync the Capacitor artifact with one command:
 
 ```bash
-pnpm build
-npx cap sync
+pnpm cap:sync
 npx cap open android
 npx cap open ios
 ```
 
-Use Android Studio or Xcode to run and sign the native apps. Native projects in `android/` and `ios/` are kept in the repository; do not edit generated web assets by hand.
+Use Android Studio or Xcode to run and sign the native apps. Do not run `cap sync` after `pnpm build:web`; `pnpm cap:sync` always rebuilds the native artifact first. Native projects in `android/` and `ios/` are kept in the repository; do not edit generated web assets by hand.

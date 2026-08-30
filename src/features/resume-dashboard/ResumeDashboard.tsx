@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Progress } from "@/components/ui/progress"
+import { HomepageSeoContent } from "@/components/homepage-seo-content"
 import { cn } from "@/lib/utils"
 
 /** The minimum data the dashboard needs to render one saved resume. */
@@ -193,7 +194,8 @@ export function ResumeDashboard({
   }
 
   return (
-    <section aria-labelledby="resume-dashboard-heading" className={cn("mx-auto w-full max-w-7xl space-y-10 px-4 py-8 sm:px-6 lg:px-8", className)}>
+    <>
+      <section aria-labelledby="resume-dashboard-heading" className={cn("mx-auto w-full max-w-7xl space-y-10 px-4 py-8 sm:px-6 lg:px-8", className)}>
       <div className="relative isolate overflow-hidden rounded-[2rem] border border-amber-200/90 bg-[#fff8ed] px-6 py-9 shadow-sm shadow-amber-950/5 sm:px-10 sm:py-12 lg:px-14 lg:py-14 dark:border-amber-900/70 dark:bg-amber-950/20">
         <div aria-hidden="true" className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full bg-amber-200/40 blur-3xl dark:bg-amber-700/10" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 left-1/3 size-64 rounded-full bg-orange-200/30 blur-3xl dark:bg-orange-700/10" />
@@ -201,13 +203,13 @@ export function ResumeDashboard({
           <div className="max-w-2xl">
             <Badge variant="outline" className="border-amber-300 bg-amber-100/60 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
               <SparklesIcon />
-              Your resume studio
+              Free online resume maker
             </Badge>
             <h1 id="resume-dashboard-heading" className="mt-5 max-w-xl font-heading text-4xl leading-[1.06] tracking-[-0.04em] text-amber-950 sm:text-5xl dark:text-amber-50">
-              Make room for your best work.
+              Make a resume online, then save it as a PDF.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-7 text-amber-950/70 sm:text-lg dark:text-amber-100/70">
-              Keep every version close, make small improvements, and send the right story when an opportunity arrives.
+              Create multiple drafts, choose how each one looks, and use the preview when you are ready to print or save a PDF.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Button type="button" size="lg" className="bg-amber-900 text-amber-50 hover:bg-amber-800 dark:bg-amber-100 dark:text-amber-950 dark:hover:bg-amber-200" onClick={onCreateResume}>
@@ -293,6 +295,8 @@ export function ResumeDashboard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </section>
+      </section>
+      {__INCLUDE_WEB_SEO__ ? <HomepageSeoContent /> : null}
+    </>
   )
 }

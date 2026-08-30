@@ -196,6 +196,45 @@ export const deserializeDocument = (
     return null;
 };
 
+/**
+ * Read one legacy Svelte profile by its historical per-document storage key.
+ * This is deliberately separate from the one-time profiles-index migration:
+ * a v1 workspace may already exist while an old profile was never indexed.
+ */
+export const readLegacyDocument = (
+    storage: StorageLike,
+    documentId: string,
+    options: NormalizationOptions = {}
+): ResumeDocument | null => {
+    const parsed = parseJson(storage.getItem(documentId));
+    if (!isRecord(parsed)) return null;
+    const hasProfileShape =
+        parsed.meta ||
+        parsed.metadata ||
+        parsed.personalInfo ||
+        parsed.personal_info ||
+        parsed.config ||
+        parsed.experience ||
+        parsed.education ||
+        parsed.projects ||
+        parsed.skills;
+    if (!hasProfileShape) return null;
+    const meta = isRecord(parsed.meta) ? parsed.meta : {};
+    return normalizeResumeDocument(
+        { ...parsed, meta: { ...meta, id: documentId } },
+        { ...options, preserveEmptyEntries: true },
+    );
+};
+
+/** Browser boundary for on-demand legacy profile reads. */
+export const readLegacyDocumentFromBrowser = (
+    documentId: string,
+    options: NormalizationOptions = {}
+): ResumeDocument | null => {
+    const storage = getDefaultStorage();
+    return storage ? readLegacyDocument(storage, documentId, options) : null;
+};
+
 /** Decode a versioned envelope, accepting an older direct snapshot envelope. */
 export const deserializeWorkspace = (
     value: unknown,

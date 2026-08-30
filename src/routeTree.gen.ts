@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CreateResumeDocumentIdRouteImport } from './routes/create-resume/$documentId'
 import { Route as ResumeDocumentIdRouteRouteImport } from './routes/resume/$documentId/route'
+import { Route as CreateResumeDocumentIdIndexRouteImport } from './routes/create-resume/$documentId/index'
 import { Route as CreateResumeDocumentIdStepRouteImport } from './routes/create-resume/$documentId/$step'
 import { Route as ResumeDocumentIdIndexRouteImport } from './routes/resume/$documentId/index'
 import { Route as ResumeDocumentIdPreviewRouteImport } from './routes/resume/$documentId/preview'
+import { Route as TemplatesTenaliIndexRouteImport } from './routes/templates/tenali/index'
 import { Route as TemplatesTenaliDocumentIdRouteImport } from './routes/templates/tenali/$documentId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -32,6 +34,12 @@ const ResumeDocumentIdRouteRoute = ResumeDocumentIdRouteRouteImport.update({
   path: '/resume/$documentId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreateResumeDocumentIdIndexRoute =
+  CreateResumeDocumentIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => CreateResumeDocumentIdRoute,
+  } as any)
 const CreateResumeDocumentIdStepRoute =
   CreateResumeDocumentIdStepRouteImport.update({
     id: '/$step',
@@ -48,6 +56,11 @@ const ResumeDocumentIdPreviewRoute = ResumeDocumentIdPreviewRouteImport.update({
   path: '/preview',
   getParentRoute: () => ResumeDocumentIdRouteRoute,
 } as any)
+const TemplatesTenaliIndexRoute = TemplatesTenaliIndexRouteImport.update({
+  id: '/templates/tenali/',
+  path: '/templates/tenali/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TemplatesTenaliDocumentIdRoute =
   TemplatesTenaliDocumentIdRouteImport.update({
     id: '/templates/tenali/$documentId',
@@ -62,15 +75,18 @@ export interface FileRoutesByFullPath {
   '/create-resume/$documentId/$step': typeof CreateResumeDocumentIdStepRoute
   '/resume/$documentId/preview': typeof ResumeDocumentIdPreviewRoute
   '/templates/tenali/$documentId': typeof TemplatesTenaliDocumentIdRoute
+  '/create-resume/$documentId/': typeof CreateResumeDocumentIdIndexRoute
   '/resume/$documentId/': typeof ResumeDocumentIdIndexRoute
+  '/templates/tenali/': typeof TemplatesTenaliIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/create-resume/$documentId': typeof CreateResumeDocumentIdRouteWithChildren
   '/create-resume/$documentId/$step': typeof CreateResumeDocumentIdStepRoute
   '/resume/$documentId/preview': typeof ResumeDocumentIdPreviewRoute
   '/templates/tenali/$documentId': typeof TemplatesTenaliDocumentIdRoute
+  '/create-resume/$documentId': typeof CreateResumeDocumentIdIndexRoute
   '/resume/$documentId': typeof ResumeDocumentIdIndexRoute
+  '/templates/tenali': typeof TemplatesTenaliIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,7 +96,9 @@ export interface FileRoutesById {
   '/create-resume/$documentId/$step': typeof CreateResumeDocumentIdStepRoute
   '/resume/$documentId/preview': typeof ResumeDocumentIdPreviewRoute
   '/templates/tenali/$documentId': typeof TemplatesTenaliDocumentIdRoute
+  '/create-resume/$documentId/': typeof CreateResumeDocumentIdIndexRoute
   '/resume/$documentId/': typeof ResumeDocumentIdIndexRoute
+  '/templates/tenali/': typeof TemplatesTenaliIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,15 +109,18 @@ export interface FileRouteTypes {
     | '/create-resume/$documentId/$step'
     | '/resume/$documentId/preview'
     | '/templates/tenali/$documentId'
+    | '/create-resume/$documentId/'
     | '/resume/$documentId/'
+    | '/templates/tenali/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/create-resume/$documentId'
     | '/create-resume/$documentId/$step'
     | '/resume/$documentId/preview'
     | '/templates/tenali/$documentId'
+    | '/create-resume/$documentId'
     | '/resume/$documentId'
+    | '/templates/tenali'
   id:
     | '__root__'
     | '/'
@@ -108,7 +129,9 @@ export interface FileRouteTypes {
     | '/create-resume/$documentId/$step'
     | '/resume/$documentId/preview'
     | '/templates/tenali/$documentId'
+    | '/create-resume/$documentId/'
     | '/resume/$documentId/'
+    | '/templates/tenali/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -116,6 +139,7 @@ export interface RootRouteChildren {
   ResumeDocumentIdRouteRoute: typeof ResumeDocumentIdRouteRouteWithChildren
   CreateResumeDocumentIdRoute: typeof CreateResumeDocumentIdRouteWithChildren
   TemplatesTenaliDocumentIdRoute: typeof TemplatesTenaliDocumentIdRoute
+  TemplatesTenaliIndexRoute: typeof TemplatesTenaliIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -141,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResumeDocumentIdRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/create-resume/$documentId/': {
+      id: '/create-resume/$documentId/'
+      path: '/'
+      fullPath: '/create-resume/$documentId/'
+      preLoaderRoute: typeof CreateResumeDocumentIdIndexRouteImport
+      parentRoute: typeof CreateResumeDocumentIdRoute
+    }
     '/create-resume/$documentId/$step': {
       id: '/create-resume/$documentId/$step'
       path: '/$step'
@@ -161,6 +192,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/resume/$documentId/preview'
       preLoaderRoute: typeof ResumeDocumentIdPreviewRouteImport
       parentRoute: typeof ResumeDocumentIdRouteRoute
+    }
+    '/templates/tenali/': {
+      id: '/templates/tenali/'
+      path: '/templates/tenali'
+      fullPath: '/templates/tenali/'
+      preLoaderRoute: typeof TemplatesTenaliIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/templates/tenali/$documentId': {
       id: '/templates/tenali/$documentId'
@@ -189,11 +227,13 @@ const ResumeDocumentIdRouteRouteWithChildren =
 
 interface CreateResumeDocumentIdRouteChildren {
   CreateResumeDocumentIdStepRoute: typeof CreateResumeDocumentIdStepRoute
+  CreateResumeDocumentIdIndexRoute: typeof CreateResumeDocumentIdIndexRoute
 }
 
 const CreateResumeDocumentIdRouteChildren: CreateResumeDocumentIdRouteChildren =
   {
     CreateResumeDocumentIdStepRoute: CreateResumeDocumentIdStepRoute,
+    CreateResumeDocumentIdIndexRoute: CreateResumeDocumentIdIndexRoute,
   }
 
 const CreateResumeDocumentIdRouteWithChildren =
@@ -206,6 +246,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResumeDocumentIdRouteRoute: ResumeDocumentIdRouteRouteWithChildren,
   CreateResumeDocumentIdRoute: CreateResumeDocumentIdRouteWithChildren,
   TemplatesTenaliDocumentIdRoute: TemplatesTenaliDocumentIdRoute,
+  TemplatesTenaliIndexRoute: TemplatesTenaliIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -5,6 +5,11 @@ import { BUILT_IN_SECTION_IDS } from './model'
  * routes. It intentionally remains in the legacy profile-shaped format so it
  * exercises the same normalisation path as imported old profiles.
  */
+// A generated placeholder headshot so portrait-capable templates have
+// something to show in the sample. Kept tiny (under 1 KB) on purpose.
+const DEMO_PORTRAIT =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAADGElEQVR42u2dy1EEMQxEOwMy5UjGe6WKCCABqljWkiyp32Fu7OBRP2s81sd6fH1+c/lewggAYG2At493ANgoatYFAGaCbwdCCO4NhNyFz7wvAFwUfftY1gMwxcDTQdBU4SdDCwAvGm/begUAFgo/7fnU2ThOm1NWALjttnV+dnUygFsMooMd1OGh3YNRN20iZr23NxDie0MgXL73K0GI7w2BEN8bAiG+NwTKHjBC9rarEN8bAiG+NwTine+9JhCz39sLCPG9IZC7+JPHHWF/uYi/MbU7YsyrAdie538FgAnGcar8OR2jEN8bgiMA3OsFOz9/OACdDUAx6Ov6aPrspyL4TCNNnv2UhZ/rpKmzn94AMVqJ2e/tBcTs9/YCmjb7O4vf2UYhADD793mBUQBMEL+rrf4NALPfwwsAAACw+HNeDIrZ7+0FAAAAAAAAiPrZRgkBAABw/86vATwAHoC0L+d0MZH06Z00CgAAAAAAAAAA0B0AooEAAAAAAADWAJATCAAA4A4AdQFJADi0fHE/Nva38Y70AABg/gqgOhgA6A8AAHQIAQB6BAEAXcIAwLpPIAAYdwoFAPNewQBg3C28BAD6/+8/X2BMXQCXeWEIFwCwBgAAPgPTASAm4BEDWAMA0UBTAEgIKQSAKuG9h0iM6RNIaZhpo8jJ3UG62W5cr+AN4nex3ahm0ZuE72LDMecFbBb/pg1fAqDaCziIf8OOj8gjY7IG7yR+tR2PAKjwAo7iV9nyr7+/fm6gs/gVtgwBIMsLIH6uPZ/5zdWzgxE+15ahAER7AUR/T7Xns79TBWWInwvByX1U+c8AIB6A03uomjhEjoMgAiAAAIC6VSfixkEQtX5Q5acHwsYAEPkFoarvT0SNgSD681FZmzkAEA9Axv6BqvagETQHgFPtVBGIQMxzCLLiB6qIRSPkGQCZEUQR2/fOIRDZPd4JJCK/zzuFTCR5eieRpgIABP0ziAEAAKj0cS4iAQAAAAAAAAAAAAAAAAAAAAAAAAKrZhIAAAAAAABAYNtLCAAAgNZvzi3lAAAA6P7p3FDyB/xXSylfgTk0AAAAAElFTkSuQmCC'
+
 export function createDemoResumePayload(id = 'demo', now = new Date().toISOString()) {
   return {
     meta: {
@@ -26,6 +31,7 @@ export function createDemoResumePayload(id = 'demo', now = new Date().toISOStrin
       name: 'Maya Patel',
       email: 'maya.patel@example.com',
       phone: '+1 (415) 555-0142',
+      image: DEMO_PORTRAIT,
       title_links: [
         { title: 'Portfolio', url: 'https://mayapatel.design' },
         { title: 'LinkedIn', url: 'https://linkedin.com/in/mayapatel' },

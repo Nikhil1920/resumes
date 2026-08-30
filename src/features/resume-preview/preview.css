@@ -203,6 +203,27 @@
 .resume-preview__classic-skills ul { margin: 0; padding-left: 10px; list-style: none; }
 .resume-preview__classic-skills li { margin-bottom: 2px; font-size: .95em; }
 
+/* --- Personal portrait (only rendered by portrait-capable templates) --- */
+
+.resume-preview__portrait {
+  flex: 0 0 auto;
+  width: 26mm;
+  height: 26mm;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Row headers keep the photo beside the name and push contact details right. */
+.resume-preview__header:has(> .resume-preview__portrait) { align-items: center; justify-content: flex-start; }
+.resume-preview__header:has(> .resume-preview__portrait) .resume-preview__contact { margin-left: auto; }
+
+.resume-preview[data-template='oslo'] .resume-preview__portrait { width: 24mm; height: 24mm; border-radius: 12%; }
+.resume-preview[data-template='vienna'] .resume-preview__portrait { width: 20mm; height: 20mm; margin-bottom: .3rem; }
+.resume-preview[data-template='kyoto'] .resume-preview__portrait { width: 17mm; height: 17mm; }
+.resume-preview[data-template='geneva'] .resume-preview__portrait { box-shadow: 0 0 0 3px color-mix(in srgb, var(--resume-accent) 35%, transparent); }
+.resume-preview[data-template='austin'] .resume-preview__portrait { border: 3px solid rgba(255, 255, 255, .9); }
+.resume-preview[data-template='sydney'] .resume-preview__portrait { border: 3px solid rgba(255, 255, 255, .85); }
+
 /* --- Sidebar layouts: zurich, sydney (left rail) and berlin (right rail) --- */
 
 .resume-preview__page--split { display: flex; flex-direction: column; padding: 0; }
@@ -217,13 +238,15 @@
 
 .resume-preview__sidebar { display: flex; flex-direction: column; gap: 1.1rem; padding: 11mm 7.5mm; }
 .resume-preview__main { display: grid; gap: 1.35rem; align-content: start; padding: 11mm 9mm; }
+.resume-preview__sidebar-identity { display: flex; flex-direction: column; align-items: flex-start; gap: .45rem; }
 .resume-preview__sidebar-identity h1 {
   margin: 0;
   color: #14211e;
   font: 800 1.5rem/1.12 var(--resume-title-font), Arial, sans-serif;
   letter-spacing: -.02em;
 }
-.resume-preview__sidebar-identity p { margin: .35rem 0 0; color: var(--resume-accent); font-size: .8rem; font-weight: 700; }
+.resume-preview__sidebar-identity p { margin: 0; color: var(--resume-accent); font-size: .8rem; font-weight: 700; }
+.resume-preview__sidebar-identity .resume-preview__portrait { width: 27mm; height: 27mm; }
 .resume-preview__sidebar-contact { display: flex; flex-direction: column; gap: .28rem; font-size: .72rem; overflow-wrap: anywhere; }
 
 .resume-preview__sidebar .resume-preview__section { break-inside: avoid; }
@@ -269,21 +292,32 @@
 .resume-preview[data-template='oslo'] .resume-preview__headline { margin-top: .3rem; }
 .resume-preview[data-template='oslo'] .resume-preview__contact { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; max-width: none; gap: .15rem 0; text-align: left; }
 .resume-preview[data-template='oslo'] .resume-preview__contact > * + *::before { margin: 0 .55rem; color: #9aa8a4; content: '·'; }
+/* With a portrait the photo spans the name and contact rows instead of stacking above them. */
+.resume-preview[data-template='oslo'] .resume-preview__header:has(> .resume-preview__portrait) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 1.1rem;
+  row-gap: .55rem;
+  align-items: center;
+}
+.resume-preview[data-template='oslo'] .resume-preview__header:has(> .resume-preview__portrait) > .resume-preview__portrait { grid-row: 1 / span 2; }
+.resume-preview[data-template='oslo'] .resume-preview__header:has(> .resume-preview__portrait) .resume-preview__contact { margin-left: 0; }
 .resume-preview[data-template='oslo'] .resume-preview__content { gap: 1.2rem; padding-top: 1.35rem; }
 .resume-preview[data-template='oslo'] .resume-preview__section-title { padding-bottom: .3rem; border-bottom: 1px solid #e4e9e7; color: #172121; }
 .resume-preview[data-template='oslo'] .resume-preview__section-title::after { display: none; }
 
 /* vienna: formal centered header and centered entry headings flanked by hairlines */
-.resume-preview[data-template='vienna'] .resume-preview__header { flex-direction: column; align-items: center; gap: .35rem; padding-bottom: 1rem; border-bottom: 1px solid #d9d3c8; text-align: center; }
+.resume-preview[data-template='vienna'] .resume-preview__header { flex-direction: column; align-items: center; gap: .3rem; padding-bottom: .7rem; border-bottom: 1px solid #d9d3c8; text-align: center; }
+.resume-preview[data-template='vienna'] .resume-preview__header:has(> .resume-preview__portrait) .resume-preview__contact { margin-left: 0; }
 .resume-preview[data-template='vienna'] .resume-preview__header h1 { color: #23201a; font: 700 1.9rem/1.1 var(--resume-title-font), Georgia, 'Times New Roman', serif; letter-spacing: .06em; text-transform: uppercase; }
 .resume-preview[data-template='vienna'] .resume-preview__headline { margin: 0; color: #6b6252; font-weight: 600; }
 .resume-preview[data-template='vienna'] .resume-preview__contact { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: center; max-width: none; gap: .15rem 0; text-align: center; }
 .resume-preview[data-template='vienna'] .resume-preview__contact > * + *::before { margin: 0 .55rem; color: #b5ac9c; content: '·'; }
-.resume-preview[data-template='vienna'] .resume-preview__content { gap: 1.15rem; padding-top: 1.25rem; }
-.resume-preview[data-template='vienna'] .resume-preview__section-title { justify-content: center; gap: .8rem; color: #23201a; letter-spacing: .14em; }
+.resume-preview[data-template='vienna'] .resume-preview__content { gap: 1rem; padding-top: 1rem; }
+.resume-preview[data-template='vienna'] .resume-preview__section-title { justify-content: center; gap: .8rem; margin-bottom: .5rem; color: #23201a; letter-spacing: .14em; }
 .resume-preview[data-template='vienna'] .resume-preview__section-title::before { width: 2.5rem; height: 1px; background: #cfc7b8; content: ''; }
 .resume-preview[data-template='vienna'] .resume-preview__section-title::after { width: 2.5rem; height: 1px; background: #cfc7b8; }
-.resume-preview[data-template='vienna'] .resume-preview__entry-heading { flex-direction: column; align-items: center; gap: .15rem; text-align: center; }
+.resume-preview[data-template='vienna'] .resume-preview__entry-heading { flex-direction: row; align-items: baseline; justify-content: center; gap: 1rem; text-align: center; }
 .resume-preview[data-template='vienna'] .resume-preview__item-meta { text-align: center; }
 
 /* kyoto: dense spacing and smaller type to fit more on one page */

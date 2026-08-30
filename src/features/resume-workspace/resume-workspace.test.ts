@@ -67,6 +67,37 @@ describe("resume workspace model", () => {
         expect(document.settings.accentColor).toBe("#0f766e");
     });
 
+    it("keeps safe portrait images, drops unsafe ones, and allows removal through patches", () => {
+        const validImage = "data:image/png;base64,iVBORw0KGgo=";
+        const document = normalizeResumeDocument(
+            {
+                personal_info: {
+                    name: "Ada Lovelace",
+                    image: validImage,
+                },
+            },
+            { idFactory: deterministicIds(), now: clock }
+        );
+        expect(document.personalInfo.image).toBe(validImage);
+
+        const rejected = normalizeResumeDocument(
+            {
+                personalInfo: {
+                    image: "data:text/html;base64,PGI+",
+                },
+            },
+            { idFactory: deterministicIds(), now: clock }
+        );
+        expect(rejected.personalInfo.image).toBeUndefined();
+
+        let snapshot = createInitialWorkspaceSnapshot();
+        snapshot = reduceWorkspace(snapshot, { type: "document/create", document: { id: "one" } }, { idFactory: deterministicIds(), now: clock });
+        snapshot = reduceWorkspace(snapshot, { type: "document/update", patch: { personalInfo: { image: validImage } } }, { idFactory: deterministicIds(), now: clock });
+        expect(snapshot.documents.one.personalInfo.image).toBe(validImage);
+        snapshot = reduceWorkspace(snapshot, { type: "document/update", patch: { personalInfo: { image: undefined } } }, { idFactory: deterministicIds(), now: clock });
+        expect(snapshot.documents.one.personalInfo.image).toBeUndefined();
+    });
+
     it("keeps layout separate from content and derives ordered navigation/preview", () => {
         const document = createEmptyResumeDocument(
             { id: "doc", name: "Resume", sections: ["skills", "summary"] },

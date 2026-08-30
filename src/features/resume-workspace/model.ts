@@ -43,6 +43,8 @@ export interface PersonalInfo {
     name: string;
     email: string;
     phone: string;
+    /** Optional headshot: a safe image data URL or https URL, rendered by portrait-capable templates. */
+    image?: string;
     titleLinks: ResumeLink[];
 }
 
@@ -723,16 +725,43 @@ const normalizeLanguages = (
         .filter((entry) => preserveEmptyEntries || !isEntryBlank("languages", entry));
 };
 
+/**
+ * Portraits are embedded as data URLs so documents stay self-contained in
+ * localStorage and JSON exports.  The allowlist keeps opaque payloads out of
+ * img srcs, and the length cap keeps one photo from exhausting the storage
+ * quota.
+ */
+export const PORTRAIT_IMAGE_PATTERN =
+    /^data:image\/(?:png|jpeg|jpg|webp);base64,[a-z0-9+/=]+$/i;
+export const MAX_PORTRAIT_IMAGE_LENGTH = 1_400_000;
+
+export const isPortraitImageValue = (value: unknown): value is string => {
+    if (typeof value !== "string") return false;
+    const candidate = value.trim();
+    if (!candidate || candidate.length > MAX_PORTRAIT_IMAGE_LENGTH) return false;
+    return (
+        PORTRAIT_IMAGE_PATTERN.test(candidate) ||
+        /^https?:\/\/\S+$/i.test(candidate)
+    );
+};
+
+const normalizePortraitImage = (value: unknown): string | undefined => {
+    const candidate = typeof value === "string" ? value.trim() : "";
+    return candidate && isPortraitImageValue(candidate) ? candidate : undefined;
+};
+
 const normalizePersonalInfo = (
     value: unknown,
     idFactory: IdFactory
 ): PersonalInfo => {
     const source = asRecord(value);
     const used = new Set<string>();
+    const image = normalizePortraitImage(source.image ?? source.portrait);
     return {
         name: asString(source.name),
         email: asString(source.email),
         phone: asString(source.phone),
+        ...(image ? { image } : {}),
         titleLinks: asArray(source.titleLinks ?? source.title_links).map((link) =>
             normalizeLink(link, "link", used, idFactory)
         ),

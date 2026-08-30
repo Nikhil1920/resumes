@@ -4,7 +4,7 @@ import { useEffect, useMemo } from 'react'
 
 import { sanitizeRichText } from '../resume-workspace/rich-text'
 import { downloadJsonFile } from '../../lib/download-json'
-import { getResumePreviewTitle, getTemplateLayout, PREVIEW_TEMPLATE_OPTIONS, type ResumeTemplateLayout } from './presentation'
+import { getResumePreviewTitle, getTemplateLayout, getTemplatePortrait, PREVIEW_TEMPLATE_OPTIONS, type ResumeTemplateLayout } from './presentation'
 import './preview.css'
 
 /** The built-in section identifiers are deliberately stable: they are used for ordering and persistence. */
@@ -33,6 +33,7 @@ export interface PreviewPersonalInfo {
   email?: string
   phone?: string
   location?: string
+  image?: string
   links: PreviewLink[]
 }
 
@@ -209,6 +210,17 @@ function DateRange({ start, end }: { start?: string; end?: string }) {
 
 function isSafeHref(value: string) {
   return /^(?:https?:|mailto:|tel:|\/|#)/i.test(value.trim())
+}
+
+/** Mirrors the workspace portrait allowlist so hand-built models cannot smuggle an unsafe src. */
+function isSafePortraitSrc(value: string | undefined): value is string {
+  if (!value) return false
+  return /^data:image\/(?:png|jpeg|jpg|webp);base64,/i.test(value) || /^https?:\/\//i.test(value)
+}
+
+function Portrait({ src }: { src?: string }) {
+  if (!isSafePortraitSrc(src)) return null
+  return <img className="resume-preview__portrait" src={src} alt="" />
 }
 
 function PreviewLinkAnchor({ link }: { link: PreviewLink }) {
@@ -389,6 +401,7 @@ function SidebarResume({ model, sections, layout }: { model: ResumePreviewModel;
     <div className={`resume-preview__split resume-preview__split--${layout}`}>
       <aside className="resume-preview__sidebar" aria-label="Contact and highlights">
         <header className="resume-preview__sidebar-identity">
+          <Portrait src={model.personalInfo.image} />
           <h1>{model.personalInfo.name || 'Your Name'}</h1>
           {model.personalInfo.headline ? <p>{model.personalInfo.headline}</p> : null}
         </header>
@@ -455,6 +468,7 @@ export function ResumePreview({ model, onBack, onEdit, onModelChange, onPrint, o
   const populated = hasContent(model)
   const isClassicTenali = model.template === 'tenali-classic'
   const templateLayout = getTemplateLayout(model.template)
+  const templatePortrait = getTemplatePortrait(model.template)
   const useSplitLayout = populated && (templateLayout === 'sidebar-left' || templateLayout === 'sidebar-right')
 
   useEffect(() => {
@@ -476,6 +490,7 @@ export function ResumePreview({ model, onBack, onEdit, onModelChange, onPrint, o
             : isClassicTenali ? <ClassicResume model={model} sections={orderedSections} />
             : <>
               <header className="resume-preview__header">
+                {templatePortrait === 'header' ? <Portrait src={model.personalInfo.image} /> : null}
                 <div><h1>{model.personalInfo.name || 'Your Name'}</h1>{model.personalInfo.headline ? <p className="resume-preview__headline">{model.personalInfo.headline}</p> : null}</div>
                 <div className="resume-preview__contact">
                   {model.personalInfo.email ? <a href={`mailto:${encodeURIComponent(model.personalInfo.email)}`}>{model.personalInfo.email}</a> : null}

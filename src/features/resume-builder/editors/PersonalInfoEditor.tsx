@@ -1,12 +1,14 @@
-import { ChevronDownIcon, ChevronUpIcon, PlusIcon } from "lucide-react"
+import * as React from "react"
+import { ChevronDownIcon, ChevronUpIcon, ImageIcon, LoaderCircleIcon, PlusIcon, Trash2Icon, UploadIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { fileToPortraitDataUrl } from "@/lib/portrait-image"
 import { EntryCard } from "../components/EntryCard"
 import { FieldGrid, FieldGroup } from "../components/FieldGroup"
 import type { PersonalInfo, ResumeLink } from "../../resume-workspace/model"
 
-export type PersonalInfoUpdate = Partial<Pick<PersonalInfo, "name" | "email" | "phone">>
+export type PersonalInfoUpdate = Partial<Pick<PersonalInfo, "name" | "email" | "phone" | "image">>
 export type PersonalInfoLinkUpdate = Partial<Pick<ResumeLink, "title" | "url">>
 
 export type PersonalInfoEditorProps = {
@@ -30,9 +32,55 @@ export function PersonalInfoEditor({
   disabled = false,
   className,
 }: PersonalInfoEditorProps) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const [isProcessingImage, setIsProcessingImage] = React.useState(false)
+  const [imageError, setImageError] = React.useState<string | null>(null)
+
+  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+    if (!file) return
+    setImageError(null)
+    setIsProcessingImage(true)
+    try {
+      onPatch({ image: await fileToPortraitDataUrl(file) })
+    } catch (error) {
+      setImageError(error instanceof Error ? error.message : "The image could not be added.")
+    } finally {
+      setIsProcessingImage(false)
+    }
+  }
+
   return (
     <div className={className}>
-      <FieldGrid columns={3}>
+      <div className="flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center">
+        {value.image ? (
+          <img src={value.image} alt="" aria-hidden="true" className="size-16 shrink-0 rounded-full border object-cover" />
+        ) : (
+          <div className="grid size-16 shrink-0 place-items-center rounded-full border border-dashed text-muted-foreground" aria-hidden="true">
+            <ImageIcon className="size-5" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-medium">Photo</h3>
+          <p className="text-xs text-muted-foreground">Shown by templates that include a portrait. Large images are resized automatically.</p>
+          {imageError && <p className="mt-1 text-xs text-destructive" role="alert">{imageError}</p>}
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => void handleImageChange(event)} />
+          <Button type="button" size="sm" variant="outline" disabled={disabled || isProcessingImage} onClick={() => fileInputRef.current?.click()}>
+            {isProcessingImage ? <LoaderCircleIcon className="animate-spin" /> : <UploadIcon />}
+            {value.image ? "Replace" : "Upload"}
+          </Button>
+          {value.image && (
+            <Button type="button" size="sm" variant="ghost" disabled={disabled || isProcessingImage} aria-label="Remove photo" title="Remove photo" onClick={() => { setImageError(null); onPatch({ image: undefined }) }}>
+              <Trash2Icon />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <FieldGrid columns={3} className="mt-6">
         <FieldGroup label="Full name" htmlFor="personal-name" required>
           <Input id="personal-name" value={value.name} disabled={disabled} autoComplete="name" onChange={(event) => onPatch({ name: event.target.value })} />
         </FieldGroup>

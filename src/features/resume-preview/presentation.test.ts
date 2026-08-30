@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getResumePreviewTitle, getTemplateLabel, getTemplateLayout, PREVIEW_TEMPLATE_OPTIONS, RESUME_TEMPLATES } from './presentation'
+import { getResumePreviewTitle, getTemplateLabel, getTemplateLayout, getTemplatePortrait, PREVIEW_TEMPLATE_OPTIONS, RESUME_TEMPLATES } from './presentation'
 
 describe('resume preview presentation', () => {
   it('uses the saved resume title as the preview page title', () => {
@@ -37,6 +37,20 @@ describe('resume preview presentation', () => {
 
   it('falls back to the single-column renderer for unknown templates', () => {
     expect(getTemplateLayout('custom-company-template')).toBe('single-column')
+  })
+
+  it('renders the portrait in sidebars and headers while the tenali designs stay image-free', () => {
+    expect(getTemplatePortrait('zurich')).toBe('sidebar')
+    expect(getTemplatePortrait('sydney')).toBe('sidebar')
+    expect(getTemplatePortrait('berlin')).toBe('sidebar')
+    expect(getTemplatePortrait('oslo')).toBe('header')
+    expect(getTemplatePortrait('vienna')).toBe('header')
+    expect(getTemplatePortrait('kyoto')).toBe('header')
+    expect(getTemplatePortrait('geneva')).toBe('header')
+    expect(getTemplatePortrait('austin')).toBe('header')
+    expect(getTemplatePortrait('tenali')).toBeNull()
+    expect(getTemplatePortrait('tenali-classic')).toBeNull()
+    expect(getTemplatePortrait('custom-company-template')).toBeNull()
   })
 
   it('labels known templates and falls back to the raw value for custom ones', () => {

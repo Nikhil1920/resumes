@@ -10,6 +10,7 @@
     "dev-host": "vite dev --host --port 3000",
     "generate-routes": "tsr generate",
     "build": "vite build",
+    "postbuild": "node scripts/prepare-capacitor.mjs",
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
@@ -62,11 +63,5 @@
     "typescript": "^6.0.2",
     "vite": "^8.1.5",
     "vitest": "^3.2.4"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "lightningcss"
-    ]
   }
 }

@@ -8,8 +8,9 @@ import tailwindcss from '@tailwindcss/vite'
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
-  // Capacitor is configured to package the Vite output from `build`.
+  // TanStack Start writes the browser bundle to build/client for Capacitor.
   build: { outDir: 'build' },
+  publicDir: 'static',
   plugins: [
     devtools(),
     tailwindcss(),

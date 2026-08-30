@@ -138,6 +138,83 @@ describe("resume workspace model", () => {
         expect(snapshot.documents.one.sections.find((section) => section.id === "certifications")?.title).toBe("Credentials");
     });
 
+    it("preserves in-progress whitespace in controlled editor fields", () => {
+        const ids = deterministicIds();
+        const dependencies = { idFactory: ids, now: clock };
+        let snapshot = reduceWorkspace(
+            createInitialWorkspaceSnapshot(),
+            { type: "document/create", document: { id: "one" } },
+            dependencies
+        );
+        snapshot = reduceWorkspace(
+            snapshot,
+            {
+                type: "document/update",
+                patch: { personalInfo: { name: "Ada " } },
+            },
+            dependencies
+        );
+        snapshot = reduceWorkspace(
+            snapshot,
+            { type: "entry/create", section: "skills" },
+            dependencies
+        );
+        const skillId = snapshot.documents.one.skills[0].id;
+        snapshot = reduceWorkspace(
+            snapshot,
+            {
+                type: "entry/update",
+                section: "skills",
+                entryId: skillId,
+                patch: { name: "Systems ", category: "Design " },
+            },
+            dependencies
+        );
+        snapshot = reduceWorkspace(
+            snapshot,
+            { type: "personal-link/create" },
+            dependencies
+        );
+        const linkId = snapshot.documents.one.personalInfo.titleLinks[0].id;
+        snapshot = reduceWorkspace(
+            snapshot,
+            {
+                type: "personal-link/update",
+                linkId,
+                patch: { title: "Portfolio ", url: "https://example.com/path " },
+            },
+            dependencies
+        );
+
+        expect(snapshot.documents.one.personalInfo.name).toBe("Ada ");
+        expect(snapshot.documents.one.skills[0]).toMatchObject({
+            name: "Systems ",
+            category: "Design ",
+        });
+        expect(snapshot.documents.one.personalInfo.titleLinks[0]).toMatchObject({
+            title: "Portfolio ",
+            url: "https://example.com/path ",
+        });
+    });
+
+    it("rejects invalid accent colors at the state boundary", () => {
+        const dependencies = { idFactory: deterministicIds(), now: clock };
+        let snapshot = reduceWorkspace(
+            createInitialWorkspaceSnapshot(),
+            { type: "document/create", document: { id: "one" } },
+            dependencies
+        );
+        snapshot = reduceWorkspace(
+            snapshot,
+            {
+                type: "document/settings/update",
+                patch: { accentColor: "not-a-color" },
+            },
+            dependencies
+        );
+        expect(snapshot.documents.one.settings.accentColor).toBe("#0f766e");
+    });
+
     it("keeps the current step inside the visible configured workflow", () => {
         const ids = deterministicIds();
         let snapshot = createInitialWorkspaceSnapshot();

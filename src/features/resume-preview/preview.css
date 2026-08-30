@@ -1,0 +1,194 @@
+.resume-preview {
+  --resume-accent: #0f766e;
+  --resume-title-font: Inter;
+  --resume-body-font: Inter;
+  min-height: 100%;
+  background: #f4f5f5;
+  color: #172121;
+  font-family: var(--resume-body-font), Arial, sans-serif;
+}
+
+.resume-preview__toolbar {
+  position: sticky;
+  z-index: 10;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 4.25rem;
+  padding: .75rem clamp(1rem, 3vw, 2.5rem);
+  border-bottom: 1px solid #dce3e1;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 1px 10px rgba(12, 34, 31, .05);
+  backdrop-filter: blur(14px);
+}
+
+.resume-preview__toolbar-leading,
+.resume-preview__toolbar-actions,
+.resume-preview__toolbar-controls { display: flex; align-items: center; gap: .5rem; }
+.resume-preview__toolbar-leading { flex: 1 1 auto; }
+.resume-preview__toolbar-actions { margin-left: auto; }
+.resume-preview__toolbar-controls { flex: 0 1 auto; justify-content: center; }
+
+.resume-preview__toolbar label {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: #667371;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.resume-preview__toolbar select {
+  min-height: 2rem;
+  max-width: 8.5rem;
+  padding: 0 1.5rem 0 .55rem;
+  border: 1px solid #d8e0de;
+  border-radius: .4rem;
+  background: #fff;
+  color: #263431;
+  font: 500 .76rem var(--resume-body-font), Arial, sans-serif;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.resume-preview__color-control input {
+  width: 2rem;
+  height: 2rem;
+  padding: .15rem;
+  border: 1px solid #d8e0de;
+  border-radius: .4rem;
+  background: #fff;
+  cursor: pointer;
+}
+
+.resume-preview__text-button,
+.resume-preview__icon-button,
+.resume-preview__primary-button {
+  min-height: 2.25rem;
+  border: 0;
+  border-radius: .45rem;
+  padding: 0 .8rem;
+  cursor: pointer;
+  font: 700 .75rem var(--resume-body-font), Arial, sans-serif;
+  transition: background-color .15s ease, color .15s ease, transform .15s ease;
+}
+.resume-preview__text-button { background: transparent; color: var(--resume-accent); }
+.resume-preview__text-button:hover { background: #e9f1ef; }
+.resume-preview__icon-button { border: 1px solid #d8e0de; background: #fff; color: #4f5f5a; }
+.resume-preview__icon-button:hover { border-color: var(--resume-accent); color: var(--resume-accent); }
+.resume-preview__primary-button { background: var(--resume-accent); color: #fff; }
+.resume-preview__primary-button:hover { filter: brightness(.92); transform: translateY(-1px); }
+
+.resume-preview__workspace {
+  display: flex;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 3.5rem) 1rem 4rem;
+}
+
+.resume-preview__page {
+  box-sizing: border-box;
+  width: min(100%, 210mm);
+  min-height: 297mm;
+  padding: 18mm 18mm 20mm;
+  background: #fff;
+  box-shadow: 0 12px 38px rgba(13, 37, 33, .13);
+  overflow-wrap: anywhere;
+}
+.resume-preview__page--letter { width: min(100%, 216mm); min-height: 279mm; }
+
+.resume-preview__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  padding-bottom: 1.35rem;
+  border-bottom: 3px solid var(--resume-accent);
+}
+.resume-preview__header h1 {
+  margin: 0;
+  color: #102825;
+  font: 800 clamp(2rem, 4vw, 2.75rem)/1.05 var(--resume-title-font), Arial, sans-serif;
+  letter-spacing: -.045em;
+}
+.resume-preview__headline { margin: .45rem 0 0; color: var(--resume-accent); font-size: .95rem; font-weight: 700; }
+.resume-preview__contact { display: flex; max-width: 45%; flex-direction: column; align-items: flex-end; justify-content: flex-end; gap: .24rem; color: #5c6a66; font-size: .72rem; text-align: right; }
+.resume-preview__contact a,
+.resume-preview a { color: var(--resume-accent); text-decoration: none; }
+.resume-preview__contact a:hover,
+.resume-preview a:hover { text-decoration: underline; }
+
+.resume-preview__content { display: grid; gap: 1.45rem; padding-top: 1.55rem; }
+.resume-preview__section { break-inside: avoid; }
+.resume-preview__section-title {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  margin: 0 0 .65rem;
+  color: var(--resume-accent);
+  font: 800 .75rem/1.2 var(--resume-title-font), Arial, sans-serif;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.resume-preview__section-title::after { width: 2rem; height: 2px; background: color-mix(in srgb, var(--resume-accent) 35%, transparent); content: ''; }
+.resume-preview__entry { break-inside: avoid; margin-bottom: .95rem; }
+.resume-preview__entry:last-child { margin-bottom: 0; }
+.resume-preview__entry-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.resume-preview__entry h3,
+.resume-preview__skill-group h3 { margin: 0; color: #20302d; font: 750 .9rem/1.25 var(--resume-title-font), Arial, sans-serif; }
+.resume-preview__organization { margin: .18rem 0 0; color: #50615c; font-size: .78rem; }
+.resume-preview__item-meta { flex: 0 0 auto; color: #66736f; font-size: .69rem; font-weight: 600; text-align: right; }
+.resume-preview__rich-text { margin-top: .38rem; color: #3d4a46; font-size: .77rem; line-height: 1.52; }
+.resume-preview__rich-text p { margin: 0 0 .4rem; }
+.resume-preview__rich-text p:last-child { margin-bottom: 0; }
+.resume-preview__rich-text ul,
+.resume-preview__rich-text ol { margin: .25rem 0 0 1.1rem; padding: 0; }
+.resume-preview__rich-text li + li { margin-top: .16rem; }
+.resume-preview__bullet-list { margin: .35rem 0 0 1.1rem; padding: 0; color: #3d4a46; font-size: .77rem; line-height: 1.5; }
+.resume-preview__bullet-list .resume-preview__rich-text { margin: 0; }
+.resume-preview__project-footer { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .45rem; color: #62706c; font-size: .7rem; }
+.resume-preview__project-footer a + a::before { color: #b2bfbb; content: ' · '; }
+.resume-preview__skill-groups { display: grid; gap: .45rem; }
+.resume-preview__skill-group { display: grid; grid-template-columns: minmax(6rem, 25%) 1fr; gap: .75rem; align-items: baseline; }
+.resume-preview__skill-group p { margin: 0; color: #3d4a46; font-size: .78rem; line-height: 1.45; }
+.resume-preview__compact-list { display: grid; gap: .45rem; margin: 0; padding-left: 1.1rem; color: #3d4a46; font-size: .78rem; line-height: 1.45; }
+.resume-preview__languages { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; color: #3d4a46; font-size: .78rem; }
+.resume-preview__languages div { display: flex; gap: .4rem; }
+.resume-preview__languages span { color: #71807b; }
+
+.resume-preview__empty-state { display: flex; min-height: 245mm; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; }
+.resume-preview__empty-mark { display: grid; width: 3.5rem; height: 3.5rem; place-items: center; margin-bottom: 1.1rem; border-radius: 50%; background: #e5f1ee; color: var(--resume-accent); font-size: 1.55rem; }
+.resume-preview__empty-state h1 { margin: 0; color: #19302b; font: 800 1.5rem var(--resume-title-font), Arial, sans-serif; letter-spacing: -.03em; }
+.resume-preview__empty-state p { max-width: 23rem; margin: .55rem 0 1.25rem; color: #687873; font-size: .84rem; line-height: 1.55; }
+
+@media (max-width: 1400px) {
+  .resume-preview__toolbar { flex-wrap: wrap; }
+  .resume-preview__toolbar-controls { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; padding-top: .15rem; }
+  .resume-preview__toolbar-actions { margin-left: 0; }
+}
+@media (max-width: 640px) {
+  .resume-preview__toolbar { gap: .45rem; padding: .65rem .75rem; }
+  .resume-preview__toolbar-actions { width: 100%; overflow-x: auto; }
+  .resume-preview__toolbar-actions button { flex: 1 0 auto; }
+  .resume-preview__workspace { padding: 1rem .5rem 2rem; }
+  .resume-preview__page { width: 100%; min-width: 0; min-height: 100svh; padding: clamp(1.25rem, 8vw, 3rem); }
+  .resume-preview__page--letter { width: 100%; }
+  .resume-preview__header { gap: 1rem; }
+  .resume-preview__header h1 { font-size: 2rem; }
+  .resume-preview__empty-state { min-height: 70svh; }
+}
+
+@media print {
+  .resume-preview { background: #fff; }
+  .resume-preview__toolbar { display: none !important; }
+  .resume-preview__workspace { display: block; padding: 0; }
+  .resume-preview__page { width: 210mm; min-height: 297mm; padding: 18mm 18mm 20mm; box-shadow: none; }
+  .resume-preview__page--letter { width: 216mm; min-height: 279mm; }
+  .resume-preview__section { break-inside: avoid; }
+  .resume-preview__entry { break-inside: avoid; }
+  @page { size: A4; margin: 0; }
+  .resume-preview[data-page-size='Letter'] .resume-preview__page { page: resume-letter; }
+  @page resume-letter { size: Letter; margin: 0; }
+}

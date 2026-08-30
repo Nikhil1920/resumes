@@ -404,6 +404,11 @@ const asArray = (value: unknown): unknown[] =>
 const asString = (value: unknown, fallback = ""): string =>
     typeof value === "string" ? value.trim() : fallback;
 
+// Live controlled fields must keep a trailing space between keystrokes. Import
+// normalization uses asString; reducer update paths use this raw variant.
+const asEditableString = (value: unknown, fallback = ""): string =>
+    typeof value === "string" ? value : fallback;
+
 const asDate = (value: unknown, fallback: string): string => {
     const result = asString(value);
     return result || fallback;
@@ -748,11 +753,16 @@ const normalizeSettings = (value: unknown): ResumeSettings => {
             source.bodyFont ?? source.body_font,
             DEFAULT_RESUME_SETTINGS.bodyFont
         ),
-        accentColor: asString(
+        accentColor: normalizeAccentColor(
             source.accentColor ?? source.accent_color,
             DEFAULT_RESUME_SETTINGS.accentColor
         ),
     };
+};
+
+const normalizeAccentColor = (value: unknown, fallback: string): string => {
+    const color = asString(value);
+    return /^#[0-9a-f]{6}$/i.test(color) ? color : fallback;
 };
 
 /**
@@ -1018,6 +1028,22 @@ const updateEntry = (
         { ...items[index], ...patch } as RepeatableEntry,
         options
     );
+    const editableFields: Record<RepeatableSection, readonly string[]> = {
+        experience: ["company", "title", "location", "startDate", "endDate", "description"],
+        education: ["institution", "location", "degree", "startDate", "endDate", "description"],
+        projects: ["title", "startDate", "endDate", "description"],
+        skills: ["name", "category"],
+        certifications: ["name", "issuer", "date", "url"],
+        languages: ["name"],
+    };
+    const editableEntry = nextEntry as unknown as Record<string, unknown>;
+    for (const field of editableFields[section]) {
+        const value = patch[field];
+        if (typeof value !== "string") continue;
+        editableEntry[field] = field === "description"
+            ? (options.sanitizer ?? defaultRichTextSanitizer).sanitize(value)
+            : value;
+    }
     nextEntry.id = entryId;
     const nextItems = [...items];
     nextItems[index] = nextEntry;
@@ -1143,9 +1169,38 @@ export const reduceWorkspace = (
                         },
                     } as ResumeDocument;
                     const normalized = normalizeResumeDocument(next, normalization);
+                    const rawMeta = patch.meta;
+                    const rawPersonalInfo = patch.personalInfo;
                     return {
                         ...normalized,
-                        meta: { ...normalized.meta, id: documentId },
+                        ...(typeof patch.summary === "string"
+                            ? { summary: (dependencies.sanitizer ?? defaultRichTextSanitizer).sanitize(patch.summary) }
+                            : {}),
+                        ...(typeof patch.awards === "string"
+                            ? { awards: (dependencies.sanitizer ?? defaultRichTextSanitizer).sanitize(patch.awards) }
+                            : {}),
+                        meta: {
+                            ...normalized.meta,
+                            id: documentId,
+                            ...(typeof rawMeta?.name === "string"
+                                ? { name: rawMeta.name }
+                                : {}),
+                            ...(typeof rawMeta?.description === "string"
+                                ? { description: rawMeta.description }
+                                : {}),
+                        },
+                        personalInfo: {
+                            ...normalized.personalInfo,
+                            ...(typeof rawPersonalInfo?.name === "string"
+                                ? { name: rawPersonalInfo.name }
+                                : {}),
+                            ...(typeof rawPersonalInfo?.email === "string"
+                                ? { email: rawPersonalInfo.email }
+                                : {}),
+                            ...(typeof rawPersonalInfo?.phone === "string"
+                                ? { phone: rawPersonalInfo.phone }
+                                : {}),
+                        },
                     };
                 },
                 now
@@ -1422,8 +1477,8 @@ export const reduceWorkspace = (
                             link.id === action.linkId
                                 ? {
                                       ...link,
-                                      title: asString(action.patch.title, link.title),
-                                      url: asString(action.patch.url, link.url),
+                                      title: asEditableString(action.patch.title, link.title),
+                                      url: asEditableString(action.patch.url, link.url),
                                   }
                                 : link
                         ),
@@ -1522,11 +1577,11 @@ export const reduceWorkspace = (
                                           link.id === action.linkId
                                               ? {
                                                     ...link,
-                                                    title: asString(
+                                                    title: asEditableString(
                                                         action.patch.title,
                                                         link.title
                                                     ),
-                                                    url: asString(
+                                                    url: asEditableString(
                                                         action.patch.url,
                                                         link.url
                                                     ),
@@ -1638,10 +1693,24 @@ export const reduceWorkspace = (
             return withUpdatedDocument(
                 snapshot,
                 documentId,
-                (document) => ({
-                    ...document,
-                    settings: { ...document.settings, ...action.patch },
-                }),
+                (document) => {
+                    const accentColor = action.patch.accentColor;
+                    const patch = {
+                        ...action.patch,
+                        ...(accentColor === undefined
+                            ? {}
+                            : {
+                                  accentColor: normalizeAccentColor(
+                                      accentColor,
+                                      document.settings.accentColor
+                                  ),
+                              }),
+                    };
+                    return {
+                        ...document,
+                        settings: { ...document.settings, ...patch },
+                    };
+                },
                 now
             );
         }

@@ -16,8 +16,14 @@ export type ResumeSettingsEditorProps = {
   className?: string
 }
 
-const DEFAULT_TEMPLATES = ["tenali"] as const
+const DEFAULT_TEMPLATES = ["tenali", "tenali-classic"] as const
 const DEFAULT_FONTS = ["Arial", "Inter", "Georgia", "Helvetica", "Times New Roman"] as const
+
+const templateLabel = (template: string) => template === "tenali"
+  ? "Tenali Modern"
+  : template === "tenali-classic"
+    ? "Tenali Classic"
+    : template
 
 function FontField({ id, label, value, options, onChange, disabled }: { id: string; label: string; value: string; options: readonly string[]; onChange: (value: string) => void; disabled: boolean }) {
   const hasCurrentValue = options.includes(value)
@@ -44,7 +50,7 @@ export function ResumeSettingsEditor({ settings, onChange, templates = DEFAULT_T
         <FieldGroup label="Template" htmlFor="resume-template">
           <Select value={settings.template} onValueChange={(value) => { if (typeof value === "string") onChange({ template: value }) }} disabled={disabled}>
             <SelectTrigger id="resume-template" className="w-full"><SelectValue /></SelectTrigger>
-            <SelectContent>{!hasCurrentTemplate && <SelectItem value={settings.template}>{settings.template}</SelectItem>}{templates.map((template) => <SelectItem key={template} value={template}>{template}</SelectItem>)}</SelectContent>
+            <SelectContent>{!hasCurrentTemplate && <SelectItem value={settings.template}>{templateLabel(settings.template)}</SelectItem>}{templates.map((template) => <SelectItem key={template} value={template}>{templateLabel(template)}</SelectItem>)}</SelectContent>
           </Select>
         </FieldGroup>
         <FieldGroup label="Page size" htmlFor="resume-page-size">

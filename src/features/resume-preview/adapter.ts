@@ -270,6 +270,7 @@ export const toResumePreviewModel = (
 
     return {
         id: document.meta.id,
+        title: text(document.meta.name),
         personalInfo,
         sections,
         template: text(document.settings.template),

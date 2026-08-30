@@ -260,7 +260,7 @@ function WorkspaceToolbar({
           value={documentName}
           onChange={(event) => onNameChange(event.currentTarget.value)}
           placeholder="Untitled resume"
-          className="h-8 min-w-0 max-w-[15rem] border-transparent bg-transparent px-2 text-sm font-semibold shadow-none hover:border-border focus:border-ring sm:max-w-xs"
+          className="h-8 min-w-0 max-w-60 border-transparent bg-transparent px-2 text-sm font-semibold shadow-none hover:border-border focus:border-ring sm:max-w-xs"
         />
       </div>
 
@@ -598,7 +598,7 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
               {panel === "appearance" && (
                 <>
                   <EditorHeader title="Resume appearance" description="Tune the page, typography, and accent used by your live preview." completed={false} />
-                  <ResumeSettingsEditor settings={selectedDocument.settings} templates={["tenali"]} disabled={isDisabled} className="mt-7" onChange={(patch) => actions.updateDocumentSettings(patch)} />
+                  <ResumeSettingsEditor settings={selectedDocument.settings} templates={["tenali", "tenali-classic"]} disabled={isDisabled} className="mt-7" onChange={(patch) => actions.updateDocumentSettings(patch)} />
                 </>
               )}
             </div>

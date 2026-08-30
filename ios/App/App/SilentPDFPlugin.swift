@@ -20,8 +20,9 @@ public class SilentPDFPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDeleg
 
     @objc func download(_ call: CAPPluginCall) {
         let value = call.getString("value") ?? ""
+        let title = call.getString("title") ?? "Resume"
 
-        createPDFUsingPrintRenderer { pdfURL in
+        createPDFUsingPrintRenderer(title: title) { pdfURL in
             guard let pdfURL = pdfURL else {
                 print("Failed to create PDF")
                 return
@@ -44,8 +45,9 @@ public class SilentPDFPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDeleg
 
     @objc func share(_ call: CAPPluginCall) {
         let value = call.getString("value") ?? ""
+        let title = call.getString("title") ?? "Resume"
 
-        createPDFUsingPrintRenderer { pdfURL in
+        createPDFUsingPrintRenderer(title: title) { pdfURL in
             guard let pdfURL = pdfURL else {
                 print("Failed to create PDF")
                 return
@@ -77,7 +79,7 @@ public class SilentPDFPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDeleg
     }
 
     // Using UIPrintPageRenderer for better quality PDFs
-    func createPDFUsingPrintRenderer(completion: @escaping (URL?) -> Void) {
+    func createPDFUsingPrintRenderer(title: String, completion: @escaping (URL?) -> Void) {
         guard let webView = self.bridge?.webView else {
             completion(nil)
             return
@@ -93,11 +95,13 @@ public class SilentPDFPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDeleg
         printPageRenderer.setValue(printableRect, forKey: "printableRect")
 
         let tempDir = FileManager.default.temporaryDirectory
-        let date = Date()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd-MM-yyyy hh-mm a"
-        let formattedDate = formatter.string(from: date)
-        let fileName = "Resume-\(formattedDate).pdf"
+        let invalidCharacters = CharacterSet(charactersIn: "/\\?%*:|\"<>")
+            .union(.controlCharacters)
+        let cleanedTitle = title.components(separatedBy: invalidCharacters)
+            .joined(separator: "_")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let fileStem = cleanedTitle.isEmpty ? "Resume" : cleanedTitle
+        let fileName = fileStem.hasSuffix(".pdf") ? fileStem : "\(fileStem).pdf"
         let fileURL = tempDir.appendingPathComponent(fileName)
 
         // Create PDF data

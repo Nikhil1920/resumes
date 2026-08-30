@@ -158,6 +158,51 @@
 .resume-preview__languages div { display: flex; gap: .4rem; }
 .resume-preview__languages span { color: #71807b; }
 
+.resume-preview[data-template='tenali-classic'] .resume-preview__page {
+  width: min(100%, 216mm);
+  padding: 10.58mm 5.29mm;
+  color: #333;
+  font: 11pt/normal var(--resume-body-font), "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+}
+.resume-preview[data-template='tenali-classic'] .resume-preview__page--a4 { width: min(100%, 210mm); }
+.resume-preview__classic-header { text-align: center; }
+.resume-preview__classic-header h1 {
+  margin: 0 0 5px;
+  color: #333;
+  font: bold 2.5em/normal var(--resume-title-font), Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+  letter-spacing: 1px;
+}
+.resume-preview__classic-header > p { margin: -2px 0 5px; font-size: .95em; }
+.resume-preview__classic-contact { margin-bottom: 10px; font-size: .9em; }
+.resume-preview__classic-separator { margin: 0 5px; }
+.resume-preview[data-template='tenali-classic'] .resume-preview__classic-contact a,
+.resume-preview[data-template='tenali-classic'] .resume-preview__classic-links a { color: #007bff; text-decoration: underline; }
+.resume-preview__classic-section { margin-bottom: 10px; }
+.resume-preview__classic-section h2 {
+  margin: 0 0 5px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #000;
+  color: #333;
+  font: bold 1.2em/normal var(--resume-title-font), Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+  letter-spacing: 1px;
+  text-transform: capitalize;
+}
+.resume-preview__classic-section-list { margin: 0; padding-left: 10px; list-style: none; }
+.resume-preview__classic-section-list > li { break-inside: avoid; margin-bottom: 8px; }
+.resume-preview__classic-subheading { display: flex; justify-content: space-between; gap: 1rem; }
+.resume-preview__classic-subheading span { color: #555; font-size: .9em; font-style: italic; }
+.resume-preview__classic-location-date { flex: 0 0 auto; text-align: right; }
+.resume-preview__classic-project-heading { display: flex; justify-content: space-between; gap: 1rem; font-size: .95em; }
+.resume-preview__classic-project-heading > div:last-child { flex: 0 0 auto; padding-left: 10px; text-align: right; white-space: nowrap; }
+.resume-preview__classic-project-heading em { color: #555; }
+.resume-preview__classic-description { margin-top: .2em; }
+.resume-preview__classic-description p { margin: 0; padding-left: 10px; }
+.resume-preview__classic-description ul { margin: 0; padding-left: 20px; list-style: disc; }
+.resume-preview__classic-description li { font-size: .95em; }
+.resume-preview__classic-links { display: flex; gap: .75rem; padding-left: 10px; font-size: .9em; }
+.resume-preview__classic-skills ul { margin: 0; padding-left: 10px; list-style: none; }
+.resume-preview__classic-skills li { margin-bottom: 2px; font-size: .95em; }
+
 .resume-preview__empty-state { display: flex; min-height: 245mm; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; }
 .resume-preview__empty-mark { display: grid; width: 3.5rem; height: 3.5rem; place-items: center; margin-bottom: 1.1rem; border-radius: 50%; background: #e5f1ee; color: var(--resume-accent); font-size: 1.55rem; }
 .resume-preview__empty-state h1 { margin: 0; color: #19302b; font: 800 1.5rem var(--resume-title-font), Arial, sans-serif; letter-spacing: -.03em; }
@@ -184,10 +229,16 @@
   .resume-preview { background: #fff; }
   .resume-preview__toolbar { display: none !important; }
   .resume-preview__workspace { display: block; padding: 0; }
-  .resume-preview__page { width: 210mm; min-height: 297mm; padding: 18mm 18mm 20mm; box-shadow: none; }
+  .resume-preview__page { width: 210mm; min-height: 297mm; padding: 15mm 18mm; box-shadow: none; }
   .resume-preview__page--letter { width: 216mm; min-height: 279mm; }
-  .resume-preview__section { break-inside: avoid; }
+  .resume-preview__content { display: block; }
+  .resume-preview__section { break-inside: auto; }
+  .resume-preview__section + .resume-preview__section { margin-top: 1.1rem; }
+  .resume-preview__section-title { break-after: avoid; }
   .resume-preview__entry { break-inside: avoid; }
+  .resume-preview[data-template='tenali-classic'] .resume-preview__page { padding: 10.58mm 5.29mm; }
+  .resume-preview[data-template='tenali-classic'] .resume-preview__classic-section { break-inside: auto; }
+  .resume-preview[data-template='tenali-classic'] .resume-preview__classic-section h2 { break-after: avoid; }
   @page { size: A4; margin: 0; }
   .resume-preview[data-page-size='Letter'] .resume-preview__page { page: resume-letter; }
   @page resume-letter { size: Letter; margin: 0; }

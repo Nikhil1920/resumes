@@ -46,7 +46,7 @@ public class SilentPDFPlugin extends Plugin {
 
         getActivity().runOnUiThread(() -> {
             File tempDir = getContext().getCacheDir();
-            String finalFileName = "Resume_" + System.currentTimeMillis() + ".pdf";
+            String finalFileName = getPdfFileName(call);
 
             new CreatePdf(getContext())
                     .setFilePath(tempDir.toString())
@@ -138,7 +138,7 @@ public class SilentPDFPlugin extends Plugin {
 
         getActivity().runOnUiThread(() -> {
             File tempDir = getContext().getCacheDir();
-            String finalFileName = "Resume_" + System.currentTimeMillis() + ".pdf";
+            String finalFileName = getPdfFileName(call);
 
             new CreatePdf(getContext())
                     .setFilePath(tempDir.toString())
@@ -188,6 +188,15 @@ public class SilentPDFPlugin extends Plugin {
         } else {
             return true;
         }
+    }
+
+    private String getPdfFileName(PluginCall call) {
+        String title = call.getString("title", "Resume").trim();
+        String cleanedTitle = title.replaceAll("[\\\\/\\?%\\*:\\|\\\"<>\\p{Cntrl}]", "_").trim();
+        if (cleanedTitle.isEmpty()) {
+            cleanedTitle = "Resume";
+        }
+        return cleanedTitle.endsWith(".pdf") ? cleanedTitle : cleanedTitle + ".pdf";
     }
 
     private void copyFile(File source, File destination) throws IOException {

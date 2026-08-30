@@ -598,7 +598,7 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
               {panel === "appearance" && (
                 <>
                   <EditorHeader title="Resume appearance" description="Tune the page, typography, and accent used by your live preview." completed={false} />
-                  <ResumeSettingsEditor settings={selectedDocument.settings} templates={["tenali", "tenali-classic"]} disabled={isDisabled} className="mt-7" onChange={(patch) => actions.updateDocumentSettings(patch)} />
+                  <ResumeSettingsEditor settings={selectedDocument.settings} disabled={isDisabled} className="mt-7" onChange={(patch) => actions.updateDocumentSettings(patch)} />
                 </>
               )}
             </div>

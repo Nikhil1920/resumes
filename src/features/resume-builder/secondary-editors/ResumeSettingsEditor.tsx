@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FieldGrid, FieldGroup } from "../components/FieldGroup"
+import { getTemplateLabel, RESUME_TEMPLATES } from "@/features/resume-preview/presentation"
 import type { PageSize, ResumeSettings } from "@/features/resume-workspace/model"
 
 export type ResumeSettingsUpdate = Partial<Pick<ResumeSettings, "template" | "pageSize" | "titleFont" | "bodyFont" | "accentColor">>
@@ -8,7 +9,7 @@ export type ResumeSettingsUpdate = Partial<Pick<ResumeSettings, "template" | "pa
 export type ResumeSettingsEditorProps = {
   settings: ResumeSettings
   onChange: (patch: ResumeSettingsUpdate) => void
-  /** Optional template options; a custom template remains valid if omitted. */
+  /** Optional template values; a custom template remains valid if omitted. */
   templates?: readonly string[]
   titleFonts?: readonly string[]
   bodyFonts?: readonly string[]
@@ -16,14 +17,8 @@ export type ResumeSettingsEditorProps = {
   className?: string
 }
 
-const DEFAULT_TEMPLATES = ["tenali", "tenali-classic"] as const
+const DEFAULT_TEMPLATES = RESUME_TEMPLATES.map((template) => template.value)
 const DEFAULT_FONTS = ["Arial", "Inter", "Georgia", "Helvetica", "Times New Roman"] as const
-
-const templateLabel = (template: string) => template === "tenali"
-  ? "Tenali Modern"
-  : template === "tenali-classic"
-    ? "Tenali Classic"
-    : template
 
 function FontField({ id, label, value, options, onChange, disabled }: { id: string; label: string; value: string; options: readonly string[]; onChange: (value: string) => void; disabled: boolean }) {
   const hasCurrentValue = options.includes(value)
@@ -50,7 +45,7 @@ export function ResumeSettingsEditor({ settings, onChange, templates = DEFAULT_T
         <FieldGroup label="Template" htmlFor="resume-template">
           <Select value={settings.template} onValueChange={(value) => { if (typeof value === "string") onChange({ template: value }) }} disabled={disabled}>
             <SelectTrigger id="resume-template" className="w-full"><SelectValue /></SelectTrigger>
-            <SelectContent>{!hasCurrentTemplate && <SelectItem value={settings.template}>{templateLabel(settings.template)}</SelectItem>}{templates.map((template) => <SelectItem key={template} value={template}>{templateLabel(template)}</SelectItem>)}</SelectContent>
+            <SelectContent>{!hasCurrentTemplate && <SelectItem value={settings.template}>{getTemplateLabel(settings.template)}</SelectItem>}{templates.map((template) => <SelectItem key={template} value={template}>{getTemplateLabel(template)}</SelectItem>)}</SelectContent>
           </Select>
         </FieldGroup>
         <FieldGroup label="Page size" htmlFor="resume-page-size">

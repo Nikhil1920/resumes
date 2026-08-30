@@ -2,6 +2,7 @@ import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
 import { AppHeader } from '@/components/app-header'
+import { RouteNotFound } from '@/components/route-not-found'
 import ThemeToggle from '@/components/ThemeToggle'
 import { Toaster } from '@/components/ui/sonner'
 
@@ -32,6 +33,7 @@ export const Route = createRootRoute({
     ],
   }),
   shellComponent: RootDocument,
+  notFoundComponent: RouteNotFound,
 })
 
 /**

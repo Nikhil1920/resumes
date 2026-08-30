@@ -1,12 +1,13 @@
 import { sanitizeRichText } from "../resume-workspace/rich-text";
-import type {
-    EducationEntry,
-    ExperienceEntry,
-    ProjectEntry,
-    ResumeDocument,
-    ResumeLink,
-    SectionLayout,
-    SkillEntry,
+import {
+    isPortraitImageValue,
+    type EducationEntry,
+    type ExperienceEntry,
+    type ProjectEntry,
+    type ResumeDocument,
+    type ResumeLink,
+    type SectionLayout,
+    type SkillEntry,
 } from "../resume-workspace/model";
 import type {
     PreviewAwardItem,
@@ -260,12 +261,17 @@ export const toResumePreviewModel = (
         }
     }
 
+    const personalInfoSource = document.personalInfo;
+    const image = isPortraitImageValue(personalInfoSource.image)
+        ? personalInfoSource.image.trim()
+        : undefined;
     const personalInfo: PreviewPersonalInfo = {
         id: document.meta.id,
-        name: text(document.personalInfo.name),
-        email: optionalText(document.personalInfo.email),
-        phone: optionalText(document.personalInfo.phone),
-        links: safeLinks(document.personalInfo.titleLinks),
+        name: text(personalInfoSource.name),
+        email: optionalText(personalInfoSource.email),
+        phone: optionalText(personalInfoSource.phone),
+        ...(image ? { image } : {}),
+        links: safeLinks(personalInfoSource.titleLinks),
     };
 
     return {

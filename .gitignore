@@ -16,6 +16,9 @@ node_modules
 .vite
 *.tsbuildinfo
 
+# Local PDF verification output
+/tmp
+
 # OS
 .DS_Store
 Thumbs.db

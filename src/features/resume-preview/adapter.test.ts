@@ -132,6 +132,31 @@ describe("toResumePreviewModel", () => {
         expect((model.sections[1].content as { items: Array<{ url?: string }> }).items[0].url).toBeUndefined();
     });
 
+    it("maps a safe portrait image and drops unsafe sources", () => {
+        const validImage = "data:image/png;base64,iVBORw0KGgo=";
+        const document = createDocument({
+            personalInfo: {
+                name: "Ada Lovelace",
+                email: "ada@example.com",
+                phone: "",
+                image: validImage,
+                titleLinks: [],
+            },
+        });
+        expect(toResumePreviewModel(document).personalInfo.image).toBe(validImage);
+
+        const unsafe = createDocument({
+            personalInfo: {
+                name: "Ada Lovelace",
+                email: "",
+                phone: "",
+                image: "data:text/html;base64,PGI+",
+                titleLinks: [],
+            },
+        });
+        expect(toResumePreviewModel(unsafe).personalInfo.image).toBeUndefined();
+    });
+
     it("maps rich text and settings, including awards as one stable unlabeled item", () => {
         const document = createDocument({
             settings: {

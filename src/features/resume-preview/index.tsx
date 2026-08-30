@@ -4,7 +4,7 @@ import { useEffect, useMemo } from 'react'
 
 import { sanitizeRichText } from '../resume-workspace/rich-text'
 import { downloadJsonFile } from '../../lib/download-json'
-import { getResumePreviewTitle, PREVIEW_TEMPLATE_OPTIONS } from './presentation'
+import { getResumePreviewTitle, getTemplateLayout, PREVIEW_TEMPLATE_OPTIONS, type ResumeTemplateLayout } from './presentation'
 import './preview.css'
 
 /** The built-in section identifiers are deliberately stable: they are used for ordering and persistence. */
@@ -358,6 +358,50 @@ function ClassicResume({ model, sections }: { model: ResumePreviewModel; section
   </>
 }
 
+/** Sidebar layouts keep the compact catalog sections in the narrow column and long-form sections in the main column. */
+const SIDEBAR_SECTION_TYPES: ReadonlySet<BuiltInSectionId> = new Set(['skills', 'languages', 'certifications', 'awards'])
+
+function splitSectionsForColumns(sections: PreviewSection[]) {
+  const main: PreviewSection[] = []
+  const sidebar: PreviewSection[] = []
+  for (const section of sections) {
+    if (SIDEBAR_SECTION_TYPES.has(section.type)) sidebar.push(section)
+    else main.push(section)
+  }
+  return { main, sidebar }
+}
+
+function SidebarContact({ model }: { model: ResumePreviewModel }) {
+  const { email, phone, location } = model.personalInfo
+  return (
+    <div className="resume-preview__sidebar-contact">
+      {email ? <a href={`mailto:${encodeURIComponent(email)}`}>{email}</a> : null}
+      {phone ? <a href={`tel:${phone.replace(/[^\d+]/g, '')}`}>{phone}</a> : null}
+      {location ? <span>{location}</span> : null}
+      {model.personalInfo.links.map((link) => <PreviewLinkAnchor link={link} key={link.id} />)}
+    </div>
+  )
+}
+
+function SidebarResume({ model, sections, layout }: { model: ResumePreviewModel; sections: PreviewSection[]; layout: ResumeTemplateLayout }) {
+  const { main, sidebar } = splitSectionsForColumns(sections)
+  return (
+    <div className={`resume-preview__split resume-preview__split--${layout}`}>
+      <aside className="resume-preview__sidebar" aria-label="Contact and highlights">
+        <header className="resume-preview__sidebar-identity">
+          <h1>{model.personalInfo.name || 'Your Name'}</h1>
+          {model.personalInfo.headline ? <p>{model.personalInfo.headline}</p> : null}
+        </header>
+        <SidebarContact model={model} />
+        {sidebar.map((section) => <RenderSection section={section} key={section.id} />)}
+      </aside>
+      <div className="resume-preview__main">
+        {main.map((section) => <RenderSection section={section} key={section.id} />)}
+      </div>
+    </div>
+  )
+}
+
 function downloadJson(model: ResumePreviewModel) {
   downloadJsonFile(
     `${model.personalInfo.name.trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'resume'}.json`,
@@ -410,6 +454,8 @@ export function ResumePreview({ model, onBack, onEdit, onModelChange, onPrint, o
   const orderedSections = model.sections.filter((section) => section.visible !== false && section.type in SECTION_TITLES)
   const populated = hasContent(model)
   const isClassicTenali = model.template === 'tenali-classic'
+  const templateLayout = getTemplateLayout(model.template)
+  const useSplitLayout = populated && (templateLayout === 'sidebar-left' || templateLayout === 'sidebar-right')
 
   useEffect(() => {
     const previousTitle = document.title
@@ -421,19 +467,25 @@ export function ResumePreview({ model, onBack, onEdit, onModelChange, onPrint, o
     <div className={`resume-preview ${className || ''}`.trim()} style={style} data-template={model.template} data-page-size={model.pageSize}>
       {showToolbar ? <PreviewToolbar model={model} onBack={onBack} onEdit={onEdit} onModelChange={onModelChange} onPrint={onPrint} onExportJson={onExportJson} onShare={onShare} onDownload={onDownload} /> : null}
       <main className="resume-preview__workspace">
-        <article className={`resume-preview__page resume-preview__page--${model.pageSize.toLowerCase()}`} aria-label={`${model.personalInfo.name || 'Resume'} preview`}>
-          {populated && isClassicTenali ? <ClassicResume model={model} sections={orderedSections} /> : populated ? <>
-            <header className="resume-preview__header">
-              <div><h1>{model.personalInfo.name || 'Your Name'}</h1>{model.personalInfo.headline ? <p className="resume-preview__headline">{model.personalInfo.headline}</p> : null}</div>
-              <div className="resume-preview__contact">
-                {model.personalInfo.email ? <a href={`mailto:${encodeURIComponent(model.personalInfo.email)}`}>{model.personalInfo.email}</a> : null}
-                {model.personalInfo.phone ? <a href={`tel:${model.personalInfo.phone.replace(/[^\d+]/g, '')}`}>{model.personalInfo.phone}</a> : null}
-                {model.personalInfo.location ? <span>{model.personalInfo.location}</span> : null}
-                {model.personalInfo.links.map((link) => <PreviewLinkAnchor link={link} key={link.id} />)}
-              </div>
-            </header>
-            <div className="resume-preview__content">{orderedSections.map((section) => <RenderSection section={section} key={section.id} />)}</div>
-          </> : <div className="resume-preview__empty-state"><div className="resume-preview__empty-mark">✦</div><h1>Your resume starts here</h1><p>Add your personal information and at least one section to see a polished preview.</p>{onEdit ? <button type="button" className="resume-preview__primary-button" onClick={onEdit}>Start editing</button> : null}</div>}
+        <article
+          className={`resume-preview__page resume-preview__page--${model.pageSize.toLowerCase()}${useSplitLayout ? ' resume-preview__page--split' : ''}`.trim()}
+          aria-label={`${model.personalInfo.name || 'Resume'} preview`}
+        >
+          {!populated ? <div className="resume-preview__empty-state"><div className="resume-preview__empty-mark">✦</div><h1>Your resume starts here</h1><p>Add your personal information and at least one section to see a polished preview.</p>{onEdit ? <button type="button" className="resume-preview__primary-button" onClick={onEdit}>Start editing</button> : null}</div>
+            : useSplitLayout ? <SidebarResume model={model} sections={orderedSections} layout={templateLayout} />
+            : isClassicTenali ? <ClassicResume model={model} sections={orderedSections} />
+            : <>
+              <header className="resume-preview__header">
+                <div><h1>{model.personalInfo.name || 'Your Name'}</h1>{model.personalInfo.headline ? <p className="resume-preview__headline">{model.personalInfo.headline}</p> : null}</div>
+                <div className="resume-preview__contact">
+                  {model.personalInfo.email ? <a href={`mailto:${encodeURIComponent(model.personalInfo.email)}`}>{model.personalInfo.email}</a> : null}
+                  {model.personalInfo.phone ? <a href={`tel:${model.personalInfo.phone.replace(/[^\d+]/g, '')}`}>{model.personalInfo.phone}</a> : null}
+                  {model.personalInfo.location ? <span>{model.personalInfo.location}</span> : null}
+                  {model.personalInfo.links.map((link) => <PreviewLinkAnchor link={link} key={link.id} />)}
+                </div>
+              </header>
+              <div className="resume-preview__content">{orderedSections.map((section) => <RenderSection section={section} key={section.id} />)}</div>
+            </>}
         </article>
       </main>
     </div>

@@ -28,6 +28,20 @@ const chrome = spawn(chromePath, [
   'about:blank',
 ], { stdio: ['ignore', 'ignore', 'pipe'] })
 
+const TEMPLATE_VALUES = [
+  'tenali',
+  'tenali-classic',
+  'oslo',
+  'vienna',
+  'kyoto',
+  'geneva',
+  'austin',
+  'zurich',
+  'sydney',
+  'berlin',
+]
+const SPLIT_TEMPLATES = new Set(['zurich', 'sydney', 'berlin'])
+
 try {
   const endpoint = await readDevToolsEndpoint(chrome)
   const cdp = await connectCdp(endpoint)
@@ -61,31 +75,33 @@ try {
     throw new Error(`Unexpected preview title: ${JSON.stringify(title)}`)
   }
 
-  const modernPath = join(outputDirectory, 'preview-modern.pdf')
-  await printPdf(cdp, sessionId, modernPath)
+  const pdfPaths = []
+  for (const template of TEMPLATE_VALUES) {
+    const switched = await evaluate(cdp, sessionId, `(() => {
+      const select = document.querySelector('select[aria-label="Template"]')
+      if (!select) return false
+      select.value = '${template}'
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+      return true
+    })()`)
+    if (!switched) throw new Error('The template selector was not found.')
+    const splitMarker = SPLIT_TEMPLATES.has(template) ? ' && Boolean(document.querySelector(\'.resume-preview__split\'))' : ''
+    await waitFor(cdp, sessionId, `document.querySelector('.resume-preview')?.dataset.template === '${template}' && Boolean(document.querySelector('.resume-preview__page > :first-child'))${splitMarker}`)
 
-  const switched = await evaluate(cdp, sessionId, `(() => {
-    const select = document.querySelector('select[aria-label="Template"]')
-    if (!select) return false
-    select.value = 'tenali-classic'
-    select.dispatchEvent(new Event('change', { bubbles: true }))
-    return true
-  })()`)
-  if (!switched) throw new Error('The template selector was not found.')
-  await waitFor(cdp, sessionId, `document.querySelector('.resume-preview')?.dataset.template === 'tenali-classic' && Boolean(document.querySelector('.resume-preview__classic-header'))`)
-
-  const classicPath = join(outputDirectory, 'preview-tenali-classic.pdf')
-  await printPdf(cdp, sessionId, classicPath)
+    const path = join(outputDirectory, `preview-${template}.pdf`)
+    await printPdf(cdp, sessionId, path)
+    pdfPaths.push(path)
+  }
   await cdp.send('Target.closeTarget', { targetId })
   cdp.close()
 
-  for (const path of [modernPath, classicPath]) {
+  for (const path of pdfPaths) {
     const info = await commandOutput('pdfinfo', [path])
     if (!/^Pages:\s+1$/m.test(info)) throw new Error(`${path} did not render as one page.\n${info}`)
     if (!/^Title:\s+Maya Patel · Product Designer$/m.test(info)) throw new Error(`${path} did not use the preview title.\n${info}`)
   }
 
-  console.log(`Verified one-page PDFs with the preview title:\n${modernPath}\n${classicPath}`)
+  console.log(`Verified one-page PDFs with the preview title:\n${pdfPaths.join('\n')}`)
 } finally {
   if (chrome.exitCode === null) {
     chrome.kill('SIGTERM')

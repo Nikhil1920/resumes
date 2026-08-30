@@ -203,6 +203,141 @@
 .resume-preview__classic-skills ul { margin: 0; padding-left: 10px; list-style: none; }
 .resume-preview__classic-skills li { margin-bottom: 2px; font-size: .95em; }
 
+/* --- Sidebar layouts: zurich, sydney (left rail) and berlin (right rail) --- */
+
+.resume-preview__page--split { display: flex; flex-direction: column; padding: 0; }
+.resume-preview__split {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.9fr);
+  align-items: stretch;
+}
+.resume-preview__split--sidebar-right { grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); }
+.resume-preview__split--sidebar-right .resume-preview__sidebar { order: 2; }
+
+.resume-preview__sidebar { display: flex; flex-direction: column; gap: 1.1rem; padding: 11mm 7.5mm; }
+.resume-preview__main { display: grid; gap: 1.35rem; align-content: start; padding: 11mm 9mm; }
+.resume-preview__sidebar-identity h1 {
+  margin: 0;
+  color: #14211e;
+  font: 800 1.5rem/1.12 var(--resume-title-font), Arial, sans-serif;
+  letter-spacing: -.02em;
+}
+.resume-preview__sidebar-identity p { margin: .35rem 0 0; color: var(--resume-accent); font-size: .8rem; font-weight: 700; }
+.resume-preview__sidebar-contact { display: flex; flex-direction: column; gap: .28rem; font-size: .72rem; overflow-wrap: anywhere; }
+
+.resume-preview__sidebar .resume-preview__section { break-inside: avoid; }
+.resume-preview__sidebar .resume-preview__section-title { margin-bottom: .5rem; font-size: .7rem; letter-spacing: .1em; }
+.resume-preview__sidebar .resume-preview__section-title::after { width: 1.25rem; }
+.resume-preview__sidebar .resume-preview__rich-text { font-size: .73rem; }
+.resume-preview__sidebar .resume-preview__skill-group { grid-template-columns: 1fr; gap: .2rem; }
+.resume-preview__sidebar .resume-preview__skill-group p { font-size: .73rem; }
+.resume-preview__sidebar .resume-preview__compact-list { gap: .35rem; font-size: .73rem; }
+.resume-preview__sidebar .resume-preview__entry { margin-bottom: .8rem; }
+.resume-preview__sidebar .resume-preview__entry h3 { font-size: .82rem; }
+.resume-preview__sidebar .resume-preview__entry:last-child { margin-bottom: 0; }
+
+.resume-preview[data-template='zurich'] .resume-preview__sidebar {
+  background: color-mix(in srgb, var(--resume-accent) 7%, #ffffff);
+  border-right: 1px solid color-mix(in srgb, var(--resume-accent) 20%, transparent);
+}
+
+.resume-preview[data-template='sydney'] .resume-preview__sidebar { background: var(--resume-accent); color: rgba(255, 255, 255, .92); }
+.resume-preview[data-template='sydney'] .resume-preview__sidebar-identity h1,
+.resume-preview[data-template='sydney'] .resume-preview__sidebar .resume-preview__section-title,
+.resume-preview[data-template='sydney'] .resume-preview__sidebar .resume-preview__skill-group h3,
+.resume-preview[data-template='sydney'] .resume-preview__sidebar .resume-preview__entry h3 { color: #fff; }
+.resume-preview[data-template='sydney'] .resume-preview__sidebar-identity p { color: rgba(255, 255, 255, .82); }
+.resume-preview[data-template='sydney'] .resume-preview__sidebar .resume-preview__section-title::after { background: rgba(255, 255, 255, .45); }
+.resume-preview[data-template='sydney'] .resume-preview__sidebar .resume-preview__sidebar-contact { color: rgba(255, 255, 255, .88); }
+.resume-preview[data-template='sydney'] .resume-preview__sidebar a { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
+.resume-preview[data-template='sydney'] .resume-preview__sidebar .resume-preview__rich-text,
+.resume-preview[data-template='sydney'] .resume-preview__sidebar .resume-preview__compact-list,
+.resume-preview[data-template='sydney'] .resume-preview__sidebar .resume-preview__skill-group p,
+.resume-preview[data-template='sydney'] .resume-preview__sidebar .resume-preview__organization,
+.resume-preview[data-template='sydney'] .resume-preview__sidebar .resume-preview__languages { color: rgba(255, 255, 255, .88); }
+.resume-preview[data-template='sydney'] .resume-preview__sidebar .resume-preview__languages span,
+.resume-preview[data-template='sydney'] .resume-preview__sidebar .resume-preview__item-meta { color: rgba(255, 255, 255, .72); }
+
+.resume-preview[data-template='berlin'] .resume-preview__sidebar { border-left: 1px solid #e2e8e6; }
+
+/* --- Single-column restyles of the shared modern renderer --- */
+
+/* oslo: quiet typographic layout, contact as one inline row, hairline rules */
+.resume-preview[data-template='oslo'] .resume-preview__header { flex-direction: column; align-items: flex-start; gap: .85rem; border-bottom: none; padding-bottom: 0; }
+.resume-preview[data-template='oslo'] .resume-preview__header h1 { font-size: clamp(1.7rem, 3vw, 2.1rem); letter-spacing: -.02em; }
+.resume-preview[data-template='oslo'] .resume-preview__headline { margin-top: .3rem; }
+.resume-preview[data-template='oslo'] .resume-preview__contact { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; max-width: none; gap: .15rem 0; text-align: left; }
+.resume-preview[data-template='oslo'] .resume-preview__contact > * + *::before { margin: 0 .55rem; color: #9aa8a4; content: '·'; }
+.resume-preview[data-template='oslo'] .resume-preview__content { gap: 1.2rem; padding-top: 1.35rem; }
+.resume-preview[data-template='oslo'] .resume-preview__section-title { padding-bottom: .3rem; border-bottom: 1px solid #e4e9e7; color: #172121; }
+.resume-preview[data-template='oslo'] .resume-preview__section-title::after { display: none; }
+
+/* vienna: formal centered header and centered entry headings flanked by hairlines */
+.resume-preview[data-template='vienna'] .resume-preview__header { flex-direction: column; align-items: center; gap: .35rem; padding-bottom: 1rem; border-bottom: 1px solid #d9d3c8; text-align: center; }
+.resume-preview[data-template='vienna'] .resume-preview__header h1 { color: #23201a; font: 700 1.9rem/1.1 var(--resume-title-font), Georgia, 'Times New Roman', serif; letter-spacing: .06em; text-transform: uppercase; }
+.resume-preview[data-template='vienna'] .resume-preview__headline { margin: 0; color: #6b6252; font-weight: 600; }
+.resume-preview[data-template='vienna'] .resume-preview__contact { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: center; max-width: none; gap: .15rem 0; text-align: center; }
+.resume-preview[data-template='vienna'] .resume-preview__contact > * + *::before { margin: 0 .55rem; color: #b5ac9c; content: '·'; }
+.resume-preview[data-template='vienna'] .resume-preview__content { gap: 1.15rem; padding-top: 1.25rem; }
+.resume-preview[data-template='vienna'] .resume-preview__section-title { justify-content: center; gap: .8rem; color: #23201a; letter-spacing: .14em; }
+.resume-preview[data-template='vienna'] .resume-preview__section-title::before { width: 2.5rem; height: 1px; background: #cfc7b8; content: ''; }
+.resume-preview[data-template='vienna'] .resume-preview__section-title::after { width: 2.5rem; height: 1px; background: #cfc7b8; }
+.resume-preview[data-template='vienna'] .resume-preview__entry-heading { flex-direction: column; align-items: center; gap: .15rem; text-align: center; }
+.resume-preview[data-template='vienna'] .resume-preview__item-meta { text-align: center; }
+
+/* kyoto: dense spacing and smaller type to fit more on one page */
+.resume-preview[data-template='kyoto'] .resume-preview__page { padding: 13mm 14mm 14mm; }
+.resume-preview[data-template='kyoto'] .resume-preview__header { gap: 1.25rem; padding-bottom: .85rem; border-bottom-width: 2px; }
+.resume-preview[data-template='kyoto'] .resume-preview__header h1 { font-size: clamp(1.5rem, 3vw, 1.85rem); }
+.resume-preview[data-template='kyoto'] .resume-preview__contact { gap: .18rem; font-size: .68rem; }
+.resume-preview[data-template='kyoto'] .resume-preview__content { gap: .95rem; padding-top: 1.05rem; }
+.resume-preview[data-template='kyoto'] .resume-preview__section-title { margin-bottom: .45rem; letter-spacing: .09em; }
+.resume-preview[data-template='kyoto'] .resume-preview__section-title::after { display: none; }
+.resume-preview[data-template='kyoto'] .resume-preview__entry { margin-bottom: .6rem; }
+.resume-preview[data-template='kyoto'] .resume-preview__entry-heading { gap: .75rem; }
+.resume-preview[data-template='kyoto'] .resume-preview__organization { font-size: .74rem; }
+.resume-preview[data-template='kyoto'] .resume-preview__item-meta { font-size: .66rem; }
+.resume-preview[data-template='kyoto'] .resume-preview__rich-text { margin-top: .28rem; font-size: .72rem; line-height: 1.42; }
+.resume-preview[data-template='kyoto'] .resume-preview__bullet-list { font-size: .72rem; line-height: 1.4; }
+.resume-preview[data-template='kyoto'] .resume-preview__skill-group p { font-size: .74rem; }
+.resume-preview[data-template='kyoto'] .resume-preview__compact-list { gap: .3rem; font-size: .74rem; }
+
+/* geneva: accent rail with a dot for each dated entry */
+.resume-preview[data-template='geneva'] .resume-preview__header h1 { padding-left: .65rem; border-left: 5px solid var(--resume-accent); }
+.resume-preview[data-template='geneva'] .resume-preview__item-meta { color: var(--resume-accent); }
+.resume-preview[data-template='geneva'] .resume-preview__section--experience .resume-preview__entry,
+.resume-preview[data-template='geneva'] .resume-preview__section--education .resume-preview__entry,
+.resume-preview[data-template='geneva'] .resume-preview__section--projects .resume-preview__entry {
+  position: relative;
+  margin-bottom: .85rem;
+  padding-left: 1rem;
+  border-left: 2px solid color-mix(in srgb, var(--resume-accent) 28%, transparent);
+}
+.resume-preview[data-template='geneva'] .resume-preview__section--experience .resume-preview__entry::before,
+.resume-preview[data-template='geneva'] .resume-preview__section--education .resume-preview__entry::before,
+.resume-preview[data-template='geneva'] .resume-preview__section--projects .resume-preview__entry::before {
+  position: absolute;
+  top: .28rem;
+  left: -5.5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--resume-accent);
+  content: '';
+}
+
+/* austin: full-width accent band behind the header */
+.resume-preview[data-template='austin'] .resume-preview__page { padding: 0 18mm 18mm; }
+.resume-preview[data-template='austin'] .resume-preview__header { margin: 0 -18mm; padding: 12mm 18mm 10mm; background: var(--resume-accent); border-bottom: none; }
+.resume-preview[data-template='austin'] .resume-preview__header h1 { color: #fff; letter-spacing: -.02em; }
+.resume-preview[data-template='austin'] .resume-preview__headline { color: rgba(255, 255, 255, .85); }
+.resume-preview[data-template='austin'] .resume-preview__contact,
+.resume-preview[data-template='austin'] .resume-preview__contact a { color: rgba(255, 255, 255, .92); }
+.resume-preview[data-template='austin'] .resume-preview__content { padding-top: 1.35rem; }
+.resume-preview[data-template='austin'] .resume-preview__section-title { padding-left: .55rem; border-left: 4px solid var(--resume-accent); letter-spacing: .1em; }
+.resume-preview[data-template='austin'] .resume-preview__section-title::after { display: none; }
+
 .resume-preview__empty-state { display: flex; min-height: 245mm; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; }
 .resume-preview__empty-mark { display: grid; width: 3.5rem; height: 3.5rem; place-items: center; margin-bottom: 1.1rem; border-radius: 50%; background: #e5f1ee; color: var(--resume-accent); font-size: 1.55rem; }
 .resume-preview__empty-state h1 { margin: 0; color: #19302b; font: 800 1.5rem var(--resume-title-font), Arial, sans-serif; letter-spacing: -.03em; }
@@ -223,6 +358,16 @@
   .resume-preview__header { gap: 1rem; }
   .resume-preview__header h1 { font-size: 2rem; }
   .resume-preview__empty-state { min-height: 70svh; }
+
+  .resume-preview__page--split { padding: 0; }
+  .resume-preview__split { display: flex; flex-direction: column; }
+  .resume-preview__split--sidebar-right .resume-preview__sidebar { order: 0; }
+  .resume-preview__sidebar { gap: 1rem; padding: 1.5rem 1.25rem; }
+  .resume-preview__main { gap: 1.15rem; padding: 1.5rem 1.25rem; }
+
+  .resume-preview[data-template='austin'] .resume-preview__page { padding: 0 clamp(1.25rem, 8vw, 3rem) 2rem; }
+  .resume-preview[data-template='austin'] .resume-preview__header { margin: 0 calc(clamp(1.25rem, 8vw, 3rem) * -1); padding: clamp(1.5rem, 6vw, 2.5rem) clamp(1.25rem, 8vw, 3rem); }
+  .resume-preview[data-template='kyoto'] .resume-preview__page { padding: clamp(1rem, 5vw, 1.75rem); }
 }
 
 @media print {
@@ -239,6 +384,14 @@
   .resume-preview[data-template='tenali-classic'] .resume-preview__page { padding: 10.58mm 5.29mm; }
   .resume-preview[data-template='tenali-classic'] .resume-preview__classic-section { break-inside: auto; }
   .resume-preview[data-template='tenali-classic'] .resume-preview__classic-section h2 { break-after: avoid; }
+
+  .resume-preview__page--split { padding: 0; }
+  .resume-preview__sidebar { padding: 10mm 7mm; }
+  .resume-preview__main { padding: 10mm 8mm; }
+  .resume-preview[data-template='kyoto'] .resume-preview__page { padding: 11mm 13mm; }
+  .resume-preview[data-template='austin'] .resume-preview__page { padding: 0 18mm 15mm; }
+  .resume-preview[data-template='austin'] .resume-preview__header { margin: 0 -18mm; padding: 11mm 18mm 9mm; }
+
   @page { size: A4; margin: 0; }
   .resume-preview[data-page-size='Letter'] .resume-preview__page { page: resume-letter; }
   @page resume-letter { size: Letter; margin: 0; }

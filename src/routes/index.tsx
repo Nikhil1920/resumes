@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
+import { HomepageSeoContent } from '@/components/homepage-seo-content'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ResumeDashboard, type ResumeCardSummary } from '@/features/resume-dashboard/ResumeDashboard'
 import {
@@ -14,21 +15,100 @@ import { useResumeActions, useResumeWorkspace } from '@/features/resume-workspac
 import { downloadJsonFile } from '@/lib/download-json'
 
 export const Route = createFileRoute('/')({
+  head: () => ({
+    meta: [
+      {
+        title: 'Free Online Resume Maker for PDF | Resume Maker 9000',
+      },
+      {
+        name: 'description',
+        content:
+          'Create and customize a resume without an account. Choose from 10 templates, preview changes, then print or save the result as a PDF.',
+      },
+      {
+        name: 'robots',
+        content: 'index, follow, max-image-preview:large',
+      },
+      {
+        property: 'og:type',
+        content: 'website',
+      },
+      {
+        property: 'og:site_name',
+        content: 'Resume Maker 9000',
+      },
+      {
+        property: 'og:title',
+        content: 'Free Online Resume Maker for PDF',
+      },
+      {
+        property: 'og:description',
+        content:
+          'Build a resume without signing up, keep drafts on this device, and save the finished version as a PDF through your browser.',
+      },
+      {
+        property: 'og:url',
+        content: 'https://resumes.byanr.com/',
+      },
+      {
+        property: 'og:image',
+        content: 'https://resumes.byanr.com/resume-maker-9000-banner.png',
+      },
+      {
+        name: 'twitter:card',
+        content: 'summary_large_image',
+      },
+      {
+        name: 'twitter:title',
+        content: 'Free Online Resume Maker for PDF',
+      },
+      {
+        name: 'twitter:description',
+        content:
+          'Build a resume without signing up, then print or save it as a PDF.',
+      },
+      {
+        name: 'twitter:image',
+        content: 'https://resumes.byanr.com/resume-maker-9000-banner.png',
+      },
+    ],
+    links: [
+      {
+        rel: 'canonical',
+        href: 'https://resumes.byanr.com/',
+      },
+    ],
+  }),
   component: DashboardRoute,
 })
 
 function DashboardSkeleton() {
   return (
-    <section className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8" aria-busy="true" aria-label="Loading resume workspace">
-      <Skeleton className="h-64 w-full rounded-[2rem]" />
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-8 w-44" />
-        <Skeleton className="h-8 w-28" />
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {[1, 2, 3].map((item) => <Skeleton key={item} className="h-64 rounded-xl" />)}
-      </div>
-    </section>
+    <>
+      <section className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8" aria-busy="true" aria-label="Loading resume workspace">
+        <div className="rounded-[2rem] border border-amber-200/90 bg-[#fff8ed] px-6 py-9 sm:px-10 sm:py-12 lg:px-14 lg:py-14 dark:border-amber-900/70 dark:bg-amber-950/20">
+          <p className="text-sm font-medium text-amber-900 dark:text-amber-100">Free online resume maker</p>
+          <h1 className="mt-4 max-w-2xl font-heading text-4xl leading-[1.06] tracking-[-0.04em] text-amber-950 sm:text-5xl dark:text-amber-50">
+            Make a resume online, then save it as a PDF.
+          </h1>
+          <p className="mt-5 max-w-xl text-base leading-7 text-amber-950/70 sm:text-lg dark:text-amber-100/70">
+            No account or upload required. Your drafts stay on this device while you edit and preview them.
+          </p>
+          <div className="mt-7 flex gap-3">
+            <Skeleton className="h-10 w-36" />
+            <Skeleton className="h-10 w-36" />
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-44" />
+          <Skeleton className="h-8 w-28" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3].map((item) => <Skeleton key={item} className="h-64 rounded-xl" />)}
+        </div>
+      </section>
+      {__INCLUDE_WEB_SEO__ ? <HomepageSeoContent /> : null}
+    </>
   )
 }
 

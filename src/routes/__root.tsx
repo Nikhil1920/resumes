@@ -21,11 +21,6 @@ export const Route = createRootRoute({
       {
         title: 'Resume Maker 9000',
       },
-      {
-        name: 'description',
-        content:
-          'Create a professional, ATS-friendly resume with Resume Maker 9000.',
-      },
     ],
     links: [
       { rel: 'icon', href: '/favicon.svg' },

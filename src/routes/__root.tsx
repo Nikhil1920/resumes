@@ -1,6 +1,10 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
+import { AppHeader } from '@/components/app-header'
+import ThemeToggle from '@/components/ThemeToggle'
+import { Toaster } from '@/components/ui/sonner'
+
 import appCss from '../styles.css?url'
 
 const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('theme');var mode=(stored==='light'||stored==='dark'||stored==='auto')?stored:'auto';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`
@@ -53,16 +57,13 @@ function RootDocument({ children }: { children: ReactNode }) {
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div id="app-shell" className="min-h-svh bg-background text-foreground">
-      <header className="border-b border-border/60 bg-card/80">
-        <div className="mx-auto flex min-h-14 w-full max-w-7xl items-center px-4 sm:px-6">
-          <span className="text-sm font-semibold tracking-tight">
-            Resume Maker 9000
-          </span>
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
-        {children}
-      </main>
+      <div className="print:hidden">
+        <AppHeader actions={<ThemeToggle />} />
+      </div>
+      <div className="w-full min-w-0 print:p-0">{children}</div>
+      <div className="print:hidden">
+        <Toaster position="bottom-right" />
+      </div>
     </div>
   )
 }

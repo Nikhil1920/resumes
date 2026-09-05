@@ -33,7 +33,11 @@ assertExcludes(sitemap, '/resume/', 'sitemap excludes resume workspaces')
 assertExcludes(sitemap, '/create-resume/', 'sitemap excludes legacy editor routes')
 
 const redirects = await readFile(resolve(webClient, '_redirects'), 'utf8')
-assertIncludes(redirects, '/*  /_shell.html  200', 'web redirects include the SPA fallback')
+assertIncludes(redirects, '/resume/*  /_shell  200', 'web redirects include the SPA fallback')
+assert(
+  !redirects.split('\n').some((line) => line.startsWith('/*')),
+  'Verification failed: web redirects must not shadow static assets with a catch-all',
+)
 
 const capacitorIndex = await readFile(resolve(capacitorClient, 'index.html'), 'utf8')
 const capacitorShell = await readFile(resolve(capacitorClient, '_shell.html'), 'utf8')

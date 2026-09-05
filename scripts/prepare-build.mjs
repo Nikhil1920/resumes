@@ -137,8 +137,20 @@ function renderHeaders() {
   return `/resume/*\n  X-Robots-Tag: noindex, nofollow\n\n/create-resume/*\n  X-Robots-Tag: noindex, nofollow\n\n/templates/tenali*\n  X-Robots-Tag: noindex, nofollow\n`
 }
 
+// Cloudflare Pages evaluates _redirects before static assets, so a `/*`
+// catch-all would shadow index.html, the guides, and the JS bundles. Proxy
+// only the app route prefixes, and target the extension-less `/_shell`:
+// proxying to `/_shell.html` trips Pages' pretty-URL 308 and redirect-loops.
 function renderRedirects() {
-  return `/create-resume  /  301\n/profiles  /  301\n/*  /_shell.html  200\n`
+  return [
+    '/create-resume  /  301',
+    '/profiles  /  301',
+    '/resume  /_shell  200',
+    '/templates  /_shell  200',
+    '/resume/*  /_shell  200',
+    '/create-resume/*  /_shell  200',
+    '/templates/*  /_shell  200',
+  ].join('\n') + '\n'
 }
 
 async function renderShell() {

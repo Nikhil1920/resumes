@@ -2,6 +2,12 @@
   "name": "resume-maker-9000",
   "private": true,
   "type": "module",
+  "license": "AGPL-3.0-only",
+  "author": "Nikhil Reddy Avuthu <anr.appcontact@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nikhil1920/resumes.git"
+  },
   "imports": {
     "#/*": "./src/*"
   },

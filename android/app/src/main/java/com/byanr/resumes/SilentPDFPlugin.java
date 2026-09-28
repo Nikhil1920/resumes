@@ -54,7 +54,7 @@ public class SilentPDFPlugin extends Plugin {
                     .openPrintDialog(false)
                     .setContentBaseUrl(null)
                     .setWebView(this.bridge.getWebView())
-                    .setPageSize(PrintAttributes.MediaSize.ISO_A4)
+                    .setPageSize(getPdfPageSize(call))
                     .setCallbackListener(new CreatePdf.PdfCallbackListener() {
                         @Override
                         public void onFailure(@NonNull String errorMsg) {
@@ -113,7 +113,10 @@ public class SilentPDFPlugin extends Plugin {
 
                                     // Optionally open the PDF
                                     Intent openIntent = new Intent(Intent.ACTION_VIEW);
-                                    Uri uri = Uri.fromFile(destinationFile);
+                                    Uri uri = FileProvider.getUriForFile(
+                                            getContext(),
+                                            getContext().getPackageName() + ".fileprovider",
+                                            destinationFile);
                                     openIntent.setDataAndType(uri, "application/pdf");
                                     openIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                                     getContext().startActivity(Intent.createChooser(openIntent, "Open PDF with"));
@@ -146,7 +149,7 @@ public class SilentPDFPlugin extends Plugin {
                     .openPrintDialog(false)
                     .setContentBaseUrl(null)
                     .setWebView(this.bridge.getWebView())
-                    .setPageSize(PrintAttributes.MediaSize.ISO_A4)
+                    .setPageSize(getPdfPageSize(call))
                     .setCallbackListener(new CreatePdf.PdfCallbackListener() {
                         @Override
                         public void onFailure(@NonNull String errorMsg) {
@@ -188,6 +191,12 @@ public class SilentPDFPlugin extends Plugin {
         } else {
             return true;
         }
+    }
+
+    private PrintAttributes.MediaSize getPdfPageSize(PluginCall call) {
+        return "Letter".equals(call.getString("pageSize"))
+                ? PrintAttributes.MediaSize.NA_LETTER
+                : PrintAttributes.MediaSize.ISO_A4;
     }
 
     private String getPdfFileName(PluginCall call) {

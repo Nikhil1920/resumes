@@ -1,10 +1,11 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
 
 type NativePdfResult = { value?: string }
+type NativePdfOptions = { value: string; title: string; pageSize: 'A4' | 'Letter' }
 
 interface SilentPdfPlugin {
-  download(options: { value: string; title: string }): Promise<NativePdfResult>
-  share(options: { value: string; title: string }): Promise<NativePdfResult>
+  download(options: NativePdfOptions): Promise<NativePdfResult>
+  share(options: NativePdfOptions): Promise<NativePdfResult>
 }
 
 const silentPdf = registerPlugin<SilentPdfPlugin>('SilentPDF')
@@ -17,8 +18,14 @@ const currentPreviewPath = () =>
 const currentPreviewTitle = () =>
   typeof document === 'undefined' ? 'Resume' : document.title
 
+const currentPreviewPageSize = (): NativePdfOptions['pageSize'] =>
+  typeof document !== 'undefined' &&
+  document.querySelector<HTMLElement>('.resume-preview[data-page-size]')?.dataset.pageSize === 'Letter'
+    ? 'Letter'
+    : 'A4'
+
 export const downloadNativeResumePdf = () =>
-  silentPdf.download({ value: currentPreviewPath(), title: currentPreviewTitle() })
+  silentPdf.download({ value: currentPreviewPath(), title: currentPreviewTitle(), pageSize: currentPreviewPageSize() })
 
 export const shareNativeResumePdf = () =>
-  silentPdf.share({ value: currentPreviewPath(), title: currentPreviewTitle() })
+  silentPdf.share({ value: currentPreviewPath(), title: currentPreviewTitle(), pageSize: currentPreviewPageSize() })

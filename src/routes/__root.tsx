@@ -5,6 +5,7 @@ import { AppHeader } from '@/components/app-header'
 import { RouteNotFound } from '@/components/route-not-found'
 import ThemeToggle from '@/components/ThemeToggle'
 import { Toaster } from '@/components/ui/sonner'
+import { WebmcpTools } from '@/features/webmcp'
 
 import appCss from '../styles.css?url'
 
@@ -54,6 +55,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div id="app-shell" className="min-h-svh bg-background text-foreground">
+      <WebmcpTools />
       <div className="print:hidden">
         <AppHeader actions={<ThemeToggle />} />
       </div>

@@ -147,6 +147,15 @@ function ResumeCard({
 }
 
 function EmptyState({ onCreateResume, onCreateSampleResume }: Pick<DashboardCallbacks, "onCreateResume" | "onCreateSampleResume">) {
+  if (!__INCLUDE_WEB_SEO__) {
+    return (
+      <div className="rounded-xl border border-dashed border-border px-5 py-8 text-center">
+        <h3 className="font-medium">No resumes yet</h3>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">Create a resume or start with a sample above.</p>
+      </div>
+    )
+  }
+
   return (
     <Card className="border-dashed border-amber-300/80 bg-amber-50/45 shadow-none dark:border-amber-900/70 dark:bg-amber-950/15">
       <CardContent className="flex flex-col items-center px-6 py-14 text-center sm:py-16">
@@ -195,7 +204,8 @@ export function ResumeDashboard({
 
   return (
     <>
-      <section aria-labelledby="resume-dashboard-heading" className={cn("mx-auto w-full max-w-7xl space-y-10 px-4 py-8 sm:px-6 lg:px-8", className)}>
+      <section aria-labelledby="resume-dashboard-heading" className={cn("mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8", __INCLUDE_WEB_SEO__ ? "space-y-10 py-8" : "space-y-8 py-6", className)}>
+      {__INCLUDE_WEB_SEO__ ? (
       <div className="relative isolate overflow-hidden rounded-[2rem] border border-amber-200/90 bg-[#fff8ed] px-6 py-9 shadow-sm shadow-amber-950/5 sm:px-10 sm:py-12 lg:px-14 lg:py-14 dark:border-amber-900/70 dark:bg-amber-950/20">
         <div aria-hidden="true" className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full bg-amber-200/40 blur-3xl dark:bg-amber-700/10" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 left-1/3 size-64 rounded-full bg-orange-200/30 blur-3xl dark:bg-orange-700/10" />
@@ -242,12 +252,29 @@ export function ResumeDashboard({
           </div>
         </div>
       </div>
+      ) : (
+        <div>
+          <h1 id="resume-dashboard-heading" className="font-heading text-3xl font-semibold tracking-tight">Your resumes</h1>
+          <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+            Create, edit and keep a version for every opportunity.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Button type="button" onClick={onCreateResume}>
+              <FilePlus2Icon />
+              Create a resume
+            </Button>
+            <Button type="button" variant="outline" onClick={onCreateSampleResume}>
+              Start with a sample
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className={__INCLUDE_WEB_SEO__ ? "flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between" : "flex items-center justify-between gap-3"}>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Workspace</p>
-            <h2 className="mt-1 font-heading text-2xl tracking-tight">Saved resumes</h2>
+            {__INCLUDE_WEB_SEO__ ? <p className="text-sm font-medium text-muted-foreground">Workspace</p> : null}
+            <h2 className={cn("font-heading tracking-tight", __INCLUDE_WEB_SEO__ ? "mt-1 text-2xl" : "text-xl")}>Saved resumes</h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <input ref={importInputRef} id={importInputId} type="file" accept="application/json,.json" tabIndex={-1} className="sr-only" onChange={handleImport} />
@@ -255,7 +282,7 @@ export function ResumeDashboard({
               <UploadIcon />
               Import JSON
             </Button>
-            {resumes.length > 0 && (
+            {__INCLUDE_WEB_SEO__ && resumes.length > 0 && (
               <Button type="button" size="sm" onClick={onCreateResume}>
                 <FilePlus2Icon />
                 New resume

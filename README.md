@@ -10,6 +10,7 @@ Resume Maker 9000 is a local-first resume builder. The app is built with React, 
 - Add, edit, delete, and reorder repeatable entries and links.
 - Autosave to local storage with hydration status, save status, undo, and redo.
 - Import and export individual resumes as versioned JSON backups.
+- Expose the whole create-edit-preview workflow as WebMCP tools so AI agents can drive the app autonomously.
 - Accept legacy Svelte profile-shaped JSON and migrate the old `profiles` local-storage records on first load.
 - Preview and print in the browser, download or share PDFs through the bundled native bridge, and use the app offline after it is installed as a Capacitor app.
 

@@ -15,7 +15,7 @@ import { useResumeActions, useResumeWorkspace } from '@/features/resume-workspac
 import { downloadJsonFile } from '@/lib/download-json'
 
 export const Route = createFileRoute('/')({
-  head: () => ({
+  head: () => __INCLUDE_WEB_SEO__ ? ({
     meta: [
       {
         title: 'Free Online Resume Maker for PDF | Resume Maker 9000',
@@ -78,14 +78,15 @@ export const Route = createFileRoute('/')({
         href: 'https://resumes.byanr.com/',
       },
     ],
-  }),
+  }) : ({ meta: [{ title: 'Resume Maker 9000' }] }),
   component: DashboardRoute,
 })
 
 function DashboardSkeleton() {
   return (
     <>
-      <section className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8" aria-busy="true" aria-label="Loading resume workspace">
+      <section className={`mx-auto w-full max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8 ${__INCLUDE_WEB_SEO__ ? 'py-8' : 'py-6'}`} aria-busy="true" aria-label="Loading resume workspace">
+        {__INCLUDE_WEB_SEO__ ? (
         <div className="rounded-[2rem] border border-amber-200/90 bg-[#fff8ed] px-6 py-9 sm:px-10 sm:py-12 lg:px-14 lg:py-14 dark:border-amber-900/70 dark:bg-amber-950/20">
           <p className="text-sm font-medium text-amber-900 dark:text-amber-100">Free online resume maker</p>
           <h1 className="mt-4 max-w-2xl font-heading text-4xl leading-[1.06] tracking-[-0.04em] text-amber-950 sm:text-5xl dark:text-amber-50">
@@ -99,6 +100,18 @@ function DashboardSkeleton() {
             <Skeleton className="h-10 w-36" />
           </div>
         </div>
+        ) : (
+          <div>
+            <h1 className="font-heading text-3xl font-semibold tracking-tight">Your resumes</h1>
+            <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+              Create, edit and keep a version for every opportunity.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Skeleton className="h-9 w-36" />
+              <Skeleton className="h-9 w-36" />
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <Skeleton className="h-8 w-44" />
           <Skeleton className="h-8 w-28" />

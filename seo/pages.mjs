@@ -11,22 +11,38 @@ export const AUTHOR = {
 /** The WebMCP tools an agent can call. Mirrors src/features/webmcp/tools.ts. */
 export const webmcpTools = [
   ['get-workspace', 'List saved resumes, their progress, and where the user is in the app.'],
-  ['get-resume', 'Read one resume in full: personal info, every section, and settings.'],
+  ['get-resume', 'Read one resume in full, with the ids every editing tool needs.'],
   ['create-resume', 'Create a new resume, select it, and open the editor.'],
-  ['update-personal-info', 'Set the name, email, phone, headline, and profile links.'],
+  ['create-sample-resume', 'Create a filled-in sample resume to start from.'],
+  ['import-resume', 'Create a complete resume from one JSON document in a single call.'],
+  ['duplicate-resume', 'Copy a resume so it can be tailored for one job.'],
+  ['update-resume-details', 'Rename a resume or change its dashboard note.'],
+  ['delete-resume', 'Delete a resume the agent no longer needs.'],
+  ['set-builder-step', 'Move the editor to a specific section.'],
+  ['open-editor-panel', 'Switch the editor between content, sections, and appearance.'],
+  ['open-preview', 'Open the full-page print preview.'],
+  ['go-to-dashboard', 'Return to the resume list.'],
+  ['undo', 'Undo the last change, made by the user or the agent.'],
+  ['redo', 'Redo the last undone change.'],
+  ['update-personal-info', 'Set the name, email, phone, photo, and profile links.'],
   ['update-summary', 'Write or replace the professional summary.'],
-  ['add-section-entry', 'Add a job, degree, project, skill, certification, or language.'],
+  ['update-awards', 'Write or replace the awards content.'],
+  ['add-section-entry', 'Add one or many jobs, degrees, projects, skills, certifications, or languages.'],
   ['update-section-entry', 'Edit any field of an existing entry.'],
   ['delete-section-entry', 'Remove one entry.'],
-  ['update-awards', 'Write or replace the awards content.'],
+  ['move-section-entry', 'Change the order of entries within a section.'],
+  ['duplicate-section-entry', 'Copy an entry to use as a starting point.'],
+  ['add-link', 'Add a profile link, or a link on a project.'],
+  ['update-link', 'Edit a link title or URL.'],
+  ['delete-link', 'Remove a link.'],
+  ['move-link', 'Reorder links.'],
   ['set-section-visibility', 'Show, hide, or restore a resume section.'],
+  ['rename-section', 'Change the heading a section shows.'],
+  ['reorder-sections', 'Set the order sections appear in.'],
+  ['remove-section', 'Take a section out of the layout, keeping its content.'],
   ['set-appearance', 'Switch template, page size, fonts, and accent color.'],
-  ['set-builder-step', 'Move the editor to a specific section.'],
-  ['open-preview', 'Open the full-page print preview.'],
   ['export-pdf', 'Open the preview and start the Save-as-PDF flow for the user to confirm.'],
   ['export-resume', 'Return the resume as portable JSON.'],
-  ['delete-resume', 'Delete a resume the agent no longer needs.'],
-  ['go-to-dashboard', 'Return to the resume list.'],
 ]
 
 const escape = (value) =>
@@ -156,7 +172,7 @@ export const guidePages = [
           </li>
           <li>
             <h3>It styles the page</h3>
-            <p><code>set-appearance</code> picks one of ten templates, A4 or Letter paper, fonts, and an accent color. <code>set-section-visibility</code> hides sections that do not help this application.</p>
+            <p><code>set-appearance</code> picks one of ten templates, A4 or Letter paper, fonts, and an accent color. <code>reorder-sections</code>, <code>rename-section</code>, and <code>set-section-visibility</code> shape the layout for this application.</p>
           </li>
           <li>
             <h3>You review and save the PDF</h3>
@@ -167,7 +183,7 @@ export const guidePages = [
 
       <section aria-labelledby="tools-heading">
         <h2 id="tools-heading">The full tool catalog</h2>
-        <p>Every tool accepts an optional <code>resumeId</code> and otherwise acts on the resume that is open. Tools use the same actions as the buttons in the interface, so agent edits autosave, appear in undo history, and look exactly like edits you make yourself.</p>
+        <p>Every control in the editor has a matching tool. Resume tools accept an optional <code>resumeId</code> and otherwise act on the resume that is open. Tools use the same actions as the buttons in the interface, so agent edits autosave, appear in undo history, and look exactly like edits you make yourself. While an agent works, the editor shows what it is doing and follows it to the section it is editing.</p>
 ${toolTable}
       </section>
 

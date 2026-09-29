@@ -28,10 +28,23 @@ export interface WebmcpToolResult {
     content: WebmcpContentBlock[];
 }
 
+/** Hints from the spec's ToolAnnotations dictionary. */
+export interface WebmcpToolAnnotations {
+    /** The tool only reads state. */
+    readOnlyHint?: boolean;
+    /** The tool has consequences the user may want to confirm (e.g. deleting data). */
+    consequentialHint?: boolean;
+    /** The result may contain content the page does not control. */
+    untrustedContentHint?: boolean;
+}
+
 export interface WebmcpToolDefinition {
     name: string;
+    /** Human-readable label, shown by agents and in the editor's activity indicator. */
+    title?: string;
     description: string;
     inputSchema: Record<string, unknown>;
+    annotations?: WebmcpToolAnnotations;
     execute: (
         input: Record<string, unknown>,
         options: { signal: AbortSignal }
@@ -40,8 +53,10 @@ export interface WebmcpToolDefinition {
 
 export interface WebmcpRegisteredTool {
     name: string;
+    title?: string;
     description: string;
     inputSchema: Record<string, unknown>;
+    annotations?: WebmcpToolAnnotations;
     origin: string;
 }
 
@@ -131,8 +146,10 @@ export const createModelContextFallback = (): ModelContextLike => {
         async getTools() {
             return Array.from(definitions.values()).map((tool) => ({
                 name: tool.name,
+                ...(tool.title ? { title: tool.title } : {}),
                 description: tool.description,
                 inputSchema: tool.inputSchema,
+                ...(tool.annotations ? { annotations: tool.annotations } : {}),
                 origin: typeof location !== "undefined" ? location.origin : "",
             }));
         },

@@ -15,6 +15,7 @@ import {
     isNativeResumePlatform,
 } from "@/features/resume-preview/native-pdf";
 
+import { withActivityTracking } from "./activity";
 import { ensureDocumentModelContext } from "./model-context";
 import { createResumeTools } from "./tools";
 
@@ -55,14 +56,19 @@ export const registerResumeWebmcpTools = async (
     const router = getRouter();
     const tools = createResumeTools({
         store: resumeWorkspaceStore,
-        navigate: (to, params) =>
-            router.navigate({ to, params: params as Record<string, string> }),
+        navigate: (to, params, search) =>
+            router.navigate({
+                to,
+                params: params as Record<string, string>,
+                search: (search ?? {}) as Record<string, string>,
+            }),
         getPath: () => router.state.location.pathname,
+        getSearch: () => router.state.location.search as Record<string, unknown>,
         printDocument: () =>
             printPreviewDocument(() =>
                 router.state.location.pathname.endsWith("/preview")
             ),
-    });
+    }).map(withActivityTracking);
     await Promise.all(
         tools.map((tool) =>
             modelContext.registerTool(tool, { signal }).catch((error) => {
@@ -92,6 +98,7 @@ export function WebmcpTools(): null {
 
 export { ensureDocumentModelContext, createModelContextFallback } from "./model-context";
 export { createResumeTools } from "./tools";
+export { agentActivityStore, useAgentActivity, type AgentActivityEntry } from "./activity";
 export type {
     ModelContextLike,
     WebmcpToolDefinition,

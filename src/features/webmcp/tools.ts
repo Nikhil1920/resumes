@@ -87,6 +87,15 @@ export interface ResumeToolsHost {
      * browser print dialog (or downloads via the native bridge).
      */
     printDocument(): Promise<void> | void;
+    /** Live-session status, when the app was opened from a live pairing link. */
+    getLiveSession?(): LiveSessionSummary;
+}
+
+export interface LiveSessionSummary {
+    status: string;
+    role: "agent" | "user";
+    resumeId: string | null;
+    peers: Array<{ role: "agent" | "user"; view: string | null; step: string | null }>;
 }
 
 /** Thrown for agent-input problems; the message is meant to be read by the agent. */
@@ -1304,6 +1313,30 @@ export const createResumeTools = (host: ResumeToolsHost): WebmcpToolDefinition[]
                     return fail(`No resume found with id "${resumeId}".`);
                 }
                 return { content: [{ type: "text", text: payload }] };
+            },
+        },
+        {
+            name: "get-live-session",
+            description:
+                "Report the live session this page is part of, if any. A live session shares one " +
+                "resume between this browser and another on the same computer (for example an " +
+                "agent's headless browser and the user's own browser) through a local relay started " +
+                "with `node scripts/live-relay.mjs --resume <id>`. Edits from either side appear in " +
+                "both, so call get-resume to see the user's latest changes. Returns the status " +
+                "(off, connecting, waiting, live, reconnecting, blocked, ended) and where each other " +
+                "participant is (view and step).",
+            inputSchema: { type: "object", properties: {} },
+            async execute() {
+                const session = host.getLiveSession?.() ?? { status: "off", role: "user", resumeId: null, peers: [] };
+                return jsonResult({
+                    ...session,
+                    hint:
+                        session.status === "off"
+                            ? "Not in a live session. Open the agent link printed by scripts/live-relay.mjs to join one."
+                            : session.status === "blocked"
+                              ? "Cannot reach the relay. Launch this browser with --disable-features=LocalNetworkAccessChecks and check that the relay is running."
+                              : undefined,
+                });
             },
         },
     ];

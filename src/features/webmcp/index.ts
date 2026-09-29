@@ -15,6 +15,8 @@ import {
     isNativeResumePlatform,
 } from "@/features/resume-preview/native-pdf";
 
+import { liveSessionStore } from "@/features/live-sync/session";
+
 import { ensureDocumentModelContext } from "./model-context";
 import { createResumeTools } from "./tools";
 
@@ -66,6 +68,19 @@ export const registerResumeWebmcpTools = async (
             printPreviewDocument(() =>
                 router.state.location.pathname.endsWith("/preview")
             ),
+        getLiveSession: () => {
+            const session = liveSessionStore.getState();
+            return {
+                status: session.status,
+                role: session.role,
+                resumeId: session.documentId,
+                peers: session.peers.map((peer) => ({
+                    role: peer.role,
+                    view: peer.presence?.view ?? null,
+                    step: peer.presence?.step ?? null,
+                })),
+            };
+        },
     });
     await Promise.all(
         tools.map((tool) =>

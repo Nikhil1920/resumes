@@ -87,6 +87,7 @@ describe("resume webmcp tools", () => {
             "open-template-explorer",
             "set-appearance",
             "export-resume",
+            "get-live-session",
         ]);
         for (const tool of tools) {
             expect(tool.description.length).toBeGreaterThan(20);

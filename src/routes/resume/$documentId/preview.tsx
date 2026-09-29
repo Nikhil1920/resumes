@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
 import { BrandMark } from '@/components/brand-mark'
+import { LiveJoiningState, LiveSessionBadge, useLiveJoining } from '@/features/live-sync/LiveSession'
 import ThemeToggle from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -51,6 +52,7 @@ function ResumePreviewRoute() {
   const activeDocumentId = useResumeWorkspace((state) => state.activeDocumentId)
   const document = useResumeWorkspace((state) => state.documents[documentId] ?? null)
   const requestedDocumentExists = useResumeWorkspace((state) => Boolean(state.documents[documentId]))
+  const liveJoining = useLiveJoining(documentId)
 
   React.useEffect(() => {
     if (
@@ -129,6 +131,7 @@ function ResumePreviewRoute() {
   }, [model])
 
   if (hydration === 'idle' || hydration === 'hydrating') return <LoadingState />
+  if (!model && liveJoining) return <LiveJoiningState />
   if (hydration === 'error' || !model) return <NotFoundState onBack={goToDashboard} />
   if (activeDocumentId !== documentId) return <LoadingState />
 
@@ -147,7 +150,7 @@ function ResumePreviewRoute() {
       onOpenTemplates={openTemplates}
       downloadLabel={isNativeResumePlatform() ? 'Download PDF' : 'Save as PDF'}
       toolbarStart={<BrandMark href="/" showWordmark={false} className="mr-1 max-sm:hidden" onClick={(event) => { event.preventDefault(); goToDashboard() }} />}
-      toolbarEnd={<ThemeToggle />}
+      toolbarEnd={<><LiveSessionBadge /><ThemeToggle /></>}
     />
   )
 }

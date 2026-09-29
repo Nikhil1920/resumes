@@ -27,6 +27,7 @@ export const webmcpTools = [
   ['export-resume', 'Return the resume as portable JSON.'],
   ['delete-resume', 'Delete a resume the agent no longer needs.'],
   ['go-to-dashboard', 'Return to the resume list.'],
+  ['get-live-session', 'Check a live session: whether the user has joined and where they are.'],
 ]
 
 const escape = (value) =>
@@ -201,6 +202,26 @@ agent-browser webmcp invoke add-section-entry --params '{"section":"skills","ent
 agent-browser webmcp invoke export-pdf --params '{}'</code></pre>
       </section>
 
+      <section aria-labelledby="live-heading">
+        <h2 id="live-heading">Watch the agent work, live, in your own browser</h2>
+        <p>Agents usually drive a separate headless browser, which normally means you only see the result at the end. A live session connects that browser to yours so you watch every edit as it happens, and anything you change flows back to the agent. There is no remote server involved: the two browsers talk through a small relay that runs on your own computer.</p>
+        <ol class="steps">
+          <li>
+            <h3>The agent starts the relay</h3>
+            <p>From the <a href="${REPO_URL}" rel="noopener">repository</a>, the agent runs <code>node scripts/live-relay.mjs --resume &lt;resumeId&gt;</code>. It listens only on <code>127.0.0.1</code>, creates a one-time token, prints an agent link and a user link, and opens the user link in your default browser.</p>
+          </li>
+          <li>
+            <h3>Both browsers join</h3>
+            <p>The agent opens its link in its headless browser, launched with <code>--disable-features=LocalNetworkAccessChecks</code> so Chrome lets a website reach the relay. The token travels in the part of the link after <code>#</code>, which browsers never send to a web server, and the app removes it from the address bar.</p>
+          </li>
+          <li>
+            <h3>Edits flow both ways</h3>
+            <p>Every change is sent as the same command the editor already uses. The relay puts commands in one order and both browsers apply them in that order, so the resume stays identical even when you and the agent type at the same moment. Each person keeps their own view, and a badge shows where the other one is.</p>
+          </li>
+        </ol>
+        <p>The agent can call <code>get-live-session</code> to see whether you have joined and which section you are looking at, and <code>get-resume</code> to read your latest edits.</p>
+      </section>
+
       <section class="limits" aria-labelledby="limits-heading">
         <h2 id="limits-heading">What to know before you hand it to an agent</h2>
         <p>Resume Maker 9000 does not include its own language model. The agent you bring writes the content, and you are responsible for checking that it is accurate. Native WebMCP is still experimental in browsers, and the final Save as PDF step on the website needs a person to confirm the print dialog. The app does not score resumes or guarantee how applicant tracking systems read them.</p>
@@ -211,6 +232,7 @@ agent-browser webmcp invoke export-pdf --params '{}'</code></pre>
       ['Which AI agents work with it?', 'Any agent that can call WebMCP tools in the page, such as agents in a Chrome build with WebMCP enabled or browser automation tools like agent-browser. Harnesses that can run JavaScript in the page can use the built-in fallback model context.'],
       ['Does my resume data leave my browser?', 'The app itself stores resumes in local browser storage and does not upload them. An AI agent you connect may send content to its own model provider, so check that agent’s privacy terms.'],
       ['Can an agent tailor a different resume for each job?', 'Yes. An agent can read an existing resume, create a new version named for the role, and rewrite the summary, bullet points, skills, and section order for that job description.'],
+      ['Can I watch the agent edit my resume in my own browser?', 'Yes. Start a live session with the local relay in the repository. The agent works in its own browser, you see every change in yours, and your edits flow back to the agent. The two browsers talk through the relay on your computer, not a remote server.'],
       ['Is WebMCP the same as MCP?', 'They are related. The Model Context Protocol connects agents to tools on servers. WebMCP brings the same tool idea to web pages, so a site can expose tools directly to agents in the browser.'],
     ],
   },

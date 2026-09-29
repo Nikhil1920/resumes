@@ -11,6 +11,7 @@ Resume Maker 9000 is a local-first resume builder. The app is built with React, 
 - Autosave to local storage with hydration status, save status, undo, and redo.
 - Import and export individual resumes as versioned JSON backups.
 - Expose the whole create-edit-preview workflow as WebMCP tools so AI agents can drive the app autonomously.
+- Share a resume live between an agent's headless browser and the user's own browser through a relay on the same machine, with no remote server.
 - Accept legacy Svelte profile-shaped JSON and migrate the old `profiles` local-storage records on first load.
 - Preview and print in the browser, download or share PDFs through the bundled native bridge, and use the app offline after it is installed as a Capacitor app.
 
@@ -58,3 +59,21 @@ npx cap open ios
 ```
 
 Use Android Studio or Xcode to run and sign the native apps. Do not run `cap sync` after `pnpm build:web`; `pnpm cap:sync` always rebuilds the native artifact first. Native projects in `android/` and `ios/` are kept in the repository; do not edit generated web assets by hand.
+
+## Live sessions with an agent
+
+An agent working in a headless browser can share its resume live with the user's own browser on the same machine. Edits flow both ways, and no remote server is involved.
+
+```bash
+node scripts/live-relay.mjs --resume <resumeId>                        # or: pnpm live --resume <resumeId>
+node scripts/live-relay.mjs --resume <resumeId> --app-url http://localhost:3000 --no-open   # local dev
+```
+
+The relay listens on `127.0.0.1` only, on a random port, and requires a random token. It prints one JSON line with `userUrl` and `agentUrl`, and opens `userUrl` in the default browser unless `--no-open` is passed. The port and token are in the URL fragment, which browsers never send to the web server, and the app removes them from the address bar.
+
+- Open `agentUrl` in the agent's browser. Headless Chrome blocks public sites from reaching localhost by default, so launch it with `--disable-features=LocalNetworkAccessChecks`.
+- Whichever browser already has the resume shares it. The other one receives a copy and saves it to its own storage.
+- Edits are the editor's own commands, numbered by the relay and replayed with the IDs and timestamps they first generated, so every browser converges on the same resume. Navigation stays per browser. Undo reverts only local edits and shares the result.
+- The `get-live-session` WebMCP tool reports the session status and where the other participant is.
+
+The sync logic lives in `src/features/live-sync/`; the relay is `scripts/live-relay.mjs` and `scripts/live-relay-session.mjs`.

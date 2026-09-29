@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { toResumePreviewModel } from "@/features/resume-preview/adapter"
+import { LiveJoiningState, LiveSessionBadge, useLiveJoining } from "@/features/live-sync/LiveSession"
 import { ScaledResumePreview } from "@/features/resume-preview/ScaledResumePreview"
 import { RESUME_TEMPLATES } from "@/features/resume-preview/presentation"
 import {
@@ -318,6 +319,7 @@ function WorkspaceToolbar({
       </div>
 
       <div className="flex items-center gap-1">
+        <LiveSessionBadge className="mr-1" />
         <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
           <Button type="button" variant="ghost" size="icon-sm" aria-label="Undo last change" title="Undo" onClick={onUndo} disabled={!canUndo}>
             <Undo2Icon />
@@ -418,6 +420,7 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
     [selectedDocument],
   )
   const [panel, setPanel] = React.useState<BuilderPanel>("editor")
+  const liveJoining = useLiveJoining(documentId)
   const missingNotified = React.useRef(false)
   const previousDocumentId = React.useRef(documentId)
 
@@ -440,11 +443,12 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
   }, [actions, activeDocumentId, documentId, hydration, requestedDocumentExists])
 
   React.useEffect(() => {
-    if (hydration === "hydrated" && !requestedDocumentExists && !missingNotified.current) {
+    // A live session may still be delivering this resume from another browser.
+    if (hydration === "hydrated" && !requestedDocumentExists && !liveJoining && !missingNotified.current) {
       missingNotified.current = true
       onMissingDocument?.(documentId)
     }
-  }, [documentId, hydration, onMissingDocument, requestedDocumentExists])
+  }, [documentId, hydration, liveJoining, onMissingDocument, requestedDocumentExists])
 
   // useActiveResumeDocument follows the selected global document. Until the
   // requested id is selected, keep the surface in a loading state so actions
@@ -454,7 +458,7 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
   if (hydration === "idle" || hydration === "hydrating" || (hydration !== "hydrated" && hydration !== "error")) {
     return <LoadingState />
   }
-  if (!requestedDocumentExists) return <EmptyDocumentState onBack={onBack} />
+  if (!requestedDocumentExists) return liveJoining ? <LiveJoiningState /> : <EmptyDocumentState onBack={onBack} />
   if (!selectedDocument || !activeNavigation) return <LoadingState />
 
   const activeStep = activeNavigation.current?.id ?? "personal-info"

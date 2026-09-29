@@ -377,7 +377,7 @@ export const DEFAULT_RESUME_SETTINGS: ResumeSettings = {
     template: "tenali",
     titleFont: "Arial",
     bodyFont: "Arial",
-    accentColor: "#0f766e",
+    accentColor: "#004aad",
 };
 
 export const createIdFactory = (seed = Math.random): IdFactory => {

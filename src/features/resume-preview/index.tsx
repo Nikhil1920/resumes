@@ -1,6 +1,7 @@
 import DOMPurify from 'dompurify'
 import type { CSSProperties, ReactNode } from 'react'
 import { useEffect, useMemo } from 'react'
+import { ArrowLeftIcon, BracesIcon, DownloadIcon, PencilIcon, PrinterIcon, Share2Icon } from 'lucide-react'
 
 import { sanitizeRichText } from '../resume-workspace/rich-text'
 import { downloadJsonFile } from '../../lib/download-json'
@@ -139,11 +140,18 @@ export interface PreviewToolbarProps {
   onExportJson?: () => void
   onShare?: () => void
   onDownload?: () => void
+  start?: ReactNode
+  end?: ReactNode
 }
 
 export interface ResumePreviewProps extends PreviewToolbarProps {
   className?: string
   showToolbar?: boolean
+  /** Thumbnails and embedded previews leave the tab title to their host route. */
+  manageDocumentTitle?: boolean
+  /** Host-provided chrome rendered at the start and end of the toolbar (e.g. brand, theme toggle). */
+  toolbarStart?: ReactNode
+  toolbarEnd?: ReactNode
 }
 
 const FONT_OPTIONS = ['Inter', 'Arial', 'Georgia', 'Helvetica', 'Times New Roman']
@@ -433,7 +441,7 @@ function downloadResume() {
   if (typeof window !== 'undefined') window.print()
 }
 
-export function PreviewToolbar({ model, onBack, onEdit, onModelChange, onPrint, onExportJson, onShare, onDownload }: PreviewToolbarProps) {
+export function PreviewToolbar({ model, start, end, onBack, onEdit, onModelChange, onPrint, onExportJson, onShare, onDownload }: PreviewToolbarProps) {
   const print = onPrint || (() => window.print())
   const exportJson = onExportJson || (() => downloadJson(model))
   const share = onShare || (() => shareModel(model))
@@ -442,8 +450,9 @@ export function PreviewToolbar({ model, onBack, onEdit, onModelChange, onPrint, 
   return (
     <div className="resume-preview__toolbar" role="toolbar" aria-label="Resume preview controls">
       <div className="resume-preview__toolbar-leading">
-        {onBack ? <button type="button" className="resume-preview__text-button" onClick={onBack}>← Back</button> : null}
-        {onEdit ? <button type="button" className="resume-preview__text-button" onClick={onEdit}>Edit resume</button> : null}
+        {start}
+        {onBack ? <button type="button" className="resume-preview__text-button" onClick={onBack}><ArrowLeftIcon aria-hidden="true" size={15} />Resumes</button> : null}
+        {onEdit ? <button type="button" className="resume-preview__text-button" onClick={onEdit}><PencilIcon aria-hidden="true" size={15} />Edit resume</button> : null}
       </div>
       {onModelChange ? <div className="resume-preview__toolbar-controls">
         <label>Template<select aria-label="Template" value={model.template} onChange={(event) => update({ template: event.target.value })}>{PREVIEW_TEMPLATE_OPTIONS.map((template) => <option key={template.value} value={template.value}>{template.label}</option>)}</select></label>
@@ -453,16 +462,17 @@ export function PreviewToolbar({ model, onBack, onEdit, onModelChange, onPrint, 
         <label className="resume-preview__color-control">Accent<input aria-label="Accent color" type="color" value={model.accentColor} onChange={(event) => update({ accentColor: event.target.value })} /></label>
       </div> : null}
       <div className="resume-preview__toolbar-actions">
-        <button type="button" className="resume-preview__icon-button" onClick={share} aria-label="Share resume">Share</button>
-        <button type="button" className="resume-preview__icon-button" onClick={download} aria-label="Download resume">Download</button>
-        <button type="button" className="resume-preview__icon-button" onClick={exportJson} aria-label="Export resume as JSON">JSON</button>
-        <button type="button" className="resume-preview__primary-button" onClick={print}>Print</button>
+        <button type="button" className="resume-preview__icon-button" onClick={share} aria-label="Share resume"><Share2Icon aria-hidden="true" size={15} />Share</button>
+        <button type="button" className="resume-preview__icon-button" onClick={download} aria-label="Download resume"><DownloadIcon aria-hidden="true" size={15} />Download</button>
+        <button type="button" className="resume-preview__icon-button" onClick={exportJson} aria-label="Export resume as JSON"><BracesIcon aria-hidden="true" size={15} />JSON</button>
+        <button type="button" className="resume-preview__primary-button" onClick={print}><PrinterIcon aria-hidden="true" size={15} />Print</button>
+        {end}
       </div>
     </div>
   )
 }
 
-export function ResumePreview({ model, onBack, onEdit, onModelChange, onPrint, onExportJson, onShare, onDownload, className, showToolbar = true }: ResumePreviewProps) {
+export function ResumePreview({ model, onBack, onEdit, onModelChange, onPrint, onExportJson, onShare, onDownload, className, showToolbar = true, manageDocumentTitle = true, toolbarStart, toolbarEnd }: ResumePreviewProps) {
   const style = useMemo(() => ({ '--resume-accent': model.accentColor, '--resume-title-font': model.titleFont, '--resume-body-font': model.bodyFont } as CSSProperties), [model.accentColor, model.bodyFont, model.titleFont])
   const orderedSections = model.sections.filter((section) => section.visible !== false && section.type in SECTION_TITLES)
   const populated = hasContent(model)
@@ -472,14 +482,15 @@ export function ResumePreview({ model, onBack, onEdit, onModelChange, onPrint, o
   const useSplitLayout = populated && (templateLayout === 'sidebar-left' || templateLayout === 'sidebar-right')
 
   useEffect(() => {
+    if (!manageDocumentTitle) return
     const previousTitle = document.title
     document.title = getResumePreviewTitle(model.title, model.personalInfo.name)
     return () => { document.title = previousTitle }
-  }, [model.personalInfo.name, model.title])
+  }, [manageDocumentTitle, model.personalInfo.name, model.title])
 
   return (
     <div className={`resume-preview ${className || ''}`.trim()} style={style} data-template={model.template} data-page-size={model.pageSize}>
-      {showToolbar ? <PreviewToolbar model={model} onBack={onBack} onEdit={onEdit} onModelChange={onModelChange} onPrint={onPrint} onExportJson={onExportJson} onShare={onShare} onDownload={onDownload} /> : null}
+      {showToolbar ? <PreviewToolbar model={model} start={toolbarStart} end={toolbarEnd} onBack={onBack} onEdit={onEdit} onModelChange={onModelChange} onPrint={onPrint} onExportJson={onExportJson} onShare={onShare} onDownload={onDownload} /> : null}
       <main className="resume-preview__workspace">
         <article
           className={`resume-preview__page resume-preview__page--${model.pageSize.toLowerCase()}${useSplitLayout ? ' resume-preview__page--split' : ''}`.trim()}

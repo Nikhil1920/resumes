@@ -950,7 +950,7 @@ export const createResumeTools = (host: ResumeToolsHost): WebmcpToolDefinition[]
                     bodyFont: { type: "string", description: "Font used for body text." },
                     accentColor: {
                         type: "string",
-                        description: 'Hex color like "#0f766e", used for headings and links.',
+                        description: 'Hex color like "#004aad", used for headings and links.',
                     },
                 },
             },
@@ -980,7 +980,7 @@ export const createResumeTools = (host: ResumeToolsHost): WebmcpToolDefinition[]
                 if (accentColor !== undefined) {
                     if (!/^#[0-9a-f]{6}$/i.test(accentColor)) {
                         fail(
-                            `"accentColor" must be a hex color like "#0f766e". Received "${accentColor}".`
+                            `"accentColor" must be a hex color like "#004aad". Received "${accentColor}".`
                         );
                     }
                     patch.accentColor = accentColor;

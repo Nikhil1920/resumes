@@ -1,13 +1,16 @@
 .resume-preview {
-  --resume-accent: #0f766e;
+  --resume-accent: #004aad;
   --resume-title-font: Inter;
   --resume-body-font: Inter;
+  --preview-ui-font: 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif;
+  container: resume-preview / inline-size;
   min-height: 100%;
-  background: #f4f5f5;
+  background: color-mix(in oklch, var(--muted, #eef1f6) 80%, var(--background, #f7f9fc));
   color: #172121;
   font-family: var(--resume-body-font), Arial, sans-serif;
 }
 
+/* The toolbar is app chrome, so it follows the app theme rather than the resume accent. */
 .resume-preview__toolbar {
   position: sticky;
   z-index: 10;
@@ -15,11 +18,12 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  min-height: 4.25rem;
-  padding: .75rem clamp(1rem, 3vw, 2.5rem);
-  border-bottom: 1px solid #dce3e1;
-  background: rgba(255, 255, 255, .92);
-  box-shadow: 0 1px 10px rgba(12, 34, 31, .05);
+  min-height: 3.75rem;
+  padding: .6rem clamp(1rem, 3vw, 2rem);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklch, var(--background) 88%, transparent);
+  color: var(--foreground);
+  font-family: var(--preview-ui-font);
   backdrop-filter: blur(14px);
 }
 
@@ -28,60 +32,81 @@
 .resume-preview__toolbar-controls { display: flex; align-items: center; gap: .5rem; }
 .resume-preview__toolbar-leading { flex: 1 1 auto; }
 .resume-preview__toolbar-actions { margin-left: auto; }
-.resume-preview__toolbar-controls { flex: 0 1 auto; justify-content: center; }
+.resume-preview__toolbar-controls {
+  flex: 0 1 auto;
+  justify-content: center;
+  gap: .25rem;
+  padding: .25rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  background: var(--card);
+}
 
 .resume-preview__toolbar label {
   display: flex;
   align-items: center;
-  gap: .35rem;
-  color: #667371;
-  font-size: .68rem;
-  font-weight: 700;
-  letter-spacing: .035em;
-  text-transform: uppercase;
+  gap: .4rem;
+  padding-left: .5rem;
+  color: var(--muted-foreground);
+  font-size: .7rem;
+  font-weight: 600;
   white-space: nowrap;
 }
+.resume-preview__toolbar label + label { border-left: 1px solid var(--border); }
 
 .resume-preview__toolbar select {
-  min-height: 2rem;
-  max-width: 8.5rem;
-  padding: 0 1.5rem 0 .55rem;
-  border: 1px solid #d8e0de;
-  border-radius: .4rem;
-  background: #fff;
-  color: #263431;
-  font: 500 .76rem var(--resume-body-font), Arial, sans-serif;
+  min-height: 1.9rem;
+  max-width: 9.5rem;
+  padding: 0 1.4rem 0 .45rem;
+  border: 1px solid transparent;
+  border-radius: .5rem;
+  background: transparent;
+  color: var(--foreground);
+  font: 500 .78rem var(--preview-ui-font);
   letter-spacing: normal;
   text-transform: none;
+  cursor: pointer;
 }
+.resume-preview__toolbar select:hover { background: var(--muted); }
+.resume-preview__toolbar select:focus-visible,
+.resume-preview__toolbar button:focus-visible,
+.resume-preview__color-control input:focus-visible {
+  outline: 3px solid color-mix(in oklch, var(--ring) 50%, transparent);
+  outline-offset: 1px;
+}
+.resume-preview__toolbar option { background: var(--popover); color: var(--popover-foreground); }
 
 .resume-preview__color-control input {
-  width: 2rem;
-  height: 2rem;
-  padding: .15rem;
-  border: 1px solid #d8e0de;
-  border-radius: .4rem;
-  background: #fff;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: .2rem;
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  background: var(--card);
   cursor: pointer;
 }
 
 .resume-preview__text-button,
 .resume-preview__icon-button,
 .resume-preview__primary-button {
-  min-height: 2.25rem;
-  border: 0;
-  border-radius: .45rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  min-height: 2.1rem;
+  border: 1px solid transparent;
+  border-radius: .6rem;
   padding: 0 .8rem;
   cursor: pointer;
-  font: 700 .75rem var(--resume-body-font), Arial, sans-serif;
-  transition: background-color .15s ease, color .15s ease, transform .15s ease;
+  font: 600 .8rem var(--preview-ui-font);
+  white-space: nowrap;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
 }
-.resume-preview__text-button { background: transparent; color: var(--resume-accent); }
-.resume-preview__text-button:hover { background: #e9f1ef; }
-.resume-preview__icon-button { border: 1px solid #d8e0de; background: #fff; color: #4f5f5a; }
-.resume-preview__icon-button:hover { border-color: var(--resume-accent); color: var(--resume-accent); }
-.resume-preview__primary-button { background: var(--resume-accent); color: #fff; }
-.resume-preview__primary-button:hover { filter: brightness(.92); transform: translateY(-1px); }
+.resume-preview__text-button { background: transparent; color: var(--muted-foreground); }
+.resume-preview__text-button:hover { background: var(--muted); color: var(--foreground); }
+.resume-preview__icon-button { border-color: var(--border); background: var(--card); color: var(--foreground); }
+.resume-preview__icon-button:hover { border-color: color-mix(in oklch, var(--primary) 45%, var(--border)); color: var(--primary); }
+.resume-preview__primary-button { background: var(--primary, #004aad); color: var(--primary-foreground, #fff); }
+.resume-preview__primary-button:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
 .resume-preview__workspace {
   display: flex;
@@ -91,11 +116,12 @@
 
 .resume-preview__page {
   box-sizing: border-box;
+  border-radius: 2px;
   width: min(100%, 210mm);
   min-height: 297mm;
   padding: 18mm 18mm 20mm;
   background: #fff;
-  box-shadow: 0 12px 38px rgba(13, 37, 33, .13);
+  box-shadow: 0 1px 3px rgba(10, 24, 60, .08), 0 18px 48px -12px rgba(10, 24, 60, .22);
   overflow-wrap: anywhere;
 }
 .resume-preview__page--letter { width: min(100%, 216mm); min-height: 279mm; }
@@ -373,19 +399,20 @@
 .resume-preview[data-template='austin'] .resume-preview__section-title::after { display: none; }
 
 .resume-preview__empty-state { display: flex; min-height: 245mm; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; }
-.resume-preview__empty-mark { display: grid; width: 3.5rem; height: 3.5rem; place-items: center; margin-bottom: 1.1rem; border-radius: 50%; background: #e5f1ee; color: var(--resume-accent); font-size: 1.55rem; }
+.resume-preview__empty-mark { display: grid; width: 3.5rem; height: 3.5rem; place-items: center; margin-bottom: 1.1rem; border-radius: 50%; background: color-mix(in srgb, var(--resume-accent) 12%, #fff); color: var(--resume-accent); font-size: 1.55rem; }
 .resume-preview__empty-state h1 { margin: 0; color: #19302b; font: 800 1.5rem var(--resume-title-font), Arial, sans-serif; letter-spacing: -.03em; }
 .resume-preview__empty-state p { max-width: 23rem; margin: .55rem 0 1.25rem; color: #687873; font-size: .84rem; line-height: 1.55; }
 
-@media screen and (max-width: 1400px) {
+@container resume-preview (max-width: 1520px) {
   .resume-preview__toolbar { flex-wrap: wrap; }
   .resume-preview__toolbar-controls { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; padding-top: .15rem; }
   .resume-preview__toolbar-actions { margin-left: 0; }
 }
-@media screen and (max-width: 640px) {
+@container resume-preview (max-width: 640px) {
   .resume-preview__toolbar { gap: .45rem; padding: .65rem .75rem; }
   .resume-preview__toolbar-actions { width: 100%; overflow-x: auto; }
-  .resume-preview__toolbar-actions button { flex: 1 0 auto; }
+  .resume-preview__toolbar-actions button:not([data-slot='button']) { flex: 1 0 auto; justify-content: center; padding-inline: .55rem; }
+  .resume-preview__toolbar-actions button:not([data-slot='button']) svg { display: none; }
   .resume-preview__workspace { padding: 1rem .5rem 2rem; }
   .resume-preview__page { width: 100%; min-width: 0; min-height: 100svh; padding: clamp(1.25rem, 8vw, 3rem); }
   .resume-preview__page--letter { width: 100%; }
@@ -405,7 +432,7 @@
 }
 
 @media print {
-  .resume-preview { background: #fff; }
+  .resume-preview { container-type: normal; background: #fff; }
   .resume-preview__toolbar { display: none !important; }
   .resume-preview__workspace { display: block; padding: 0; }
   .resume-preview__page { width: 210mm; min-height: 297mm; padding: 15mm 18mm; box-shadow: none; }
@@ -430,3 +457,11 @@
   .resume-preview[data-page-size='Letter'] .resume-preview__page { page: resume-letter; }
   @page resume-letter { size: Letter; margin: 0; }
 }
+
+/* --- Scaled previews (dashboard thumbnails, builder live preview) --- */
+
+.resume-scaled { position: relative; width: 100%; overflow: hidden; }
+.resume-scaled__canvas { transform-origin: top left; }
+.resume-scaled .resume-preview { min-height: 0; background: transparent; }
+.resume-scaled .resume-preview__workspace { display: block; padding: 0; }
+.resume-scaled .resume-preview__page { width: 100%; min-width: 0; box-shadow: none; border-radius: 0; }

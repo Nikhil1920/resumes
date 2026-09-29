@@ -1,4 +1,4 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute, useRouterState } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
 import { AppHeader } from '@/components/app-header'
@@ -52,13 +52,21 @@ function RootDocument({ children }: { children: ReactNode }) {
   )
 }
 
+/** Editor and preview routes bring their own full-width toolbars. */
+const IMMERSIVE_ROUTE = /^\/resume\/[^/]+/
+
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const immersive = IMMERSIVE_ROUTE.test(pathname)
+
   return (
     <div id="app-shell" className="min-h-svh bg-background text-foreground">
       <WebmcpTools />
-      <div className="print:hidden">
-        <AppHeader actions={<ThemeToggle />} />
-      </div>
+      {immersive ? null : (
+        <div className="print:hidden">
+          <AppHeader actions={<ThemeToggle />} />
+        </div>
+      )}
       <div className="w-full min-w-0 print:p-0">{children}</div>
       <div className="print:hidden">
         <Toaster position="bottom-right" />

@@ -2,6 +2,8 @@ import * as React from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
+import { BrandMark } from '@/components/brand-mark'
+import ThemeToggle from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ResumePreview, toResumePreviewModel, type ResumePreviewModel } from '@/features/resume-preview'
@@ -125,6 +127,8 @@ function ResumePreviewRoute() {
       onDownload={download}
       onExportJson={exportJson}
       onShare={share}
+      toolbarStart={<BrandMark href="/" showWordmark={false} className="mr-1" onClick={(event) => { event.preventDefault(); goToDashboard() }} />}
+      toolbarEnd={<ThemeToggle />}
     />
   )
 }

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { HomepageSeoContent } from '@/components/homepage-seo-content'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ResumeDashboard, type ResumeCardSummary } from '@/features/resume-dashboard/ResumeDashboard'
+import { toResumePreviewModel } from '@/features/resume-preview/adapter'
 import {
   getDashboardSummaries,
   type WorkspaceSnapshot,
@@ -23,7 +24,7 @@ export const Route = createFileRoute('/')({
       {
         name: 'description',
         content:
-          'Create and customize a resume without an account. Choose from 10 templates, preview changes, then print or save the result as a PDF.',
+          'Create and customize a resume without an account, or let an AI agent build it for you with WebMCP. 10 templates, free and open source, save as PDF.',
       },
       {
         name: 'robots',
@@ -44,7 +45,7 @@ export const Route = createFileRoute('/')({
       {
         property: 'og:description',
         content:
-          'Build a resume without signing up, keep drafts on this device, and save the finished version as a PDF through your browser.',
+          'Build a resume without signing up, or let an AI agent build it through WebMCP. Drafts stay on this device, and the code is open source.',
       },
       {
         property: 'og:url',
@@ -87,17 +88,17 @@ function DashboardSkeleton() {
     <>
       <section className={`mx-auto w-full max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8 ${__INCLUDE_WEB_SEO__ ? 'py-8' : 'py-6'}`} aria-busy="true" aria-label="Loading resume workspace">
         {__INCLUDE_WEB_SEO__ ? (
-        <div className="rounded-[2rem] border border-amber-200/90 bg-[#fff8ed] px-6 py-9 sm:px-10 sm:py-12 lg:px-14 lg:py-14 dark:border-amber-900/70 dark:bg-amber-950/20">
-          <p className="text-sm font-medium text-amber-900 dark:text-amber-100">Free online resume maker</p>
-          <h1 className="mt-4 max-w-2xl font-heading text-4xl leading-[1.06] tracking-[-0.04em] text-amber-950 sm:text-5xl dark:text-amber-50">
+        <div className="relative isolate overflow-hidden rounded-[2rem] bg-brand px-6 py-10 text-white sm:px-10 sm:py-14 lg:px-14">
+          <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">Free, open source, and AI-agent ready</p>
+          <h1 className="mt-5 max-w-2xl font-heading text-4xl leading-[1.05] font-semibold tracking-[-0.035em] sm:text-5xl lg:text-[3.5rem]">
             Make a resume online, then save it as a PDF.
           </h1>
-          <p className="mt-5 max-w-xl text-base leading-7 text-amber-950/70 sm:text-lg dark:text-amber-100/70">
+          <p className="mt-5 max-w-xl text-base leading-7 text-white/75 sm:text-lg">
             No account or upload required. Your drafts stay on this device while you edit and preview them.
           </p>
-          <div className="mt-7 flex gap-3">
-            <Skeleton className="h-10 w-36" />
-            <Skeleton className="h-10 w-36" />
+          <div className="mt-8 flex gap-3">
+            <Skeleton className="h-11 w-44 bg-white/20" />
+            <Skeleton className="h-11 w-40 bg-white/10" />
           </div>
         </div>
         ) : (
@@ -116,8 +117,8 @@ function DashboardSkeleton() {
           <Skeleton className="h-8 w-44" />
           <Skeleton className="h-8 w-28" />
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {[1, 2, 3].map((item) => <Skeleton key={item} className="h-64 rounded-xl" />)}
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[1, 2, 3, 4].map((item) => <Skeleton key={item} className="h-96 rounded-2xl" />)}
         </div>
       </section>
       {__INCLUDE_WEB_SEO__ ? <HomepageSeoContent /> : null}
@@ -152,13 +153,19 @@ function DashboardRoute() {
       currentStep,
       settings,
     }
-    return getDashboardSummaries(snapshot).map((summary) => ({
-      id: summary.id,
-      name: summary.name,
-      description: summary.description,
-      updatedAt: summary.updatedAt,
-      completion: summary.completion.percent,
-    }))
+    return getDashboardSummaries(snapshot)
+      .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt))
+      .map((summary) => {
+        const document = documents[summary.id]
+        return {
+          id: summary.id,
+          name: summary.name,
+          description: summary.description,
+          updatedAt: summary.updatedAt,
+          completion: summary.completion.percent,
+          preview: document ? toResumePreviewModel(document) : undefined,
+        }
+      })
   }, [activeDocumentId, currentStep, documents, settings])
 
   const goToEditor = React.useCallback((documentId: string) => {

@@ -1,8 +1,9 @@
-import { ChevronDownIcon, ChevronUpIcon, PlusIcon } from "lucide-react"
+import * as React from "react"
+import { GraduationCapIcon } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { EntryCard } from "../components/EntryCard"
+import { EntryCard, useEntryDisclosure } from "../components/EntryCard"
+import { AddEntryButton, DateRangeFields, EmptyEntries, EntryListHeader, formatDateSummary, joinSummary } from "../components/EntryList"
 import { FieldGrid, FieldGroup } from "../components/FieldGroup"
 import { RichTextEditor } from "../components/RichTextEditor"
 import type { EducationEntry } from "../../resume-workspace/model"
@@ -12,41 +13,56 @@ export type EducationUpdate = Partial<Omit<EducationEntry, "id">>
 export type EducationEditorProps = {
   entries: EducationEntry[]
   onPatch: (entryId: EducationEntry["id"], patch: EducationUpdate) => void
-  onCreate: (entry?: EducationUpdate) => void
+  onCreate: () => string | null | void
   onDelete: (entryId: EducationEntry["id"]) => void
+  onDuplicate?: (entryId: EducationEntry["id"]) => string | null | void
   onReorder?: (fromIndex: number, toIndex: number) => void
   disabled?: boolean
   className?: string
 }
 
-export function EducationEditor({ entries, onPatch, onCreate, onDelete, onReorder, disabled = false, className }: EducationEditorProps) {
+export function EducationEditor({ entries, onPatch, onCreate, onDelete, onDuplicate, onReorder, disabled = false, className }: EducationEditorProps) {
+  const ids = React.useMemo(() => entries.map((entry) => entry.id), [entries])
+  const { isOpen, setOpen, allOpen, toggleAll } = useEntryDisclosure(ids)
+  const openCreated = (id: string | null | void) => {
+    if (typeof id === "string") setOpen(id, true)
+  }
+
+  if (entries.length === 0) {
+    return (
+      <EmptyEntries
+        icon={GraduationCapIcon}
+        title="No education yet"
+        description="Add degrees, bootcamps, and training that support the roles you are applying for."
+        actionLabel="Add education"
+        onAction={() => openCreated(onCreate())}
+        disabled={disabled}
+      />
+    )
+  }
+
   return (
     <div className={className}>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">Include degrees, training, and other education relevant to your goals.</p>
-        <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={() => onCreate()}>
-          <PlusIcon />
-          Add education
-        </Button>
-      </div>
-
-      {entries.length === 0 ? (
-        <p className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">No education entries yet.</p>
-      ) : (
-        <div className="space-y-4">
-          {entries.map((entry, index) => (
+      <EntryListHeader count={entries.length} allOpen={allOpen} onToggleAll={toggleAll}>
+        Include degrees, training, and other education relevant to your goals.
+      </EntryListHeader>
+      <div className="space-y-3">
+        {entries.map((entry, index) => {
+          const title = entry.degree.trim() || entry.institution.trim() || "New education"
+          return (
             <EntryCard
               key={entry.id}
-              title={entry.degree.trim() || entry.institution.trim() || "New education"}
+              title={title}
+              subtitle={joinSummary(entry.degree.trim() ? entry.institution : "", formatDateSummary(entry.startDate, entry.endDate)) || "Add the qualification, school, and dates"}
               index={index}
-              onRemove={disabled ? undefined : () => onDelete(entry.id)}
-              removeLabel={`Remove ${entry.degree.trim() || entry.institution.trim() || "education"}`}
-              headerAction={onReorder && (
-                <div className="flex items-center gap-0.5">
-                  <Button type="button" variant="ghost" size="icon-xs" aria-label="Move education up" title="Move education up" disabled={disabled || index === 0} onClick={() => onReorder(index, index - 1)}><ChevronUpIcon /></Button>
-                  <Button type="button" variant="ghost" size="icon-xs" aria-label="Move education down" title="Move education down" disabled={disabled || index === entries.length - 1} onClick={() => onReorder(index, index + 1)}><ChevronDownIcon /></Button>
-                </div>
-              )}
+              open={isOpen(entry.id)}
+              onOpenChange={(open) => setOpen(entry.id, open)}
+              itemLabel="education"
+              disabled={disabled}
+              onRemove={() => onDelete(entry.id)}
+              onDuplicate={onDuplicate ? () => openCreated(onDuplicate(entry.id)) : undefined}
+              onMoveUp={onReorder && index > 0 ? () => onReorder(index, index - 1) : undefined}
+              onMoveDown={onReorder && index < entries.length - 1 ? () => onReorder(index, index + 1) : undefined}
             >
               <FieldGrid columns={2}>
                 <FieldGroup label="Degree or qualification" htmlFor={`education-degree-${entry.id}`} required>
@@ -55,22 +71,32 @@ export function EducationEditor({ entries, onPatch, onCreate, onDelete, onReorde
                 <FieldGroup label="Institution" htmlFor={`education-institution-${entry.id}`} required>
                   <Input id={`education-institution-${entry.id}`} value={entry.institution} disabled={disabled} placeholder="University of …" onChange={(event) => onPatch(entry.id, { institution: event.target.value })} />
                 </FieldGroup>
-                <FieldGroup label="Location" htmlFor={`education-location-${entry.id}`}>
+                <FieldGroup label="Location" htmlFor={`education-location-${entry.id}`} className="sm:col-span-2">
                   <Input id={`education-location-${entry.id}`} value={entry.location} disabled={disabled} placeholder="City, Country" onChange={(event) => onPatch(entry.id, { location: event.target.value })} />
                 </FieldGroup>
-                <FieldGrid columns={2} className="gap-3 sm:col-span-2">
-                  <FieldGroup label="Start date" htmlFor={`education-start-${entry.id}`}><Input id={`education-start-${entry.id}`} value={entry.startDate} disabled={disabled} placeholder="e.g. Sep 2017" onChange={(event) => onPatch(entry.id, { startDate: event.target.value })} /></FieldGroup>
-                  <FieldGroup label="End date" htmlFor={`education-end-${entry.id}`}><Input id={`education-end-${entry.id}`} value={entry.endDate} disabled={disabled} placeholder="e.g. May 2021" onChange={(event) => onPatch(entry.id, { endDate: event.target.value })} /></FieldGroup>
-                </FieldGrid>
+                <div className="sm:col-span-2">
+                  <DateRangeFields
+                    idPrefix={`education-${entry.id}`}
+                    startDate={entry.startDate}
+                    endDate={entry.endDate}
+                    disabled={disabled}
+                    presentLabel="Studying"
+                    startPlaceholder="e.g. Sep 2017"
+                    endPlaceholder="e.g. May 2021"
+                    onChange={(patch) => onPatch(entry.id, patch)}
+                  />
+                </div>
               </FieldGrid>
-
-              <FieldGroup className="mt-4" label="Description" htmlFor={`education-description-${entry.id}`}>
-                <RichTextEditor id={`education-description-${entry.id}`} value={entry.description} disabled={disabled} aria-label={`${entry.degree || "Education"} description`} onChange={(value) => onPatch(entry.id, { description: value })} />
+              <FieldGroup className="mt-4" label="Description" htmlFor={`education-description-${entry.id}`} hint="Optional: honors, coursework, or a thesis.">
+                <RichTextEditor id={`education-description-${entry.id}`} value={entry.description} disabled={disabled} aria-label={`${title} description`} placeholder="Graduated with honors…" onChange={(value) => onPatch(entry.id, { description: value })} />
               </FieldGroup>
             </EntryCard>
-          ))}
-        </div>
-      )}
+          )
+        })}
+      </div>
+      <AddEntryButton className="mt-3" onClick={() => openCreated(onCreate())} disabled={disabled}>
+        Add education
+      </AddEntryButton>
     </div>
   )
 }

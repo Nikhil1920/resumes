@@ -1,27 +1,32 @@
 .resume-builder {
   --builder-chrome-height: 3.5rem;
-  min-height: calc(100svh - var(--builder-chrome-height));
+  --builder-bottombar-height: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+  min-height: 100svh;
   background: var(--background);
 }
+
+/* --- Toolbar ---------------------------------------------------------------- */
 
 .resume-builder__toolbar {
   position: sticky;
   z-index: 30;
   top: 0;
   display: flex;
-  height: var(--builder-chrome-height);
+  height: calc(var(--builder-chrome-height) + env(safe-area-inset-top, 0px));
   align-items: center;
-  gap: .75rem;
+  gap: .5rem;
   border-bottom: 1px solid var(--border);
   background: color-mix(in oklch, var(--background) 86%, transparent);
-  padding: 0 1rem;
+  padding: env(safe-area-inset-top, 0px) max(.5rem, env(safe-area-inset-right, 0px)) 0 max(.5rem, env(safe-area-inset-left, 0px));
   backdrop-filter: blur(18px);
 }
+
+/* --- Layout ----------------------------------------------------------------- */
 
 .resume-builder__layout {
   display: grid;
   min-height: calc(100svh - var(--builder-chrome-height));
-  grid-template-columns: 15rem minmax(0, 1fr) minmax(24rem, 30rem);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .resume-builder__sidebar {
@@ -32,26 +37,13 @@
   background: var(--sidebar);
 }
 
-.resume-builder__mobile-nav {
-  position: sticky;
-  z-index: 25;
-  top: var(--builder-chrome-height);
-  display: none;
-  overflow-x: auto;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in oklch, var(--background) 92%, transparent);
-  padding: .5rem 1rem;
-  backdrop-filter: blur(14px);
-  scrollbar-width: none;
-}
-
-.resume-builder__mobile-nav::-webkit-scrollbar {
-  display: none;
-}
-
 .resume-builder__editor-pane {
   min-width: 0;
-  padding: clamp(1.5rem, 4vw, 2.75rem) clamp(1rem, 4vw, 3rem) 5rem;
+  padding:
+    1.25rem
+    max(1rem, env(safe-area-inset-right, 0px))
+    calc(var(--builder-bottombar-height) + 2rem)
+    max(1rem, env(safe-area-inset-left, 0px));
 }
 
 .resume-builder__preview-pane {
@@ -71,75 +63,134 @@
   min-height: 0;
   flex: 1 1 auto;
   overflow-y: auto;
-  padding-bottom: 1.25rem;
+  padding: 2px 2px 1.25rem;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklch, var(--foreground) 20%, transparent) transparent;
 }
 
 .resume-builder__preview-page {
   border-radius: 4px;
+  background: #fff;
   box-shadow:
     0 0 0 1px color-mix(in oklch, var(--foreground) 6%, transparent),
     0 18px 40px -16px hsl(var(--shadow-color) / .35);
 }
 
-.resume-builder__mobile-preview-cta {
+.resume-builder__drawer-preview {
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in oklch, var(--foreground) 9%, transparent) 1px, transparent 0) 0 0 / 18px 18px,
+    var(--sidebar);
+  padding-top: .75rem;
+}
+
+/* --- Mobile step bar and bottom bar ------------------------------------------- */
+
+.resume-builder__stepbar {
+  position: sticky;
+  z-index: 25;
+  top: calc(var(--builder-chrome-height) + env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklch, var(--background) 92%, transparent);
+  padding: .375rem max(.75rem, env(safe-area-inset-right, 0px)) .625rem max(.75rem, env(safe-area-inset-left, 0px));
+  backdrop-filter: blur(14px);
+}
+
+.resume-builder__bottombar {
   position: fixed;
   z-index: 25;
-  right: 1rem;
-  bottom: 1rem;
-  left: 1rem;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /* Shown below 1024px only; display lives in the media query so it never fights utility classes. */
   display: none;
+  align-items: center;
+  gap: .5rem;
+  border-top: 1px solid var(--border);
+  background: color-mix(in oklch, var(--background) 92%, transparent);
+  padding: .625rem max(.75rem, env(safe-area-inset-right, 0px)) calc(.625rem + env(safe-area-inset-bottom, 0px)) max(.75rem, env(safe-area-inset-left, 0px));
+  backdrop-filter: blur(16px);
+  transition: transform .2s ease;
+}
+
+.resume-builder__agent-toast {
+  position: fixed;
+  z-index: 26;
+  right: .75rem;
+  bottom: calc(var(--builder-bottombar-height) + .5rem);
+  left: .75rem;
+  display: none;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.resume-builder__agent-toast > span {
+  box-shadow: 0 8px 24px -8px hsl(var(--shadow-color) / .35);
+  background: var(--card);
+}
+
+/*
+ * While the on-screen keyboard is up the bottom bar would sit on top of the
+ * field being edited, so it steps aside whenever a text field has focus.
+ */
+@media (max-width: 1023px) {
+  .resume-builder__bottombar {
+    display: flex;
+  }
+
+  .resume-builder:has(:is(input:not([type='checkbox'], [type='radio'], [type='color'], [type='file']), textarea, [contenteditable='true']):focus) .resume-builder__bottombar {
+    transform: translateY(110%);
+  }
+
+  .resume-builder:has(:is(input:not([type='checkbox'], [type='radio'], [type='color'], [type='file']), textarea, [contenteditable='true']):focus) .resume-builder__agent-toast {
+    bottom: .75rem;
+  }
+}
+
+/* Phones: 44px touch targets and 16px text so iOS does not zoom into fields. */
+@media (max-width: 639px) {
+  .resume-builder__agent-toast {
+    display: flex;
+  }
+
+  .resume-builder [data-slot='input'],
+  .resume-builder [data-slot='select-trigger'] {
+    min-height: 2.75rem;
+    font-size: 1rem;
+  }
+}
+
+/* --- Breakpoints ------------------------------------------------------------- */
+
+@media (min-width: 640px) {
+  .resume-builder__editor-pane {
+    padding-inline: 2rem;
+    padding-top: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .resume-builder__toolbar {
+    padding-inline: 1rem;
+  }
+
+  .resume-builder__layout {
+    grid-template-columns: 15rem minmax(0, 1fr);
+  }
+
+  .resume-builder__editor-pane {
+    padding: clamp(1.5rem, 3vw, 2.75rem) clamp(1.5rem, 3vw, 3rem) 5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .resume-builder__layout {
+    grid-template-columns: 15rem minmax(0, 1fr) minmax(24rem, 30rem);
+  }
 }
 
 @media (min-width: 1536px) {
   .resume-builder__layout {
     grid-template-columns: 16rem minmax(0, 1fr) minmax(28rem, 36rem);
-  }
-}
-
-@media (max-width: 1279px) {
-  .resume-builder__layout {
-    grid-template-columns: 15rem minmax(0, 1fr);
-  }
-
-  .resume-builder__mobile-preview-cta {
-    display: block;
-  }
-
-  .resume-builder__editor-pane {
-    padding-bottom: 6rem;
-  }
-}
-
-@media (max-width: 1023px) {
-  .resume-builder__layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .resume-builder__mobile-nav {
-    display: block;
-  }
-}
-
-@media (max-width: 639px) {
-  .resume-builder__toolbar {
-    gap: .5rem;
-    padding-inline: .5rem;
-  }
-
-  .resume-builder__mobile-nav {
-    padding-inline: .75rem;
-  }
-
-  .resume-builder__editor-pane {
-    padding-inline: .875rem;
-  }
-
-  .resume-builder__mobile-preview-cta {
-    right: .75rem;
-    bottom: .75rem;
-    left: .75rem;
   }
 }
 

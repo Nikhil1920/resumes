@@ -70,21 +70,23 @@ try {
   })()`)
   if (!openedPreview) throw new Error('The editor preview button was not found.')
   await waitFor(cdp, sessionId, `location.pathname.endsWith('/preview') && Boolean(document.querySelector('.resume-preview__page'))`)
-  const title = await evaluate(cdp, sessionId, 'document.title')
-  if (title !== 'Maya Patel · Product Designer') {
+  // The route head and the preview both set the title; wait for it to settle.
+  try {
+    await waitFor(cdp, sessionId, `document.title === 'Maya Patel · Product Designer'`)
+  } catch {
+    const title = await evaluate(cdp, sessionId, 'document.title')
     throw new Error(`Unexpected preview title: ${JSON.stringify(title)}`)
   }
 
   const pdfPaths = []
   for (const template of TEMPLATE_VALUES) {
-    const switched = await evaluate(cdp, sessionId, `(() => {
-      const select = document.querySelector('select[aria-label="Template"]')
-      if (!select) return false
-      select.value = '${template}'
-      select.dispatchEvent(new Event('change', { bubbles: true }))
-      return true
+    // Switch through the WebMCP surface the design panel shares, which works at
+    // any viewport width (the panel itself is a drawer on narrow screens).
+    const switched = await evaluate(cdp, sessionId, `(async () => {
+      const result = await document.modelContext?.executeTool('set-appearance', { template: '${template}' })
+      return Boolean(result && !result.isError)
     })()`)
-    if (!switched) throw new Error('The template selector was not found.')
+    if (!switched) throw new Error(`The ${template} template could not be selected through WebMCP.`)
     const splitMarker = SPLIT_TEMPLATES.has(template) ? ' && Boolean(document.querySelector(\'.resume-preview__split\'))' : ''
     await waitFor(cdp, sessionId, `document.querySelector('.resume-preview')?.dataset.template === '${template}' && Boolean(document.querySelector('.resume-preview__page > :first-child'))${splitMarker}`)
 

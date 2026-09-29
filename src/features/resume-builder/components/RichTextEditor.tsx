@@ -22,6 +22,7 @@ export type RichTextEditorProps = Omit<React.ComponentProps<"div">, "onChange"> 
   disabled?: boolean
   /** Optional accessible name for the editable region. */
   "aria-label"?: string
+  "aria-describedby"?: string
 }
 
 function sanitize(value: string) {
@@ -46,6 +47,7 @@ export function RichTextEditor({
   disabled = false,
   className,
   "aria-label": ariaLabel = "Rich text editor",
+  "aria-describedby": ariaDescribedBy,
   id,
   ...props
 }: RichTextEditorProps) {
@@ -148,6 +150,7 @@ export function RichTextEditor({
       type="button"
       variant="ghost"
       size="icon-sm"
+      className="size-9 sm:size-7"
       aria-label={label}
       title={label}
       disabled={disabled}
@@ -164,10 +167,10 @@ export function RichTextEditor({
   return (
     <div
       {...props}
-      className={cn("overflow-hidden rounded-lg border border-input bg-background", className)}
+      className={cn("overflow-hidden rounded-lg border border-input bg-background transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30", className)}
       data-disabled={disabled || undefined}
     >
-      <div className="flex items-center gap-0.5 border-b bg-muted/30 p-1" role="toolbar" aria-label="Text formatting">
+      <div className="flex items-center gap-0.5 border-b border-border bg-muted/40 p-1" role="toolbar" aria-label="Text formatting">
         {toolbarButton("Bold", <BoldIcon />, () => applyFormat("bold"))}
         {toolbarButton("Italic", <ItalicIcon />, () => applyFormat("italic"))}
         {toolbarButton("Underline", <UnderlineIcon />, () => applyFormat("underline"))}
@@ -181,10 +184,11 @@ export function RichTextEditor({
         suppressContentEditableWarning
         role="textbox"
         aria-label={ariaLabel}
+        aria-describedby={ariaDescribedBy}
         aria-multiline="true"
         aria-disabled={disabled || undefined}
         data-placeholder={placeholder}
-        className="min-h-28 px-3 py-2 text-sm leading-relaxed outline-none empty:before:pointer-events-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)] [&_a]:text-primary [&_a]:underline [&_li]:ml-5 [&_p]:mb-2 [&_ul]:list-disc"
+        className="min-h-32 px-3 py-2.5 text-base leading-relaxed outline-none sm:text-sm empty:before:pointer-events-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)] [&_a]:text-primary [&_a]:underline [&_li]:ml-5 [&_p]:mb-2 [&_ul]:list-disc"
         onInput={handleInput}
         onPaste={handlePaste}
         onBlur={saveSelection}

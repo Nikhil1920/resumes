@@ -4,6 +4,7 @@ import {
   DndContext,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -11,54 +12,59 @@ import {
 } from "@dnd-kit/core"
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon, PencilIcon, Trash2Icon } from "lucide-react"
+import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon, type LucideIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import { RemoveConfirmation } from "./RemoveConfirmation"
+import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+
+import { RemoveConfirmation } from "./RemoveConfirmation"
 
 export type SectionListProps<T> = {
   items: readonly T[]
   getId: (item: T) => UniqueIdentifier
-  getLabel: (item: T) => React.ReactNode
+  getLabel: (item: T) => string
+  getDescription?: (item: T) => string
+  getIcon?: (item: T) => LucideIcon
   isEnabled?: (item: T) => boolean
   onReorder: (items: T[]) => void
   onRename?: (item: T, label: string) => void
   onToggleEnabled?: (item: T, enabled: boolean) => void
   onRemove?: (item: T) => void
-  renderItem?: (item: T) => React.ReactNode
   className?: string
   emptyState?: React.ReactNode
   disabled?: boolean
 }
 
 /**
- * Controlled, keyboard-sortable list for resume sections. Reordering and all
- * mutations are emitted to the parent so one global resume store remains the
- * sole source of truth.
+ * Controlled, sortable list for resume sections: drag the handle, use the
+ * keyboard (space then arrows), or the row menu. Every mutation is emitted to
+ * the parent so the workspace store remains the only source of truth.
  */
 export function SectionList<T>({
   items,
   getId,
   getLabel,
+  getDescription,
+  getIcon,
   isEnabled = () => true,
   onReorder,
   onRename,
   onToggleEnabled,
   onRemove,
-  renderItem,
   className,
   emptyState = "No sections yet.",
   disabled = false,
 }: SectionListProps<T>) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
   const ids = React.useMemo(() => items.map(getId), [items, getId])
   const [editingId, setEditingId] = React.useState<UniqueIdentifier | null>(null)
-  const [editingLabel, setEditingLabel] = React.useState("")
   const [removeItem, setRemoveItem] = React.useState<T | null>(null)
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -71,50 +77,41 @@ export function SectionList<T>({
     onReorder(arrayMove([...items], oldIndex, newIndex))
   }
 
-  const beginRename = (item: T) => {
-    setEditingId(getId(item))
-    setEditingLabel(String(getLabel(item)))
-  }
-
-  const commitRename = (item: T) => {
-    const label = editingLabel.trim()
-    if (label && onRename) onRename(item, label)
-    setEditingId(null)
-  }
-
-  if (items.length === 0) return <div className={cn("rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground", className)}>{emptyState}</div>
+  if (items.length === 0) return <div className={cn("rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground", className)}>{emptyState}</div>
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        <div className={cn("space-y-2", className)} role="list" aria-label="Resume sections">
-          {items.map((item, index) => (
-            <SortableSectionRow
-              key={String(getId(item))}
-              item={item}
-              index={index}
-              total={items.length}
-              id={getId(item)}
-              label={getLabel(item)}
-              enabled={isEnabled(item)}
-              disabled={disabled}
-              editing={editingId === getId(item)}
-              editingLabel={editingLabel}
-              renderItem={renderItem}
-              canRename={Boolean(onRename)}
-              canToggle={Boolean(onToggleEnabled)}
-              canRemove={Boolean(onRemove)}
-              onEditingLabelChange={setEditingLabel}
-              onBeginRename={() => beginRename(item)}
-              onCommitRename={() => commitRename(item)}
-              onCancelRename={() => setEditingId(null)}
-              onMoveUp={() => index > 0 && onReorder(arrayMove([...items], index, index - 1))}
-              onMoveDown={() => index < items.length - 1 && onReorder(arrayMove([...items], index, index + 1))}
-              onToggle={() => onToggleEnabled?.(item, !isEnabled(item))}
-              onRequestRemove={() => setRemoveItem(item)}
-            />
-          ))}
-        </div>
+        <ul className={cn("space-y-2", className)} aria-label="Resume sections">
+          {items.map((item, index) => {
+            const id = getId(item)
+            return (
+              <SortableSectionRow
+                key={String(id)}
+                id={id}
+                label={getLabel(item)}
+                description={getDescription?.(item)}
+                icon={getIcon?.(item)}
+                enabled={isEnabled(item)}
+                disabled={disabled}
+                editing={editingId === id}
+                canRename={Boolean(onRename)}
+                canToggle={Boolean(onToggleEnabled)}
+                canRemove={Boolean(onRemove)}
+                onBeginRename={() => setEditingId(id)}
+                onCommitRename={(label) => {
+                  if (label.trim() && label.trim() !== getLabel(item)) onRename?.(item, label.trim())
+                  setEditingId(null)
+                }}
+                onCancelRename={() => setEditingId(null)}
+                onMoveUp={index > 0 ? () => onReorder(arrayMove([...items], index, index - 1)) : undefined}
+                onMoveDown={index < items.length - 1 ? () => onReorder(arrayMove([...items], index, index + 1)) : undefined}
+                onToggle={(enabled) => onToggleEnabled?.(item, enabled)}
+                onRequestRemove={() => setRemoveItem(item)}
+              />
+            )
+          })}
+        </ul>
       </SortableContext>
       <RemoveConfirmation
         open={removeItem !== null}
@@ -123,52 +120,44 @@ export function SectionList<T>({
           if (removeItem) onRemove?.(removeItem)
           setRemoveItem(null)
         }}
-        title={`Remove ${removeItem ? String(getLabel(removeItem)) : "section"}?`}
-        description="This section will be hidden from the resume. Its content stays saved so you can add it again later."
+        title={`Remove ${removeItem ? getLabel(removeItem) : "section"}?`}
+        description="The section leaves your resume and the editor steps. Its content stays saved, so adding it again brings everything back."
       />
     </DndContext>
   )
 }
 
-type SortableSectionRowProps<T> = {
-  item: T
+type SortableSectionRowProps = {
   id: UniqueIdentifier
-  index: number
-  total: number
-  label: React.ReactNode
+  label: string
+  description?: string
+  icon?: LucideIcon
   enabled: boolean
   disabled: boolean
   editing: boolean
-  editingLabel: string
-  renderItem?: (item: T) => React.ReactNode
   canRename: boolean
   canToggle: boolean
   canRemove: boolean
-  onEditingLabelChange: (label: string) => void
   onBeginRename: () => void
-  onCommitRename: () => void
+  onCommitRename: (label: string) => void
   onCancelRename: () => void
-  onMoveUp: () => void
-  onMoveDown: () => void
-  onToggle: () => void
+  onMoveUp?: () => void
+  onMoveDown?: () => void
+  onToggle: (enabled: boolean) => void
   onRequestRemove: () => void
 }
 
-function SortableSectionRow<T>({
-  item,
+function SortableSectionRow({
   id,
-  index,
-  total,
   label,
+  description,
+  icon: Icon,
   enabled,
   disabled,
   editing,
-  editingLabel,
-  renderItem,
   canRename,
   canToggle,
   canRemove,
-  onEditingLabelChange,
   onBeginRename,
   onCommitRename,
   onCancelRename,
@@ -176,31 +165,101 @@ function SortableSectionRow<T>({
   onMoveDown,
   onToggle,
   onRequestRemove,
-}: SortableSectionRowProps<T>) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+}: SortableSectionRowProps) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id, disabled })
   const style = { transform: CSS.Transform.toString(transform), transition }
+  const [draft, setDraft] = React.useState(label)
+  React.useEffect(() => {
+    if (editing) setDraft(label)
+  }, [editing, label])
+  const switchId = `section-visible-${String(id)}`
 
   return (
-    <div ref={setNodeRef} style={style} className={cn("rounded-lg border bg-card p-3 shadow-xs", isDragging && "relative z-10 opacity-75 shadow-md", !enabled && "opacity-60")} role="listitem" aria-disabled={disabled || undefined} data-visible={enabled}>
-      <div className="flex items-center gap-2">
-        <button type="button" className="touch-none rounded p-1 text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" aria-label={`Reorder ${String(label)}`} disabled={disabled} {...attributes} {...listeners}>
-          <GripVerticalIcon className="size-4" aria-hidden="true" />
-        </button>
-        <div className="min-w-0 flex-1">
-          {editing ? (
-            <Input autoFocus value={editingLabel} onChange={(event) => onEditingLabelChange(event.target.value)} onBlur={onCommitRename} onKeyDown={(event) => { if (event.key === "Enter") onCommitRename(); if (event.key === "Escape") onCancelRename() }} aria-label="Section name" />
-          ) : (
-            <div className="truncate text-sm font-medium">{renderItem ? renderItem(item) : label}</div>
-          )}
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button type="button" variant="ghost" size="icon-xs" aria-label="Move section up" title="Move up" onClick={onMoveUp} disabled={disabled || index === 0}><ArrowUpIcon /></Button>
-          <Button type="button" variant="ghost" size="icon-xs" aria-label="Move section down" title="Move down" onClick={onMoveDown} disabled={disabled || index === total - 1}><ArrowDownIcon /></Button>
-          {canRename && <Button type="button" variant="ghost" size="icon-xs" aria-label={`Rename ${String(label)}`} title="Rename" onClick={onBeginRename} disabled={disabled}><PencilIcon /></Button>}
-          {canToggle && <Button type="button" variant={enabled ? "secondary" : "outline"} size="sm" onClick={onToggle} disabled={disabled}>{enabled ? "Enabled" : "Disabled"}</Button>}
-          {canRemove && <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove ${String(label)}`} title="Remove" onClick={onRequestRemove} disabled={disabled}><Trash2Icon className="text-destructive" /></Button>}
-        </div>
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-1.5 rounded-xl border border-border bg-card py-1.5 pr-1.5 pl-1 shadow-soft",
+        isDragging && "relative z-10 shadow-lift ring-2 ring-primary/30",
+      )}
+      data-visible={enabled}
+    >
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        className="flex size-10 shrink-0 touch-none cursor-grab items-center justify-center rounded-lg text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:cursor-grabbing sm:size-8"
+        aria-label={`Reorder ${label}. Press space, then use the arrow keys.`}
+        disabled={disabled}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVerticalIcon className="size-4" aria-hidden="true" />
+      </button>
+      {Icon && (
+        <span className={cn("hidden size-8 shrink-0 items-center justify-center rounded-lg sm:flex", enabled ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground")} aria-hidden="true">
+          <Icon className="size-4" />
+        </span>
+      )}
+      <div className="min-w-0 flex-1 px-1">
+        {editing ? (
+          <Input
+            autoFocus
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onBlur={() => onCommitRename(draft)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") onCommitRename(draft)
+              if (event.key === "Escape") onCancelRename()
+            }}
+            aria-label="Section heading"
+            className="h-9"
+          />
+        ) : (
+          <>
+            <p className={cn("truncate text-sm font-medium", !enabled && "text-muted-foreground line-through decoration-muted-foreground/40")}>{label}</p>
+            <p className="truncate text-xs text-muted-foreground">{enabled ? description : "Hidden from the resume"}</p>
+          </>
+        )}
       </div>
-    </div>
+      {canToggle && (
+        <label htmlFor={switchId} className="flex shrink-0 cursor-pointer items-center gap-2 px-1.5 py-2">
+          <span className="sr-only">Show {label} on the resume</span>
+          <Switch id={switchId} checked={enabled} disabled={disabled} onCheckedChange={(checked) => onToggle(checked)} />
+        </label>
+      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          disabled={disabled}
+          render={<Button type="button" variant="ghost" size="icon" className="size-10 shrink-0 text-muted-foreground sm:size-8" aria-label={`Actions for ${label}`} />}
+        >
+          <MoreHorizontalIcon />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44">
+          {canRename && (
+            <DropdownMenuItem onClick={onBeginRename}>
+              <PencilIcon />
+              Rename
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem disabled={!onMoveUp} onClick={onMoveUp}>
+            <ArrowUpIcon />
+            Move up
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={!onMoveDown} onClick={onMoveDown}>
+            <ArrowDownIcon />
+            Move down
+          </DropdownMenuItem>
+          {canRemove && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={onRequestRemove}>
+                <Trash2Icon />
+                Remove section
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </li>
   )
 }

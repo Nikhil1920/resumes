@@ -2,11 +2,10 @@ import * as React from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
-import { BrandMark } from '@/components/brand-mark'
-import ThemeToggle from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ResumePreview, toResumePreviewModel, type ResumePreviewModel } from '@/features/resume-preview'
+import { toResumePreviewModel, type ResumePreviewModel } from '@/features/resume-preview'
+import { PreviewScreen } from '@/features/resume-preview/PreviewScreen'
 import {
   downloadNativeResumePdf,
   isNativeResumePlatform,
@@ -74,8 +73,8 @@ function ResumePreviewRoute() {
   )
 
   const updateModel = React.useCallback((patch: Partial<Pick<ResumePreviewModel, 'template' | 'titleFont' | 'bodyFont' | 'pageSize' | 'accentColor'>>) => {
-    actions.updateDocumentSettings(patch)
-  }, [actions])
+    actions.updateDocumentSettings(patch, documentId)
+  }, [actions, documentId])
 
   const exportJson = React.useCallback(() => {
     const payload = actions.exportDocument(documentId)
@@ -114,21 +113,21 @@ function ResumePreviewRoute() {
   }, [model])
 
   if (hydration === 'idle' || hydration === 'hydrating') return <LoadingState />
-  if (hydration === 'error' || !model) return <NotFoundState onBack={goToDashboard} />
+  if (hydration === 'error' || !model || !document) return <NotFoundState onBack={goToDashboard} />
   if (activeDocumentId !== documentId) return <LoadingState />
 
   return (
-    <ResumePreview
+    <PreviewScreen
       model={model}
+      settings={document.settings}
+      documentName={document.meta.name}
+      onSettingsChange={updateModel}
       onBack={goToDashboard}
       onEdit={goToEditor}
-      onModelChange={updateModel}
-      onPrint={print}
       onDownload={download}
-      onExportJson={exportJson}
+      onPrint={print}
       onShare={share}
-      toolbarStart={<BrandMark href="/" showWordmark={false} className="mr-1" onClick={(event) => { event.preventDefault(); goToDashboard() }} />}
-      toolbarEnd={<ThemeToggle />}
+      onExportJson={exportJson}
     />
   )
 }

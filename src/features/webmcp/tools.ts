@@ -26,7 +26,17 @@ import {
     parseEditorPanel,
     type EditorPanel,
 } from "@/features/resume-builder/editor-panel";
-import { RESUME_TEMPLATES } from "@/features/resume-preview/presentation";
+import {
+    CAREER_LEVEL_LABELS,
+    RESUME_TEMPLATE_CATALOG,
+    TEMPLATE_CATEGORIES,
+    templateStylePatch,
+    type CareerLevel,
+    type ResumeTemplate,
+    type TemplateCategory,
+} from "@/features/resume-preview/templates/catalog";
+import { RESUME_FONT_OPTIONS } from "@/features/resume-preview/templates/fonts";
+import { recommendTemplates } from "@/features/resume-preview/templates/recommend";
 import { createSampleResumePayload } from "@/features/resume-workspace/demo";
 import {
     BUILT_IN_SECTION_IDS,
@@ -157,7 +167,39 @@ const requireEnum = <T extends string>(
     return candidate as T;
 };
 
-const RESUME_TEMPLATES_VALUES = RESUME_TEMPLATES.map((template) => template.value);
+const RESUME_TEMPLATES_VALUES = RESUME_TEMPLATE_CATALOG.map((template) => template.id);
+const TEMPLATE_CATEGORY_IDS = TEMPLATE_CATEGORIES.map((category) => category.id);
+const CAREER_LEVELS = Object.keys(CAREER_LEVEL_LABELS) as CareerLevel[];
+
+const unknownTemplate = (template: string): never =>
+    fail(
+        `Unknown template "${template}". Available templates: ${RESUME_TEMPLATES_VALUES.join(", ")}. ` +
+            "Call list-templates or recommend-templates to compare them."
+    );
+
+/** Everything an agent needs to judge whether a template suits a job. */
+const describeTemplate = (template: ResumeTemplate) => ({
+    id: template.id,
+    name: template.name,
+    tagline: template.tagline,
+    description: template.description,
+    bestFor: template.bestFor,
+    industries: template.industries,
+    categories: template.categories,
+    careerLevels: template.careerLevels,
+    layout: template.design.layout,
+    ats: template.ats,
+    pages: template.pages,
+    photo: template.photo,
+    multiPageFeatures: {
+        runningHeader: template.design.runningHeader,
+        pageNumbers: template.design.pageNumbers,
+    },
+    strengths: template.strengths,
+    considerations: template.considerations,
+    recommendedSectionOrder: template.recommendedSectionOrder,
+    defaults: template.defaults,
+});
 const PAGE_SIZES = ["A4", "Letter"] as const;
 const LANGUAGE_PROFICIENCIES: readonly LanguageProficiency[] = [
     "Basic",
@@ -172,7 +214,7 @@ const RESUME_STEP_IDS: readonly ResumeStep[] = [
 const MOVE_DIRECTIONS = ["up", "down", "top", "bottom"] as const;
 type MoveDirection = (typeof MOVE_DIRECTIONS)[number];
 
-const COMMON_FONTS = ["Arial", "Inter", "Georgia", "Helvetica", "Times New Roman"];
+const COMMON_FONTS = RESUME_FONT_OPTIONS;
 
 /** Hrefs the preview renders as links; anything else shows as plain text. */
 const isLinkableUrl = (value: string): boolean =>
@@ -728,8 +770,9 @@ export const createResumeTools = (host: ResumeToolsHost): WebmcpToolDefinition[]
                     template: {
                         type: "string",
                         description:
-                            "Optional initial template, one of: " +
-                            `${RESUME_TEMPLATES_VALUES.join(", ")}. Defaults to the Tenali Modern template.`,
+                            "Optional initial template id; its designed fonts and accent color are applied too. " +
+                            "Use recommend-templates with the target job title to choose one. Ids: " +
+                            `${RESUME_TEMPLATES_VALUES.join(", ")}. Defaults to tenali (Tenali Modern).`,
                     },
                     pageSize: {
                         type: "string",
@@ -751,11 +794,7 @@ export const createResumeTools = (host: ResumeToolsHost): WebmcpToolDefinition[]
                 const description = optionalString(input.description);
                 const template = optionalString(input.template);
                 if (template && !RESUME_TEMPLATES_VALUES.includes(template)) {
-                    fail(
-                        `Unknown template "${template}". Available templates: ${RESUME_TEMPLATES_VALUES.join(
-                            ", "
-                        )}.`
-                    );
+                    unknownTemplate(template);
                 }
                 const pageSize = optionalString(input.pageSize);
                 if (pageSize && !PAGE_SIZES.includes(pageSize as "A4" | "Letter")) {
@@ -778,6 +817,9 @@ export const createResumeTools = (host: ResumeToolsHost): WebmcpToolDefinition[]
                     ...(sections ? { sections } : {}),
                 });
                 if (!documentId) fail("The resume could not be created.");
+                if (template) {
+                    actions().updateDocumentSettings(templateStylePatch(template), documentId);
+                }
                 return jsonResult(await openCreatedResume(documentId));
             },
         },
@@ -1101,15 +1143,27 @@ export const createResumeTools = (host: ResumeToolsHost): WebmcpToolDefinition[]
             name: "update-personal-info",
             title: "Update personal info",
             description:
-                "Set the resume owner's contact details: full name, email, phone, photo, and " +
-                "headline links (LinkedIn, GitHub, portfolio...). Only provided fields change. " +
-                "Providing links replaces the whole link list; use add-link, update-link, delete-link, " +
-                "and move-link to change one link.",
+                "Set the resume owner's contact details: full name, professional headline, email, " +
+                "phone, location, photo, and headline links (LinkedIn, GitHub, portfolio...). Only " +
+                "provided fields change. Providing links replaces the whole link list; use add-link, " +
+                "update-link, delete-link, and move-link to change one link.",
             inputSchema: {
                 type: "object",
                 properties: {
                     resumeId: RESUME_ID_SCHEMA,
                     name: { type: "string", description: "Full name, e.g. \"Vyshnav Reddy\"." },
+                    headline: {
+                        type: "string",
+                        description:
+                            "Professional headline shown under the name by every template, e.g. " +
+                            "\"Senior Backend Engineer\" or \"Registered Nurse, ICU\". Pass an empty string to clear it.",
+                    },
+                    location: {
+                        type: "string",
+                        description:
+                            "City/region or work arrangement shown with the contact details, e.g. " +
+                            "\"Austin, TX\" or \"Remote (EU)\". Pass an empty string to clear it.",
+                    },
                     email: { type: "string", description: "Contact email address." },
                     phone: { type: "string", description: "Contact phone number." },
                     image: {
@@ -1150,6 +1204,12 @@ export const createResumeTools = (host: ResumeToolsHost): WebmcpToolDefinition[]
                     patch.email = email;
                 }
                 if (phone !== undefined) patch.phone = phone;
+                // Headline and location are optional display lines, so an
+                // empty string is a valid way to clear them.
+                const headline = optionalString(input.headline);
+                const location = optionalString(input.location);
+                if (headline !== undefined) patch.headline = headline;
+                if (location !== undefined) patch.location = location;
                 const image = optionalString(input.image);
                 if (image !== undefined) {
                     if (image && !isPortraitImageValue(image)) {
@@ -1178,7 +1238,7 @@ export const createResumeTools = (host: ResumeToolsHost): WebmcpToolDefinition[]
                 }
                 if (Object.keys(patch).length === 0) {
                     fail(
-                        "Provide at least one of: name, email, phone, image, links."
+                        "Provide at least one of: name, headline, email, phone, location, image, links."
                     );
                 }
                 actions().updateDocument({ personalInfo: patch }, resumeId);
@@ -1801,14 +1861,240 @@ export const createResumeTools = (host: ResumeToolsHost): WebmcpToolDefinition[]
 
         // --- Appearance ------------------------------------------------------------
         {
+            name: "list-templates",
+            title: "List templates",
+            description:
+                "List the resume templates with everything needed to choose one: description, " +
+                "job titles and industries each suits, career levels, applicant-tracking-system " +
+                "(ATS) rating and notes, single- or two-column layout, whether it is built for " +
+                "one page or multi-page CVs, photo support, strengths, trade-offs, and the " +
+                "recommended section order. Optional filters narrow the list. To rank templates " +
+                "for a specific job, prefer recommend-templates.",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    category: {
+                        type: "string",
+                        description: `Job family filter, one of: ${TEMPLATE_CATEGORY_IDS.join(", ")}.`,
+                    },
+                    careerLevel: {
+                        type: "string",
+                        description: `Only templates suited to this level: ${CAREER_LEVELS.join(", ")}.`,
+                    },
+                    atsExcellent: {
+                        type: "boolean",
+                        description: "Only templates rated excellent for applicant tracking systems.",
+                    },
+                    photo: {
+                        type: "boolean",
+                        description: "Only templates that can show a profile photo.",
+                    },
+                    multiPage: {
+                        type: "boolean",
+                        description: "Only templates designed for multi-page resumes/CVs.",
+                    },
+                    layout: {
+                        type: "string",
+                        description: "single-column or two-column.",
+                    },
+                },
+            },
+            annotations: { readOnlyHint: true },
+            async execute(input) {
+                let templates: readonly ResumeTemplate[] = RESUME_TEMPLATE_CATALOG;
+                const category = optionalString(input.category);
+                if (category !== undefined) {
+                    const value = requireEnum(category, TEMPLATE_CATEGORY_IDS, "category") as TemplateCategory;
+                    templates = templates.filter((template) => template.categories.includes(value));
+                }
+                const careerLevel = optionalString(input.careerLevel);
+                if (careerLevel !== undefined) {
+                    const value = requireEnum(careerLevel, CAREER_LEVELS, "careerLevel");
+                    templates = templates.filter((template) => template.careerLevels.includes(value));
+                }
+                if (input.atsExcellent === true) {
+                    templates = templates.filter((template) => template.ats.rating === "excellent");
+                }
+                if (input.photo === true) {
+                    templates = templates.filter((template) => template.photo !== "none");
+                }
+                if (input.multiPage === true) {
+                    templates = templates.filter((template) => template.pages === "multi-page");
+                }
+                const layout = optionalString(input.layout);
+                if (layout !== undefined) {
+                    const value = requireEnum(layout, ["single-column", "two-column"] as const, "layout");
+                    templates = templates.filter((template) =>
+                        value === "single-column"
+                            ? template.design.layout === "single-column"
+                            : template.design.layout !== "single-column"
+                    );
+                }
+                return jsonResult({
+                    count: templates.length,
+                    categories: TEMPLATE_CATEGORIES,
+                    templates: templates.map(describeTemplate),
+                    howToApply:
+                        "Call set-appearance with { template: <id> } (or create-resume with template) to use one.",
+                });
+            },
+        },
+        {
+            name: "recommend-templates",
+            title: "Recommend templates",
+            description:
+                "Rank resume templates for a specific job application. Pass the target job title " +
+                "and, when known, the industry, career level, region, and whether a photo or strict " +
+                "ATS compatibility matters. Returns the best matches with plain-language reasons you " +
+                "can share with the user, then apply one with set-appearance.",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    jobTitle: {
+                        type: "string",
+                        description: 'Target role, e.g. "Senior backend engineer" or "ICU registered nurse".',
+                    },
+                    industry: {
+                        type: "string",
+                        description: 'Industry or employer type, e.g. "investment banking", "hospital", "SaaS startup".',
+                    },
+                    jobDescription: {
+                        type: "string",
+                        description: "Optional job posting text; only keywords are used.",
+                    },
+                    careerLevel: {
+                        type: "string",
+                        description: `One of: ${CAREER_LEVELS.join(", ")}.`,
+                    },
+                    region: {
+                        type: "string",
+                        description:
+                            'Country or region of the application, e.g. "US", "UK", "Germany", "UAE". ' +
+                            "Used to decide whether a photo is customary.",
+                    },
+                    photo: {
+                        type: "string",
+                        description: '"include" to favor templates with a photo, "exclude" to avoid photo-first designs.',
+                    },
+                    atsPriority: {
+                        type: "boolean",
+                        description:
+                            "True when the resume will go through an online application portal or ATS; favors single-column, plain templates.",
+                    },
+                    pages: {
+                        type: "string",
+                        description: '"one-page" or "multi-page" (long CVs, executive or academic histories).',
+                    },
+                    limit: {
+                        type: "number",
+                        description: "How many templates to return (1-10). Defaults to 5.",
+                    },
+                },
+            },
+            annotations: { readOnlyHint: true },
+            async execute(input) {
+                const jobTitle = optionalString(input.jobTitle);
+                const industry = optionalString(input.industry);
+                const jobDescription = optionalString(input.jobDescription);
+                if (!jobTitle && !industry && !jobDescription) {
+                    fail('Provide at least one of: jobTitle, industry, jobDescription.');
+                }
+                const careerLevel = optionalString(input.careerLevel);
+                const photo = optionalString(input.photo);
+                const pages = optionalString(input.pages);
+                const limitInput = typeof input.limit === "number" ? Math.round(input.limit) : 5;
+                const ranked = recommendTemplates(
+                    {
+                        jobTitle,
+                        industry,
+                        jobDescription: jobDescription?.slice(0, 4000),
+                        region: optionalString(input.region),
+                        careerLevel: careerLevel ? requireEnum(careerLevel, CAREER_LEVELS, "careerLevel") : undefined,
+                        photo: photo ? requireEnum(photo, ["include", "exclude"] as const, "photo") : undefined,
+                        atsPriority: input.atsPriority === true,
+                        pages: pages ? requireEnum(pages, ["one-page", "multi-page"] as const, "pages") : undefined,
+                    },
+                    Math.min(10, Math.max(1, limitInput))
+                );
+                return jsonResult({
+                    recommendations: ranked.map(({ template, score, reasons }) => ({
+                        id: template.id,
+                        name: template.name,
+                        score,
+                        reasons,
+                        tagline: template.tagline,
+                        bestFor: template.bestFor,
+                        layout: template.design.layout,
+                        ats: template.ats.rating,
+                        pages: template.pages,
+                        photo: template.photo,
+                        recommendedSectionOrder: template.recommendedSectionOrder,
+                    })),
+                    howToApply:
+                        "Apply the chosen id with set-appearance { template }. Optionally reorder sections to match recommendedSectionOrder with set-section-visibility and the editor.",
+                });
+            },
+        },
+        {
+            name: "open-template-explorer",
+            title: "Open template explorer",
+            description:
+                "Open the visual template explorer so the user can compare templates with realistic " +
+                "sample content. Pass resumeId to let the user preview and apply templates to that " +
+                "resume, a search query (job title or industry) to pre-rank templates, or a " +
+                "template id to open its detail view.",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    resumeId: {
+                        type: "string",
+                        description: "Resume to restyle from the explorer (shows an Apply button).",
+                    },
+                    query: {
+                        type: "string",
+                        description: 'Job title or industry to rank by, e.g. "data scientist".',
+                    },
+                    template: {
+                        type: "string",
+                        description: "Template id to open in the detail view.",
+                    },
+                    category: {
+                        type: "string",
+                        description: `Job family filter, one of: ${TEMPLATE_CATEGORY_IDS.join(", ")}.`,
+                    },
+                },
+            },
+            async execute(input) {
+                await ensureHydrated();
+                const search: Record<string, string> = {};
+                const resumeId = optionalString(input.resumeId);
+                if (resumeId) {
+                    if (!store.getState().documents[resumeId]) fail(`No resume found with id "${resumeId}".`);
+                    search.resume = resumeId;
+                }
+                const query = optionalString(input.query);
+                if (query) search.q = query;
+                const template = optionalString(input.template);
+                if (template) {
+                    if (!RESUME_TEMPLATES_VALUES.includes(template)) unknownTemplate(template);
+                    search.template = template;
+                }
+                const category = optionalString(input.category);
+                if (category) search.category = requireEnum(category, TEMPLATE_CATEGORY_IDS, "category");
+                await host.navigate("/templates", undefined, search);
+                const params = new URLSearchParams(search).toString();
+                return jsonResult({ currentPath: `/templates${params ? `?${params}` : ""}` });
+            },
+        },
+        {
             name: "set-appearance",
             title: "Change appearance",
             description:
-                "Change the resume's appearance settings: template, page size, title/body " +
-                `font, and accent color. Templates: ${RESUME_TEMPLATES.map(
-                    (template) =>
-                        `${template.value} (${template.label}${template.layout === "single-column" ? "" : ", sidebar"}${template.portrait ? ", shows photo" : ""})`
-                ).join(", ")}. Common fonts: ${COMMON_FONTS.join(", ")}.`,
+                "Change the resume's appearance: template, page size, title/body font, and accent " +
+                "color. Choosing a template also applies that template's own fonts and accent color " +
+                "(its designed look) unless keepCurrentStyle is true; any font or color you pass " +
+                "explicitly wins. Pick templates with recommend-templates or list-templates. " +
+                `Fonts: ${COMMON_FONTS.join(", ")} ("Template default" uses the template's fonts).`,
             inputSchema: {
                 type: "object",
                 properties: {
@@ -1819,15 +2105,22 @@ export const createResumeTools = (host: ResumeToolsHost): WebmcpToolDefinition[]
                             "One of the built-in template ids: " +
                             `${RESUME_TEMPLATES_VALUES.join(", ")}.`,
                     },
+                    keepCurrentStyle: {
+                        type: "boolean",
+                        description:
+                            "When switching templates, keep the resume's current fonts and accent color " +
+                            "instead of adopting the template's designed style. Defaults to false.",
+                    },
                     pageSize: {
                         type: "string",
-                        description: "Printed page size: A4 or Letter.",
+                        description:
+                            "Printed page size: A4 (most countries) or Letter (US and Canada).",
                     },
                     titleFont: { type: "string", description: "Font used for headings." },
                     bodyFont: { type: "string", description: "Font used for body text." },
                     accentColor: {
                         type: "string",
-                        description: 'Hex color like "#004aad", used for headings and links.',
+                        description: 'Hex color like "#004aad", used for headings, rules, and links.',
                     },
                 },
             },
@@ -1837,13 +2130,12 @@ export const createResumeTools = (host: ResumeToolsHost): WebmcpToolDefinition[]
                 const template = optionalString(input.template);
                 if (template !== undefined) {
                     if (!RESUME_TEMPLATES_VALUES.includes(template)) {
-                        fail(
-                            `Unknown template "${template}". Available templates: ${RESUME_TEMPLATES_VALUES.join(
-                                ", "
-                            )}.`
-                        );
+                        unknownTemplate(template);
                     }
-                    patch.template = template;
+                    Object.assign(
+                        patch,
+                        input.keepCurrentStyle === true ? { template } : templateStylePatch(template)
+                    );
                 }
                 const pageSize = optionalString(input.pageSize);
                 if (pageSize !== undefined) {

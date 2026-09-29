@@ -27,11 +27,12 @@ describe('resume preview presentation', () => {
   it('routes sidebar templates to the split renderer and everything else to the single column', () => {
     expect(getTemplateLayout('zurich')).toBe('sidebar-left')
     expect(getTemplateLayout('sydney')).toBe('sidebar-left')
+    expect(getTemplateLayout('madrid')).toBe('sidebar-left')
     expect(getTemplateLayout('berlin')).toBe('sidebar-right')
+    expect(getTemplateLayout('milan')).toBe('sidebar-right')
+    expect(getTemplateLayout('copenhagen')).toBe('sidebar-right')
     for (const template of RESUME_TEMPLATES) {
-      if (!['zurich', 'sydney', 'berlin'].includes(template.value)) {
-        expect(getTemplateLayout(template.value)).toBe('single-column')
-      }
+      expect(getTemplateLayout(template.value)).toBe(template.layout)
     }
   })
 
@@ -39,17 +40,15 @@ describe('resume preview presentation', () => {
     expect(getTemplateLayout('custom-company-template')).toBe('single-column')
   })
 
-  it('renders the portrait in sidebars and headers while the tenali designs stay image-free', () => {
+  it('renders the portrait only in portrait-capable templates', () => {
     expect(getTemplatePortrait('zurich')).toBe('sidebar')
     expect(getTemplatePortrait('sydney')).toBe('sidebar')
-    expect(getTemplatePortrait('berlin')).toBe('sidebar')
+    expect(getTemplatePortrait('berlin')).toBe('header')
     expect(getTemplatePortrait('oslo')).toBe('header')
-    expect(getTemplatePortrait('vienna')).toBe('header')
-    expect(getTemplatePortrait('kyoto')).toBe('header')
-    expect(getTemplatePortrait('geneva')).toBe('header')
-    expect(getTemplatePortrait('austin')).toBe('header')
+    expect(getTemplatePortrait('milan')).toBe('header')
     expect(getTemplatePortrait('tenali')).toBeNull()
     expect(getTemplatePortrait('tenali-classic')).toBeNull()
+    expect(getTemplatePortrait('boston')).toBeNull()
     expect(getTemplatePortrait('custom-company-template')).toBeNull()
   })
 

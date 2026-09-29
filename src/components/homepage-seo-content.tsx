@@ -1,6 +1,7 @@
 import { ArrowRightIcon, BotIcon, CheckCircle2Icon, ScaleIcon } from 'lucide-react'
 
 import { GithubMark } from '@/components/icons/github-mark'
+import { RESUME_TEMPLATE_CATALOG } from '@/features/resume-preview/templates/catalog'
 
 const SITE_URL = 'https://resumes.byanr.com'
 const REPO_URL = 'https://github.com/Nikhil1920/resumes'
@@ -29,7 +30,7 @@ const homepageJsonLd = JSON.stringify({
       author: { '@type': 'Person', name: 'Nikhil Reddy Avuthu', url: 'https://github.com/Nikhil1920' },
       featureList: [
         'Build resumes without an account',
-        'Ten resume templates with A4 and Letter paper',
+        `${RESUME_TEMPLATE_CATALOG.length} resume templates with A4 and Letter paper`,
         'Save as PDF through the browser print dialog',
         'Drafts stored locally in the browser',
         'WebMCP tools that let AI agents create and edit resumes autonomously',
@@ -82,7 +83,7 @@ export function HomepageSeoContent() {
 
         <ul className="space-y-3 text-sm leading-6 text-muted-foreground">
           {[
-            'Ten built-in resume templates, including single-column and sidebar layouts.',
+            `${RESUME_TEMPLATE_CATALOG.length} built-in resume templates for every kind of job, including ATS-first, sidebar, and multi-page CV layouts.`,
             'Editable sections for summaries, work, education, projects, skills, certifications, awards, and languages.',
             'A4 and Letter page sizes, plus font and accent-color controls.',
             'Local drafts, multiple resume versions, and JSON backup and restore.',

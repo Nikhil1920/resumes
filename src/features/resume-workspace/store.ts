@@ -37,6 +37,11 @@ import {
     type PersistedWorkspace,
 } from "./persistence";
 
+/**
+ * Undo/redo stacks.  Entries are the committed snapshots themselves, sharing
+ * unchanged documents with each other and with the live state, so neither
+ * the store nor its readers may mutate snapshot objects in place.
+ */
 export interface WorkspaceHistory {
     past: WorkspaceSnapshot[];
     future: WorkspaceSnapshot[];
@@ -277,10 +282,7 @@ export const createResumeWorkspaceStore = (
         const state = store.getState();
         store.setState({
             history: {
-                past: [
-                    ...state.history.past,
-                    JSON.parse(JSON.stringify(snapshot)) as WorkspaceSnapshot,
-                ].slice(-historyLimit),
+                past: [...state.history.past, snapshot].slice(-historyLimit),
                 future: [],
             },
         });
@@ -291,7 +293,7 @@ export const createResumeWorkspaceStore = (
         if (snapshotsEqual(current, next)) return false;
         if (recordHistory) {
             if (batchDepth > 0) {
-                batchBase ??= JSON.parse(JSON.stringify(current)) as WorkspaceSnapshot;
+                batchBase ??= current;
             } else {
                 pushHistory(current);
             }
@@ -523,10 +525,7 @@ export const createResumeWorkspaceStore = (
             ...previous,
             history: {
                 past: state.history.past.slice(0, -1),
-                future: [
-                    ...state.history.future,
-                    JSON.parse(JSON.stringify(current)) as WorkspaceSnapshot,
-                ].slice(-historyLimit),
+                future: [...state.history.future, current].slice(-historyLimit),
             },
         });
         scheduleSave();
@@ -542,10 +541,7 @@ export const createResumeWorkspaceStore = (
         store.setState({
             ...next,
             history: {
-                past: [
-                    ...state.history.past,
-                    JSON.parse(JSON.stringify(current)) as WorkspaceSnapshot,
-                ].slice(-historyLimit),
+                past: [...state.history.past, current].slice(-historyLimit),
                 future: state.history.future.slice(0, -1),
             },
         });

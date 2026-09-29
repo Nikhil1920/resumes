@@ -2,11 +2,14 @@ import * as React from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
+import { BrandMark } from '@/components/brand-mark'
+import { LiveJoiningState, LiveSessionBadge, useLiveJoining } from '@/features/live-sync/LiveSession'
+import ThemeToggle from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { LiveJoiningState, LiveSessionBadge, useLiveJoining } from '@/features/live-sync/LiveSession'
-import { toResumePreviewModel, type ResumePreviewModel } from '@/features/resume-preview'
-import { PreviewScreen } from '@/features/resume-preview/PreviewScreen'
+import { toResumePreviewModel, type ResumeAppearancePatch, type ResumePreviewModel } from '@/features/resume-preview'
+import { ResumePreviewScreen } from '@/features/resume-preview/PreviewScreen'
+import { getResumeTemplate, templateStylePatch } from '@/features/resume-preview/templates/catalog'
 import {
   downloadNativeResumePdf,
   isNativeResumePlatform,
@@ -74,9 +77,22 @@ function ResumePreviewRoute() {
     [document],
   )
 
-  const updateModel = React.useCallback((patch: Partial<Pick<ResumePreviewModel, 'template' | 'titleFont' | 'bodyFont' | 'pageSize' | 'accentColor'>>) => {
+  const updateAppearance = React.useCallback((patch: ResumeAppearancePatch) => {
     actions.updateDocumentSettings(patch, documentId)
   }, [actions, documentId])
+
+  const selectTemplate = React.useCallback((templateId: string) => {
+    if (document?.settings.template === templateId) return
+    actions.updateDocumentSettings(templateStylePatch(templateId), documentId)
+    toast.success(`Switched to ${getResumeTemplate(templateId).name}`, {
+      description: 'Fonts and accent color now follow the template.',
+      action: { label: 'Undo', onClick: () => actions.undo() },
+    })
+  }, [actions, document?.settings.template, documentId])
+
+  const openTemplates = React.useCallback(() => {
+    void navigate({ to: '/templates', search: { resume: documentId } })
+  }, [documentId, navigate])
 
   const exportJson = React.useCallback(() => {
     const payload = actions.exportDocument(documentId)
@@ -116,22 +132,25 @@ function ResumePreviewRoute() {
 
   if (hydration === 'idle' || hydration === 'hydrating') return <LoadingState />
   if (!model && liveJoining) return <LiveJoiningState />
-  if (hydration === 'error' || !model || !document) return <NotFoundState onBack={goToDashboard} />
+  if (hydration === 'error' || !model) return <NotFoundState onBack={goToDashboard} />
   if (activeDocumentId !== documentId) return <LoadingState />
 
   return (
-    <PreviewScreen
+    <ResumePreviewScreen
       model={model}
-      settings={document.settings}
-      documentName={document.meta.name}
-      onSettingsChange={updateModel}
       onBack={goToDashboard}
       onEdit={goToEditor}
-      onDownload={download}
+      onSelectTemplate={selectTemplate}
+      onAppearanceChange={updateAppearance}
       onPrint={print}
-      onShare={share}
+      onDownload={download}
       onExportJson={exportJson}
-      badge={<LiveSessionBadge />}
+      onShare={share}
+      templatesHref={`/templates?resume=${encodeURIComponent(documentId)}`}
+      onOpenTemplates={openTemplates}
+      downloadLabel={isNativeResumePlatform() ? 'Download PDF' : 'Save as PDF'}
+      toolbarStart={<BrandMark href="/" showWordmark={false} className="mr-1 max-sm:hidden" onClick={(event) => { event.preventDefault(); goToDashboard() }} />}
+      toolbarEnd={<><LiveSessionBadge /><ThemeToggle /></>}
     />
   )
 }

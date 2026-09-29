@@ -6,9 +6,12 @@ import {
     getCompletion,
     getNavigation,
     getPreviewRenderModel,
+    MAX_PORTRAIT_IMAGE_LENGTH,
     normalizeResumeDocument,
     reduceWorkspace,
+    snapshotsEqual,
     type IdFactory,
+    type WorkspaceSnapshot,
 } from "./model";
 import {
     createLocalStoragePersistence,
@@ -33,6 +36,13 @@ const deterministicIds = (): IdFactory => {
 };
 
 const clock = () => "2026-01-01T00:00:00.000Z";
+
+/** Freeze a value and everything reachable from it, so any later in-place write throws. */
+const deepFreeze = (value: unknown): void => {
+    if (value === null || typeof value !== "object" || Object.isFrozen(value)) return;
+    for (const child of Object.values(value)) deepFreeze(child);
+    Object.freeze(value);
+};
 
 describe("resume workspace model", () => {
     it("normalizes legacy fields, sanitizes rich text, and gives repeatables stable IDs", () => {
@@ -96,6 +106,56 @@ describe("resume workspace model", () => {
         expect(snapshot.documents.one.personalInfo.image).toBe(validImage);
         snapshot = reduceWorkspace(snapshot, { type: "document/update", patch: { personalInfo: { image: undefined } } }, { idFactory: deterministicIds(), now: clock });
         expect(snapshot.documents.one.personalInfo.image).toBeUndefined();
+    });
+
+    it("compares snapshots exactly as their JSON would compare", () => {
+        const ids = deterministicIds();
+        let snapshot = createInitialWorkspaceSnapshot();
+        snapshot = reduceWorkspace(snapshot, { type: "document/create", document: { id: "one" } }, { idFactory: ids, now: clock });
+        snapshot = reduceWorkspace(snapshot, { type: "document/create", document: { id: "two" } }, { idFactory: ids, now: clock });
+        const copy = JSON.parse(JSON.stringify(snapshot)) as WorkspaceSnapshot;
+
+        expect(snapshotsEqual(snapshot, snapshot)).toBe(true);
+        expect(snapshotsEqual(snapshot, copy)).toBe(true);
+        // JSON drops undefined-valued keys.
+        expect(
+            snapshotsEqual(snapshot, {
+                ...copy,
+                documents: {
+                    ...copy.documents,
+                    one: {
+                        ...copy.documents.one,
+                        personalInfo: { ...copy.documents.one.personalInfo, image: undefined },
+                    },
+                },
+            })
+        ).toBe(true);
+        // Document order is meaningful (dashboard order, delete fallback), as it is in the JSON.
+        expect(
+            snapshotsEqual(snapshot, {
+                ...copy,
+                documents: { two: copy.documents.two, one: copy.documents.one },
+            })
+        ).toBe(false);
+        expect(
+            snapshotsEqual(snapshot, {
+                ...copy,
+                documents: {
+                    ...copy.documents,
+                    two: { ...copy.documents.two, summary: "<p>Changed</p>" },
+                },
+            })
+        ).toBe(false);
+        expect(
+            snapshotsEqual(snapshot, {
+                ...copy,
+                documents: {
+                    ...copy.documents,
+                    two: { ...copy.documents.two, sections: copy.documents.two.sections.slice(1) },
+                },
+            })
+        ).toBe(false);
+        expect(snapshotsEqual(snapshot, { ...copy, activeDocumentId: "one" })).toBe(false);
     });
 
     it("keeps layout separate from content and derives ordered navigation/preview", () => {
@@ -226,6 +286,29 @@ describe("resume workspace model", () => {
             title: "Portfolio ",
             url: "https://example.com/path ",
         });
+    });
+
+    it("normalizes and edits the optional headline and location", () => {
+        const imported = normalizeResumeDocument(
+            { personal_info: { name: "Ada", headline: " Staff Engineer ", location: " London " } },
+            { idFactory: deterministicIds(), now: clock }
+        );
+        expect(imported.personalInfo).toMatchObject({ headline: "Staff Engineer", location: "London" });
+        expect(createEmptyResumeDocument({ id: "blank" }).personalInfo).not.toHaveProperty("headline");
+
+        const dependencies = { idFactory: deterministicIds(), now: clock };
+        let snapshot = reduceWorkspace(
+            createInitialWorkspaceSnapshot(),
+            { type: "document/create", document: { id: "one" } },
+            dependencies
+        );
+        snapshot = reduceWorkspace(
+            snapshot,
+            { type: "document/update", patch: { personalInfo: { headline: "Data ", location: "Remote" } } },
+            dependencies
+        );
+        expect(snapshot.documents.one.personalInfo).toMatchObject({ headline: "Data ", location: "Remote" });
+        expect(snapshot.documents.one.settings).toMatchObject({ titleFont: "Template default", bodyFont: "Template default" });
     });
 
     it("rejects invalid accent colors at the state boundary", () => {
@@ -409,6 +492,76 @@ describe("resume workspace store", () => {
         expect(persistence.value?.snapshot.documents.one.personalInfo.name).toBe(
             "First Person"
         );
+    });
+
+    it("records history by sharing snapshot references instead of copying them", () => {
+        const store = createResumeWorkspaceStore({
+            persistence: null,
+            idFactory: deterministicIds(),
+            now: clock,
+            autoHydrate: false,
+        });
+        // Freeze every committed snapshot: history shares these objects, so an
+        // in-place write anywhere in the store or reducer would throw here.
+        store.subscribe((state) => {
+            deepFreeze(state.documents);
+            deepFreeze(state.settings);
+        });
+        const actions = store.getState().actions;
+        const portrait = `data:image/png;base64,${"A".repeat(MAX_PORTRAIT_IMAGE_LENGTH - 32)}`;
+        actions.createDocument({ id: "photo" });
+        actions.updateDocument({ personalInfo: { name: "Ada", image: portrait } });
+        const experienceId = actions.createEntry("experience");
+        actions.createDocument({ id: "other" });
+        actions.selectDocument("photo");
+        expect(experienceId).not.toBeNull();
+
+        const beforeEdit = store.getState();
+        actions.updateEntry("experience", experienceId ?? "", { company: "Analytical Engines" });
+        const afterEdit = store.getState();
+        const recorded = afterEdit.history.past[afterEdit.history.past.length - 1];
+
+        // The undo entry is the previous state's objects, not a copy of them.
+        expect(recorded.documents).toBe(beforeEdit.documents);
+        expect(recorded.settings).toBe(beforeEdit.settings);
+        // The edit rebuilt only the path it touched; the portrait's object and
+        // the other resume are shared by the history entry and the live state.
+        expect(afterEdit.documents.photo).not.toBe(recorded.documents.photo);
+        expect(afterEdit.documents.photo.personalInfo).toBe(recorded.documents.photo.personalInfo);
+        expect(afterEdit.documents.photo.personalInfo.image).toBe(portrait);
+        expect(afterEdit.documents.other).toBe(recorded.documents.other);
+        expect(afterEdit.settings).toBe(recorded.settings);
+
+        // A command that changes nothing records nothing.
+        actions.updateEntry("experience", "missing", { company: "Nobody" });
+        expect(store.getState().history).toBe(afterEdit.history);
+
+        actions.undo();
+        const undone = store.getState();
+        expect(undone.documents).toBe(beforeEdit.documents);
+        expect(undone.documents.photo.experience[0].company).toBe("");
+        expect(undone.history.future[undone.history.future.length - 1].documents).toBe(
+            afterEdit.documents
+        );
+
+        actions.redo();
+        const redone = store.getState();
+        expect(redone.documents).toBe(afterEdit.documents);
+        expect(redone.documents.photo.experience[0].company).toBe("Analytical Engines");
+        expect(redone.history.past[redone.history.past.length - 1].documents).toBe(
+            beforeEdit.documents
+        );
+
+        // Walk the whole stack back and forth over the frozen snapshots.
+        const pastLength = redone.history.past.length;
+        for (let step = 0; step < pastLength; step += 1) actions.undo();
+        expect(store.getState().documents).toEqual({});
+        for (let step = 0; step < pastLength; step += 1) actions.redo();
+        expect(store.getState().documents).toBe(afterEdit.documents);
+        expect(store.getState().documents.photo.personalInfo).toMatchObject({
+            name: "Ada",
+            image: portrait,
+        });
     });
 
     it("imports a workspace and derives dashboard completion", () => {

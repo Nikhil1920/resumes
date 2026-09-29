@@ -1,3 +1,4 @@
+import * as React from "react"
 import { ExternalLinkIcon, MousePointerClickIcon, PaletteIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -24,6 +25,7 @@ function LiveDot() {
 
 /** Docked preview column on wide screens. */
 export function LivePreviewPane({ model, onSectionClick, onOpenAppearance }: LivePreviewProps) {
+  const [pages, setPages] = React.useState(1)
   return (
     <aside className="resume-builder__preview-pane hidden xl:flex" aria-label="Live resume preview">
       <div className="flex items-center justify-between gap-3 px-1 pb-3">
@@ -32,7 +34,7 @@ export function LivePreviewPane({ model, onSectionClick, onOpenAppearance }: Liv
             <LiveDot />
             Live preview
           </p>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{getTemplateLabel(model.template)} · {model.pageSize}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{getTemplateLabel(model.template)} · {model.pageSize} · {pages} {pages === 1 ? "page" : "pages"}</p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onOpenAppearance}>
           <PaletteIcon />
@@ -40,7 +42,7 @@ export function LivePreviewPane({ model, onSectionClick, onOpenAppearance }: Liv
         </Button>
       </div>
       <div className="resume-builder__preview-shell">
-        <ScaledResumePreview model={model} className="resume-builder__preview-page" onSectionClick={onSectionClick} />
+        <ScaledResumePreview model={model} framed onPageCountChange={setPages} className="resume-builder__preview-page" onSectionClick={onSectionClick} />
         <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
           <MousePointerClickIcon className="size-3.5" aria-hidden="true" />
           Click any part of the page to edit it
@@ -73,6 +75,7 @@ export function LivePreviewDrawer({
         <DrawerBody className="resume-builder__drawer-preview pb-4">
           <ScaledResumePreview
             model={model}
+            framed
             className="resume-builder__preview-page"
             onSectionClick={(section) => {
               onSectionClick(section)

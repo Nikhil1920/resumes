@@ -19,7 +19,12 @@ export function AppHeader({ children, actions, className, onBrandClick }: AppHea
     <header className={cn("border-b border-border/80 bg-background/85 backdrop-blur-md", className)}>
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <BrandMark href="/" onClick={onBrandClick} />
-        {children ? <nav aria-label="Primary navigation" className="hidden min-w-0 flex-1 items-center gap-1 md:flex">{children}</nav> : <div className="flex-1" />}
+        {children ? (
+          <>
+            <nav aria-label="Primary navigation" className="hidden min-w-0 flex-1 items-center gap-1 sm:flex">{children}</nav>
+            <div className="flex-1 sm:hidden" />
+          </>
+        ) : <div className="flex-1" />}
         <p className="hidden items-center gap-1.5 rounded-full border border-border/80 bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground lg:flex">
           <ShieldCheck aria-hidden="true" className="size-3.5 text-primary" />
           Saved on this device

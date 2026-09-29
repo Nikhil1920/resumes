@@ -519,9 +519,7 @@ export function ResumeBuilder({ documentId, panel = "content", onPanelChange, on
                   />
                 ) : (
                   <ResumeSettingsEditor
-                    settings={selectedDocument.settings}
                     previewModel={previewModel}
-                    disabled={isDisabled}
                     className="mt-6 sm:mt-8"
                     onChange={(patch) => actions.updateDocumentSettings(patch, id)}
                   />

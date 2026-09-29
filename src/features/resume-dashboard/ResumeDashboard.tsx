@@ -1,25 +1,28 @@
 import * as React from "react"
 import {
   ArrowRightIcon,
+  BotIcon,
   CopyIcon,
   DownloadIcon,
   EyeIcon,
   FilePlus2Icon,
+  FileTextIcon,
   LockKeyholeIcon,
   MoreHorizontalIcon,
   PencilIcon,
+  PlusIcon,
   SparklesIcon,
   Trash2Icon,
   UploadIcon,
 } from "lucide-react"
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Progress } from "@/components/ui/progress"
 import { HomepageSeoContent } from "@/components/homepage-seo-content"
+import type { ResumePreviewModel } from "@/features/resume-preview"
+import { ScaledResumePreview } from "@/features/resume-preview/ScaledResumePreview"
 import { cn } from "@/lib/utils"
 
 /** The minimum data the dashboard needs to render one saved resume. */
@@ -30,6 +33,8 @@ export interface ResumeCardSummary {
   updatedAt: string
   /** Completion percentage from 0 to 100. Values outside that range are clamped. */
   completion: number
+  /** When present, the card shows a live thumbnail of the first page. */
+  preview?: ResumePreviewModel
 }
 
 /** Actions form the seam between this view and the global workspace store. */
@@ -51,18 +56,38 @@ export interface ResumeDashboardProps extends DashboardCallbacks {
 
 function formatUpdatedAt(value: string) {
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return "Recently"
+  if (Number.isNaN(date.getTime())) return "recently"
+  const diffMinutes = Math.round((Date.now() - date.getTime()) / 60000)
+  if (diffMinutes < 1) return "just now"
+  if (diffMinutes < 60) return `${diffMinutes} min ago`
+  const diffHours = Math.round(diffMinutes / 60)
+  if (diffHours < 24) return `${diffHours} hr ago`
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
-    year: "numeric",
+    year: date.getFullYear() === new Date().getFullYear() ? undefined : "numeric",
   }).format(date)
 }
 
-function getInitials(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean)
-  if (words.length === 0) return "R"
-  return words.slice(0, 2).map((word) => word[0]).join("").toUpperCase()
+/** Placeholder page used when a resume has no preview model yet. */
+function PaperSketch({ className }: { className?: string }) {
+  return (
+    <div aria-hidden="true" className={cn("flex flex-col rounded-[3px] bg-white p-[9%] shadow-lift", className)}>
+      <div className="h-[6%] w-1/2 rounded-full bg-[#004aad]" />
+      <div className="mt-[4%] h-[3%] w-1/3 rounded-full bg-[#004aad]/35" />
+      <div className="mt-[10%] h-[2.5%] w-1/4 rounded-full bg-[#004aad]/70" />
+      <div className="mt-[5%] space-y-[4%]">
+        <div className="h-[2%] min-h-1 w-full rounded-full bg-slate-200" />
+        <div className="h-[2%] min-h-1 w-11/12 rounded-full bg-slate-200" />
+        <div className="h-[2%] min-h-1 w-4/5 rounded-full bg-slate-200" />
+      </div>
+      <div className="mt-[10%] h-[2.5%] w-1/5 rounded-full bg-[#004aad]/70" />
+      <div className="mt-[5%] space-y-[4%]">
+        <div className="h-[2%] min-h-1 w-full rounded-full bg-slate-200" />
+        <div className="h-[2%] min-h-1 w-3/4 rounded-full bg-slate-200" />
+      </div>
+    </div>
+  )
 }
 
 function ResumeCard({
@@ -76,24 +101,43 @@ function ResumeCard({
   resume: ResumeCardSummary
   onRequestDelete: (resume: ResumeCardSummary) => void
 }) {
-  const completion = Math.min(100, Math.max(0, Number.isFinite(resume.completion) ? resume.completion : 0))
+  const completion = Math.round(Math.min(100, Math.max(0, Number.isFinite(resume.completion) ? resume.completion : 0)))
   const displayName = resume.name.trim() || "Untitled resume"
 
   return (
-    <Card className="group relative min-w-0 overflow-visible border-border/70 bg-card transition-shadow hover:shadow-lg hover:shadow-amber-950/5">
-      <CardHeader className="gap-4 pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <div aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-sm font-semibold tracking-tight text-amber-950 dark:bg-amber-950/50 dark:text-amber-100">
-              {getInitials(displayName)}
-            </div>
-            <div className="min-w-0">
-              <CardTitle className="truncate text-[1rem]">{displayName}</CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">Updated {formatUpdatedAt(resume.updatedAt)}</p>
-            </div>
+    <article className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-lift">
+      <div className="relative h-52 overflow-hidden border-b border-border bg-[linear-gradient(180deg,var(--muted),color-mix(in_oklch,var(--muted)_40%,var(--card)))] px-8 pt-6">
+        {resume.preview ? (
+          <ScaledResumePreview
+            model={resume.preview}
+            decorative
+            className="rounded-t-[3px] shadow-lift transition-transform duration-300 group-hover:-translate-y-1"
+          />
+        ) : (
+          <PaperSketch className="aspect-[210/297] w-full transition-transform duration-300 group-hover:-translate-y-1" />
+        )}
+        <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-card/90 to-transparent" />
+        <button
+          type="button"
+          onClick={() => onEditResume(resume.id)}
+          aria-label={`Edit ${displayName}`}
+          className="absolute inset-0 flex items-end justify-end p-3 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
+        >
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground opacity-0 shadow-lift transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+            <PencilIcon className="size-3" aria-hidden="true" />
+            Open editor
+          </span>
+        </button>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="truncate font-heading text-[0.95rem] font-semibold tracking-tight" title={displayName}>{displayName}</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">Edited {formatUpdatedAt(resume.updatedAt)}</p>
           </div>
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon-sm" aria-label={`More actions for ${displayName}`} title={`More actions for ${displayName}`} />}>
+            <DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon-sm" className="-mt-0.5 -mr-1.5 text-muted-foreground" aria-label={`More actions for ${displayName}`} title={`More actions for ${displayName}`} />}>
               <MoreHorizontalIcon />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
@@ -121,62 +165,127 @@ function ResumeCard({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <p className="line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">
-          {resume.description?.trim() || "Add a short description so you can find this version later."}
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-2 pb-4">
-        <div className="flex items-center justify-between gap-3 text-xs">
-          <span className="font-medium text-foreground">Resume progress</span>
-          <span className="tabular-nums text-muted-foreground">{Math.round(completion)}%</span>
+
+        {resume.description?.trim() ? (
+          <p className="line-clamp-2 text-sm leading-5 text-muted-foreground">{resume.description.trim()}</p>
+        ) : null}
+
+        <div className="mt-auto flex items-center gap-3">
+          <Progress value={completion} aria-label={`${completion}% complete`} className="h-1.5 flex-1" />
+          <span className={cn("text-xs font-medium tabular-nums", completion === 100 ? "text-primary" : "text-muted-foreground")}>{completion}%</span>
         </div>
-        <Progress value={completion} aria-label={`${Math.round(completion)}% complete`} className="h-1.5 bg-amber-100 dark:bg-amber-950/50 [&_[data-slot=progress-indicator]]:bg-amber-600" />
-      </CardContent>
-      <CardFooter className="gap-2 border-t border-border/60 bg-muted/25 p-3">
-        <Button type="button" size="sm" className="flex-1" onClick={() => onEditResume(resume.id)}>
-          <PencilIcon />
-          Edit
-        </Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => onPreviewResume(resume.id)}>
-          <EyeIcon />
-          <span className="sr-only sm:not-sr-only">Preview</span>
-        </Button>
-      </CardFooter>
-    </Card>
+
+        <div className="flex gap-2">
+          <Button type="button" size="sm" className="flex-1" onClick={() => onEditResume(resume.id)}>
+            <PencilIcon />
+            Edit
+          </Button>
+          <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => onPreviewResume(resume.id)}>
+            <EyeIcon />
+            Preview
+          </Button>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function NewResumeTile({ onCreateResume }: Pick<DashboardCallbacks, "onCreateResume">) {
+  return (
+    <button
+      type="button"
+      onClick={onCreateResume}
+      className="group flex min-h-44 flex-col sm:min-h-72 items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-transparent p-6 text-center text-muted-foreground transition-colors hover:border-primary/50 hover:bg-accent/50 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      <span className="flex size-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground transition-transform group-hover:scale-110">
+        <PlusIcon className="size-5" aria-hidden="true" />
+      </span>
+      <span className="text-sm font-semibold text-foreground">New resume</span>
+      <span className="max-w-48 text-xs leading-5">Start from a blank page. You can switch templates any time.</span>
+    </button>
   )
 }
 
 function EmptyState({ onCreateResume, onCreateSampleResume }: Pick<DashboardCallbacks, "onCreateResume" | "onCreateSampleResume">) {
-  if (!__INCLUDE_WEB_SEO__) {
-    return (
-      <div className="rounded-xl border border-dashed border-border px-5 py-8 text-center">
-        <h3 className="font-medium">No resumes yet</h3>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">Create a resume or start with a sample above.</p>
-      </div>
-    )
-  }
-
   return (
-    <Card className="border-dashed border-amber-300/80 bg-amber-50/45 shadow-none dark:border-amber-900/70 dark:bg-amber-950/15">
-      <CardContent className="flex flex-col items-center px-6 py-14 text-center sm:py-16">
-        <div aria-hidden="true" className="mb-5 flex size-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200">
-          <FilePlus2Icon className="size-6" />
+    <div className="relative overflow-hidden rounded-3xl border border-dashed border-primary/30 bg-accent/40 px-6 py-14 text-center sm:py-16">
+      <div className="mx-auto mb-6 flex w-fit items-end gap-2" aria-hidden="true">
+        <PaperSketch className="aspect-[210/297] w-14 -rotate-6 opacity-70" />
+        <PaperSketch className="aspect-[210/297] w-20" />
+        <PaperSketch className="aspect-[210/297] w-14 rotate-6 opacity-70" />
+      </div>
+      <h3 className="font-heading text-xl font-semibold tracking-tight">Your next good draft starts here</h3>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+        Build a resume from a blank page, or open the sample to see how the workspace comes together.
+      </p>
+      <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
+        <Button type="button" size="lg" className="px-4" onClick={onCreateResume}>
+          <FilePlus2Icon />
+          Create a resume
+        </Button>
+        <Button type="button" variant="outline" size="lg" className="px-4" onClick={onCreateSampleResume}>
+          View sample resume
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/** Illustration for the hero: a stack of pages in brand colors. */
+function HeroPages() {
+  return (
+    <div aria-hidden="true" className="relative mx-auto hidden h-80 w-72 lg:block">
+      <PaperSketch className="absolute top-6 left-0 aspect-[210/297] w-48 -rotate-8 opacity-60" />
+      <PaperSketch className="absolute top-0 right-0 aspect-[210/297] w-56 rotate-3" />
+      <div className="absolute -bottom-2 left-6 flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[#0b2a5b] shadow-lift">
+        <span className="flex size-6 items-center justify-center rounded-md bg-[#004aad] text-white"><FileTextIcon className="size-3.5" /></span>
+        resume.pdf
+        <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[0.65rem] text-emerald-700">Ready</span>
+      </div>
+      <div className="absolute top-24 -right-6 flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[#0b2a5b] shadow-lift">
+        <BotIcon className="size-4 text-[#004aad]" />
+        AI agent ready
+      </div>
+    </div>
+  )
+}
+
+function Hero({ compact, onCreateResume, onCreateSampleResume }: Pick<DashboardCallbacks, "onCreateResume" | "onCreateSampleResume"> & { compact: boolean }) {
+  return (
+    <div className={cn("relative isolate overflow-hidden rounded-[2rem] bg-brand px-6 text-white shadow-lift sm:px-10 lg:px-14", compact ? "py-8 sm:py-10" : "py-10 sm:py-14")}>
+      <div aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 -z-10 text-white/[0.07] [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_70%)]" />
+      <div aria-hidden="true" className="pointer-events-none absolute -top-40 -right-24 -z-10 size-[28rem] rounded-full bg-sky-400/30 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-48 -left-20 -z-10 size-96 rounded-full bg-indigo-900/60 blur-3xl" />
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div className="max-w-2xl">
+          <p className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
+            <SparklesIcon className="size-3.5" aria-hidden="true" />
+            Free, open source, and AI-agent ready
+          </p>
+          <h1 id="resume-dashboard-heading" className={cn("mt-5 font-heading leading-[1.05] font-semibold tracking-[-0.035em] text-balance", compact ? "text-3xl sm:text-4xl" : "text-4xl sm:text-5xl lg:text-[3.5rem]")}>
+            Make a resume online, then save it as a PDF.
+          </h1>
+          <p className={cn("max-w-xl text-base leading-7 text-pretty text-white/75", compact ? "mt-3" : "mt-5 sm:text-lg")}>
+            Create multiple drafts, choose from ten templates, and print or save a PDF when you are ready. No account, no upload, no paywall.
+          </p>
+          <div className={cn("flex flex-col gap-3 sm:flex-row", compact ? "mt-6" : "mt-8")}>
+            <Button type="button" size="lg" className="h-11 bg-white px-5 text-[0.95rem] text-brand shadow-lift hover:bg-white/90" onClick={onCreateResume}>
+              <FilePlus2Icon />
+              Create a resume
+              <ArrowRightIcon />
+            </Button>
+            <Button type="button" variant="outline" size="lg" className="h-11 border-white/30 bg-white/5 px-5 text-[0.95rem] text-white hover:bg-white/15 hover:text-white dark:border-white/30 dark:bg-white/5 dark:hover:bg-white/15" onClick={onCreateSampleResume}>
+              Start with a sample
+            </Button>
+          </div>
+          <p className="mt-6 flex items-center gap-2 text-xs text-white/65">
+            <LockKeyholeIcon className="size-3.5" aria-hidden="true" />
+            Your resumes stay on this device. No account or upload required.
+          </p>
         </div>
-        <h3 className="font-heading text-xl font-medium tracking-tight">Your next good draft starts here</h3>
-        <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-          Build a resume from a blank page, or open a sample to see how the workspace comes together.
-        </p>
-        <div className="mt-6 flex w-full flex-col justify-center gap-2 sm:w-auto sm:flex-row">
-          <Button type="button" onClick={onCreateResume}>
-            <FilePlus2Icon />
-            Create a resume
-          </Button>
-          <Button type="button" variant="outline" onClick={onCreateSampleResume}>
-            View sample resume
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        {compact ? null : <HeroPages />}
+      </div>
+    </div>
   )
 }
 
@@ -204,124 +313,83 @@ export function ResumeDashboard({
 
   return (
     <>
-      <section aria-labelledby="resume-dashboard-heading" className={cn("mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8", __INCLUDE_WEB_SEO__ ? "space-y-10 py-8" : "space-y-8 py-6", className)}>
-      {__INCLUDE_WEB_SEO__ ? (
-      <div className="relative isolate overflow-hidden rounded-[2rem] border border-amber-200/90 bg-[#fff8ed] px-6 py-9 shadow-sm shadow-amber-950/5 sm:px-10 sm:py-12 lg:px-14 lg:py-14 dark:border-amber-900/70 dark:bg-amber-950/20">
-        <div aria-hidden="true" className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full bg-amber-200/40 blur-3xl dark:bg-amber-700/10" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 left-1/3 size-64 rounded-full bg-orange-200/30 blur-3xl dark:bg-orange-700/10" />
-        <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-          <div className="max-w-2xl">
-            <Badge variant="outline" className="border-amber-300 bg-amber-100/60 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
-              <SparklesIcon />
-              Free online resume maker
-            </Badge>
-            <h1 id="resume-dashboard-heading" className="mt-5 max-w-xl font-heading text-4xl leading-[1.06] tracking-[-0.04em] text-amber-950 sm:text-5xl dark:text-amber-50">
-              Make a resume online, then save it as a PDF.
-            </h1>
-            <p className="mt-5 max-w-xl text-base leading-7 text-amber-950/70 sm:text-lg dark:text-amber-100/70">
-              Create multiple drafts, choose how each one looks, and use the preview when you are ready to print or save a PDF.
+      <section aria-labelledby="resume-dashboard-heading" className={cn("mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8", __INCLUDE_WEB_SEO__ ? "space-y-12 py-8" : "space-y-8 py-6", className)}>
+        {__INCLUDE_WEB_SEO__ ? (
+          <Hero compact={resumes.length > 0} onCreateResume={onCreateResume} onCreateSampleResume={onCreateSampleResume} />
+        ) : (
+          <div>
+            <h1 id="resume-dashboard-heading" className="font-heading text-3xl font-semibold tracking-tight">Your resumes</h1>
+            <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+              Create, edit and keep a version for every opportunity.
             </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button type="button" size="lg" className="bg-amber-900 text-amber-50 hover:bg-amber-800 dark:bg-amber-100 dark:text-amber-950 dark:hover:bg-amber-200" onClick={onCreateResume}>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Button type="button" size="lg" className="px-4" onClick={onCreateResume}>
                 <FilePlus2Icon />
                 Create a resume
-                <ArrowRightIcon />
               </Button>
-              <Button type="button" variant="outline" size="lg" className="border-amber-300 bg-transparent text-amber-950 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-100 dark:hover:bg-amber-950/60" onClick={onCreateSampleResume}>
+              <Button type="button" variant="outline" size="lg" className="px-4" onClick={onCreateSampleResume}>
                 Start with a sample
               </Button>
             </div>
-            <p className="mt-6 flex items-center gap-2 text-xs text-amber-950/65 dark:text-amber-100/65">
-              <LockKeyholeIcon className="size-3.5" aria-hidden="true" />
-              Your resumes stay on this device. No account or upload required.
-            </p>
-          </div>
-          <div aria-hidden="true" className="hidden w-48 rotate-3 rounded-xl border border-amber-200 bg-[#fffdf8] p-4 shadow-xl shadow-amber-950/10 lg:block">
-            <div className="mb-5 flex items-center justify-between">
-              <div className="size-7 rounded-full bg-amber-100" />
-              <div className="h-1.5 w-12 rounded-full bg-amber-200" />
-            </div>
-            <div className="h-2 w-28 rounded-full bg-amber-900/80" />
-            <div className="mt-2 h-1.5 w-20 rounded-full bg-amber-200" />
-            <div className="mt-7 space-y-2">
-              <div className="h-1.5 w-full rounded-full bg-amber-100" />
-              <div className="h-1.5 w-5/6 rounded-full bg-amber-100" />
-              <div className="h-1.5 w-3/4 rounded-full bg-amber-100" />
-            </div>
-            <div className="mt-8 h-1.5 w-16 rounded-full bg-amber-300" />
-          </div>
-        </div>
-      </div>
-      ) : (
-        <div>
-          <h1 id="resume-dashboard-heading" className="font-heading text-3xl font-semibold tracking-tight">Your resumes</h1>
-          <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
-            Create, edit and keep a version for every opportunity.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Button type="button" onClick={onCreateResume}>
-              <FilePlus2Icon />
-              Create a resume
-            </Button>
-            <Button type="button" variant="outline" onClick={onCreateSampleResume}>
-              Start with a sample
-            </Button>
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-5">
-        <div className={__INCLUDE_WEB_SEO__ ? "flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between" : "flex items-center justify-between gap-3"}>
-          <div>
-            {__INCLUDE_WEB_SEO__ ? <p className="text-sm font-medium text-muted-foreground">Workspace</p> : null}
-            <h2 className={cn("font-heading tracking-tight", __INCLUDE_WEB_SEO__ ? "mt-1 text-2xl" : "text-xl")}>Saved resumes</h2>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <input ref={importInputRef} id={importInputId} type="file" accept="application/json,.json" tabIndex={-1} className="sr-only" onChange={handleImport} />
-            <Button type="button" variant="outline" size="sm" aria-controls={importInputId} onClick={() => importInputRef.current?.click()}>
-              <UploadIcon />
-              Import JSON
-            </Button>
-            {__INCLUDE_WEB_SEO__ && resumes.length > 0 && (
-              <Button type="button" size="sm" onClick={onCreateResume}>
-                <FilePlus2Icon />
-                New resume
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {resumes.length === 0 ? (
-          <EmptyState onCreateResume={onCreateResume} onCreateSampleResume={onCreateSampleResume} />
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {resumes.map((resume) => (
-              <ResumeCard key={resume.id} resume={resume} onEditResume={onEditResume} onPreviewResume={onPreviewResume} onDuplicateResume={onDuplicateResume} onExportResume={onExportResume} onRequestDelete={setPendingDelete} />
-            ))}
           </div>
         )}
-      </div>
 
-      <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => { if (!open) setPendingDelete(null) }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {pendingDelete?.name || "this resume"}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This removes the saved resume from this device. You cannot undo this action.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep resume</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={() => {
-              if (pendingDelete) onDeleteResume(pendingDelete.id)
-              setPendingDelete(null)
-            }}>
-              <Trash2Icon />
-              Delete resume
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-tight sm:text-2xl">
+                Saved resumes
+                {resumes.length > 0 ? <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground tabular-nums">{resumes.length}</span> : null}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">Stored in this browser. Export JSON to keep a backup.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <input ref={importInputRef} id={importInputId} type="file" accept="application/json,.json" tabIndex={-1} className="sr-only" onChange={handleImport} />
+              <Button type="button" variant="outline" aria-controls={importInputId} onClick={() => importInputRef.current?.click()}>
+                <UploadIcon />
+                Import JSON
+              </Button>
+              {resumes.length > 0 && (
+                <Button type="button" onClick={onCreateResume}>
+                  <PlusIcon />
+                  New resume
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {resumes.length === 0 ? (
+            <EmptyState onCreateResume={onCreateResume} onCreateSampleResume={onCreateSampleResume} />
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {resumes.map((resume) => (
+                <ResumeCard key={resume.id} resume={resume} onEditResume={onEditResume} onPreviewResume={onPreviewResume} onDuplicateResume={onDuplicateResume} onExportResume={onExportResume} onRequestDelete={setPendingDelete} />
+              ))}
+              <NewResumeTile onCreateResume={onCreateResume} />
+            </div>
+          )}
+        </div>
+
+        <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => { if (!open) setPendingDelete(null) }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {pendingDelete?.name || "this resume"}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This removes the saved resume from this device. You cannot undo this action.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep resume</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={() => {
+                if (pendingDelete) onDeleteResume(pendingDelete.id)
+                setPendingDelete(null)
+              }}>
+                <Trash2Icon />
+                Delete resume
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </section>
       {__INCLUDE_WEB_SEO__ ? <HomepageSeoContent /> : null}
     </>

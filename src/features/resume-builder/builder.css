@@ -1,62 +1,47 @@
 .resume-builder {
   --builder-chrome-height: 3.5rem;
   min-height: calc(100svh - var(--builder-chrome-height));
-  background: color-mix(in oklch, var(--background) 94%, var(--muted));
+  background: var(--background);
 }
 
-.resume-builder__chrome {
+.resume-builder__toolbar {
   position: sticky;
   z-index: 30;
   top: 0;
   display: flex;
-  min-height: var(--builder-chrome-height);
+  height: var(--builder-chrome-height);
   align-items: center;
   gap: .75rem;
-  border-bottom: 1px solid color-mix(in oklch, var(--border) 72%, transparent);
-  background: color-mix(in oklch, var(--background) 88%, transparent);
-  padding: .55rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklch, var(--background) 86%, transparent);
+  padding: 0 1rem;
   backdrop-filter: blur(18px);
 }
 
 .resume-builder__layout {
   display: grid;
   min-height: calc(100svh - var(--builder-chrome-height));
-  grid-template-columns: 15.5rem minmax(0, 1fr) minmax(21rem, 25rem);
+  grid-template-columns: 15rem minmax(0, 1fr) minmax(24rem, 30rem);
 }
 
 .resume-builder__sidebar {
   position: sticky;
   top: var(--builder-chrome-height);
   height: calc(100svh - var(--builder-chrome-height));
-  border-right: 1px solid color-mix(in oklch, var(--border) 72%, transparent);
-  background: color-mix(in oklch, var(--card) 74%, var(--background));
-}
-
-.resume-builder__main {
-  min-width: 0;
-  background: var(--background);
-}
-
-.resume-builder__toolbar {
-  position: sticky;
-  z-index: 20;
-  top: var(--builder-chrome-height);
-  display: flex;
-  min-height: 3.75rem;
-  align-items: center;
-  gap: .75rem;
-  border-bottom: 1px solid color-mix(in oklch, var(--border) 64%, transparent);
-  background: color-mix(in oklch, var(--background) 92%, transparent);
-  padding: .65rem clamp(1rem, 3vw, 2.25rem);
-  backdrop-filter: blur(14px);
+  border-right: 1px solid var(--border);
+  background: var(--sidebar);
 }
 
 .resume-builder__mobile-nav {
+  position: sticky;
+  z-index: 25;
+  top: var(--builder-chrome-height);
   display: none;
   overflow-x: auto;
-  border-bottom: 1px solid color-mix(in oklch, var(--border) 64%, transparent);
-  background: var(--background);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklch, var(--background) 92%, transparent);
   padding: .5rem 1rem;
+  backdrop-filter: blur(14px);
   scrollbar-width: none;
 }
 
@@ -65,41 +50,37 @@
 }
 
 .resume-builder__editor-pane {
-  padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 3.5rem) 5rem;
+  min-width: 0;
+  padding: clamp(1.5rem, 4vw, 2.75rem) clamp(1rem, 4vw, 3rem) 5rem;
 }
 
 .resume-builder__preview-pane {
+  position: sticky;
+  top: var(--builder-chrome-height);
+  height: calc(100svh - var(--builder-chrome-height));
   min-width: 0;
-  border-left: 1px solid color-mix(in oklch, var(--border) 72%, transparent);
-  background: color-mix(in oklch, var(--muted) 38%, var(--background));
-  padding: 1rem;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in oklch, var(--foreground) 9%, transparent) 1px, transparent 0) 0 0 / 18px 18px,
+    var(--sidebar);
+  padding: 1rem 1.25rem 0;
 }
 
 .resume-builder__preview-shell {
-  max-height: calc(100svh - 7.5rem);
-  overflow: auto;
-  border: 1px solid color-mix(in oklch, var(--border) 78%, transparent);
-  border-radius: 1rem;
-  background: #f4f5f5;
-  box-shadow: 0 18px 46px color-mix(in oklch, var(--foreground) 8%, transparent);
-  scrollbar-color: color-mix(in oklch, var(--foreground) 24%, transparent) transparent;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-bottom: 1.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--foreground) 20%, transparent) transparent;
 }
 
-.resume-builder__preview-shell .resume-preview__workspace {
-  min-width: 0;
-  padding: 1.25rem .75rem 2.5rem;
-}
-
-.resume-builder__preview-shell .resume-preview__page {
-  width: 210mm;
-  min-width: 210mm;
-  zoom: .36;
-  box-shadow: 0 8px 24px rgba(13, 37, 33, .12);
-}
-
-.resume-builder__preview-shell .resume-preview__page--letter {
-  width: 216mm;
-  min-width: 216mm;
+.resume-builder__preview-page {
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--foreground) 6%, transparent),
+    0 18px 40px -16px hsl(var(--shadow-color) / .35);
 }
 
 .resume-builder__mobile-preview-cta {
@@ -111,9 +92,15 @@
   display: none;
 }
 
+@media (min-width: 1536px) {
+  .resume-builder__layout {
+    grid-template-columns: 16rem minmax(0, 1fr) minmax(28rem, 36rem);
+  }
+}
+
 @media (max-width: 1279px) {
   .resume-builder__layout {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 15rem minmax(0, 1fr);
   }
 
   .resume-builder__mobile-preview-cta {
@@ -126,21 +113,22 @@
 }
 
 @media (max-width: 1023px) {
-  .resume-builder__mobile-nav {
-    display: block;
+  .resume-builder__layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .resume-builder__toolbar {
-    top: var(--builder-chrome-height);
+  .resume-builder__mobile-nav {
+    display: block;
   }
 }
 
 @media (max-width: 639px) {
-  .resume-builder__chrome {
-    padding-inline: .75rem;
+  .resume-builder__toolbar {
+    gap: .5rem;
+    padding-inline: .5rem;
   }
 
-  .resume-builder__toolbar {
+  .resume-builder__mobile-nav {
     padding-inline: .75rem;
   }
 

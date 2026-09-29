@@ -1,5 +1,4 @@
 import type { AnchorHTMLAttributes } from "react"
-import { FileText } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -7,20 +6,24 @@ type BrandMarkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "children"> 
   showWordmark?: boolean
 }
 
-/** Resume Maker 9000's compact wordmark for headers, empty states, and print previews. */
+/** Resume Maker 9000's wordmark, built on the same "9000" tile as the favicon. */
 export function BrandMark({ className, showWordmark = true, ...props }: BrandMarkProps) {
   return (
     <a
       aria-label="Resume Maker 9000 home"
-      className={cn("group inline-flex items-center gap-2 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50", className)}
+      className={cn("group inline-flex items-center gap-2.5 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50", className)}
       {...props}
     >
-      <span className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-transform group-hover:-rotate-2">
-        <FileText aria-hidden="true" className="size-5" strokeWidth={1.8} />
-        <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-accent ring-2 ring-background" />
-      </span>
+      <img
+        src="/favicon.svg"
+        alt=""
+        aria-hidden="true"
+        width={32}
+        height={32}
+        className="size-8 shrink-0 shadow-soft rounded-[0.7rem] transition-transform duration-200 group-hover:-rotate-3 group-hover:scale-105"
+      />
       {showWordmark ? (
-        <span className="font-heading text-base font-semibold tracking-tight text-foreground">
+        <span className="font-heading text-[0.95rem] font-semibold tracking-tight text-foreground">
           Resume Maker <span className="text-primary">9000</span>
         </span>
       ) : null}

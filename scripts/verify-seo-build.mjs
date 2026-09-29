@@ -1,7 +1,7 @@
 import { access, readFile, readdir } from 'node:fs/promises'
 import { extname, resolve } from 'node:path'
 
-import { guidePages, SITE_URL } from '../seo/pages.mjs'
+import { guidePages, guidesIndex, REPO_URL, SITE_URL, webmcpTools } from '../seo/pages.mjs'
 
 const webClient = resolve('build', 'web', 'client')
 const capacitorClient = resolve('build', 'capacitor', 'client')
@@ -25,9 +25,39 @@ assertIncludes(guideHtml, `rel="canonical" href="${SITE_URL}${guide.path}"`, 'gu
 assertIncludes(guideHtml, 'does not import or edit PDF or DOCX files', 'guide states the import limitation')
 assertIncludes(guideHtml, 'browser print dialog', 'guide explains the web PDF workflow')
 
+for (const page of guidePages) {
+  const html = await readFile(resolve(webClient, page.path.replace(/^\//, ''), 'index.html'), 'utf8')
+  assertIncludes(html, `<h1>${page.heading}</h1>`, `${page.path} has its H1`)
+  assertIncludes(html, `rel="canonical" href="${SITE_URL}${page.path}"`, `${page.path} has a self-canonical`)
+  assertIncludes(html, '"@type":"TechArticle"', `${page.path} has article structured data`)
+  if (page.faqs?.length) assertIncludes(html, '"@type":"FAQPage"', `${page.path} has FAQ structured data`)
+  for (const [question] of page.faqs ?? []) assertIncludes(html, question.replaceAll('&', '&amp;'), `${page.path} renders FAQ "${question}"`)
+  assertExcludes(html, '</script><', `${page.path} structured data is well formed`)
+  // /docs/ is gitignored, so links into it 404 on GitHub.
+  assertExcludes(html, `${REPO_URL}/blob/main/docs/`, `${page.path} does not link to unpublished docs`)
+}
+
+const webmcpGuide = guidePages.find((page) => page.path.includes('webmcp'))
+assert(webmcpGuide, 'the WebMCP guide exists')
+const webmcpHtml = await readFile(resolve(webClient, webmcpGuide.path.replace(/^\//, ''), 'index.html'), 'utf8')
+for (const [tool] of webmcpTools) assertIncludes(webmcpHtml, `<code>${tool}</code>`, `WebMCP guide documents ${tool}`)
+
+const indexHtml = await readFile(resolve(webClient, 'guides', 'index.html'), 'utf8')
+for (const page of guidePages) assertIncludes(indexHtml, `href="${page.path}"`, `guides index links to ${page.path}`)
+assertIncludes(indexHtml, `rel="canonical" href="${SITE_URL}${guidesIndex.path}"`, 'guides index has a self-canonical')
+
+const llms = await readFile(resolve(webClient, 'llms.txt'), 'utf8')
+assertIncludes(llms, REPO_URL, 'llms.txt links the repository')
+assertExcludes(llms, `${REPO_URL}/blob/main/docs/`, 'llms.txt does not link to unpublished docs')
+for (const [tool] of webmcpTools) assertIncludes(llms, `\`${tool}\``, `llms.txt lists ${tool}`)
+
+assertIncludes(webIndex, '"@type":"SoftwareApplication"', 'web homepage has app structured data')
+assertIncludes(webIndex, 'href="/guides/ai-resume-builder-webmcp/"', 'web homepage links to the WebMCP guide')
+assertIncludes(webIndex, REPO_URL, 'web homepage links to the repository')
+
 const sitemap = await readFile(resolve(webClient, 'sitemap.xml'), 'utf8')
 const locations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1])
-const expectedLocations = [`${SITE_URL}/`, ...guidePages.map((page) => `${SITE_URL}${page.path}`)]
+const expectedLocations = [`${SITE_URL}/`, `${SITE_URL}${guidesIndex.path}`, ...guidePages.map((page) => `${SITE_URL}${page.path}`)]
 assert(JSON.stringify(locations) === JSON.stringify(expectedLocations), 'sitemap contains only canonical public pages')
 assertExcludes(sitemap, '/resume/', 'sitemap excludes resume workspaces')
 assertExcludes(sitemap, '/create-resume/', 'sitemap excludes legacy editor routes')
@@ -49,7 +79,7 @@ assertIncludes(webviewUpdatePage, 'Update Android System WebView', 'Capacitor in
 assertExcludes(webviewUpdatePage, '<script', 'WebView update page runs without JavaScript or modern app dependencies')
 await assertMissing(resolve(webClient, 'update-webview.html'), 'web output excludes the native WebView update page')
 
-for (const artifact of ['guides', 'robots.txt', 'sitemap.xml', '_headers', '_redirects']) {
+for (const artifact of ['guides', 'robots.txt', 'llms.txt', 'sitemap.xml', '_headers', '_redirects']) {
   await assertMissing(resolve(capacitorClient, artifact), `Capacitor artifact excludes ${artifact}`)
 }
 
@@ -62,7 +92,9 @@ for (const marker of [
   'Free online resume maker',
   'Make a resume online, then save it as a PDF.',
   'Free Online Resume Maker for PDF',
-  'save the finished version as a PDF through your browser',
+  'Built for AI agents',
+  'Read the code, run it yourself',
+  'Free, open source, and AI-agent ready',
 ]) {
   assertExcludes(capacitorText, marker, `Capacitor chunks exclude ${marker}`)
 }

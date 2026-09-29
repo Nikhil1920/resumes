@@ -64,7 +64,7 @@ describe("resume workspace model", () => {
         expect(document.certifications[0].id).toBe("certification-3");
         expect(document.summary).toBe("<p>Builder</p>");
         expect(document.awards).toBe("");
-        expect(document.settings.accentColor).toBe("#0f766e");
+        expect(document.settings.accentColor).toBe("#004aad");
     });
 
     it("keeps safe portrait images, drops unsafe ones, and allows removal through patches", () => {
@@ -243,7 +243,7 @@ describe("resume workspace model", () => {
             },
             dependencies
         );
-        expect(snapshot.documents.one.settings.accentColor).toBe("#0f766e");
+        expect(snapshot.documents.one.settings.accentColor).toBe("#004aad");
     });
 
     it("keeps the current step inside the visible configured workflow", () => {

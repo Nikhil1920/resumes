@@ -1,11 +1,50 @@
-import { ArrowRightIcon, CheckCircle2Icon } from 'lucide-react'
+import { ArrowRightIcon, BotIcon, CheckCircle2Icon, ScaleIcon } from 'lucide-react'
 
-const websiteJsonLd = JSON.stringify({
+import { GithubMark } from '@/components/icons/github-mark'
+
+const SITE_URL = 'https://resumes.byanr.com'
+const REPO_URL = 'https://github.com/Nikhil1920/resumes'
+
+// Keep the SoftwareApplication node in sync with softwareApplicationData() in scripts/prepare-build.mjs.
+const homepageJsonLd = JSON.stringify({
   '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  name: 'Resume Maker 9000',
-  url: 'https://resumes.byanr.com/',
-})
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      name: 'Resume Maker 9000',
+      url: `${SITE_URL}/`,
+    },
+    {
+      '@type': 'SoftwareApplication',
+      '@id': `${SITE_URL}/#app`,
+      name: 'Resume Maker 9000',
+      url: `${SITE_URL}/`,
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web, Android, iOS',
+      isAccessibleForFree: true,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      license: 'https://www.gnu.org/licenses/agpl-3.0.html',
+      sameAs: [REPO_URL],
+      author: { '@type': 'Person', name: 'Nikhil Reddy Avuthu', url: 'https://github.com/Nikhil1920' },
+      featureList: [
+        'Build resumes without an account',
+        'Ten resume templates with A4 and Letter paper',
+        'Save as PDF through the browser print dialog',
+        'Drafts stored locally in the browser',
+        'WebMCP tools that let AI agents create and edit resumes autonomously',
+        'Open source under AGPL-3.0',
+      ],
+    },
+  ],
+}).replaceAll('<', '\\u003c')
+
+const agentTools = [
+  ['create-resume', 'Start a new version for each job'],
+  ['add-section-entry', 'Add roles, projects, and skills'],
+  ['set-appearance', 'Pick a template, fonts, and color'],
+  ['export-pdf', 'Open the preview for you to save'],
+]
 
 const workflow = [
   'Start with a blank resume or the fictional sample.',
@@ -21,12 +60,12 @@ export function HomepageSeoContent() {
       aria-labelledby="resume-maker-details-heading"
       className="mx-auto w-full max-w-7xl space-y-12 px-4 pb-16 sm:px-6 lg:px-8"
     >
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteJsonLd }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: homepageJsonLd }} />
 
       <div className="grid gap-8 rounded-[2rem] border border-border/70 bg-card px-6 py-9 sm:px-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:items-center lg:px-12 lg:py-12">
         <div>
           <p className="text-sm font-medium text-primary">What the web app does</p>
-          <h2 id="resume-maker-details-heading" className="mt-3 max-w-2xl font-heading text-3xl tracking-tight sm:text-4xl">
+          <h2 id="resume-maker-details-heading" className="mt-3 max-w-2xl font-heading text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             A free online resume maker built around a clear PDF workflow
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
@@ -47,6 +86,7 @@ export function HomepageSeoContent() {
             'Editable sections for summaries, work, education, projects, skills, certifications, awards, and languages.',
             'A4 and Letter page sizes, plus font and accent-color controls.',
             'Local drafts, multiple resume versions, and JSON backup and restore.',
+            'WebMCP tools so AI agents can build and tailor resumes on their own.',
           ].map((feature) => (
             <li key={feature} className="flex gap-3">
               <CheckCircle2Icon aria-hidden="true" className="mt-1 size-4 shrink-0 text-primary" />
@@ -56,9 +96,75 @@ export function HomepageSeoContent() {
         </ul>
       </div>
 
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <section aria-labelledby="ai-agents-heading" className="relative isolate overflow-hidden rounded-[2rem] bg-[#0b1730] px-6 py-9 text-white sm:px-10 lg:py-11">
+          <div aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 -z-10 text-white/[0.05] [mask-image:radial-gradient(ellipse_at_top_left,black,transparent_75%)]" />
+          <div aria-hidden="true" className="pointer-events-none absolute -top-24 -left-16 -z-10 size-80 rounded-full bg-[#004aad]/60 blur-3xl" />
+          <p className="inline-flex items-center gap-2 text-sm font-medium text-sky-300">
+            <BotIcon aria-hidden="true" className="size-4" />
+            Built for AI agents
+          </p>
+          <h2 id="ai-agents-heading" className="mt-3 max-w-xl font-heading text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            Let an AI agent build and tailor your resume
+          </h2>
+          <p className="mt-4 max-w-xl text-base leading-7 text-white/70">
+            Resume Maker 9000 exposes its whole editor as WebMCP tools. An agent in your browser can create a resume for each job, write every section, restyle it, and open the print-ready preview on its own. Every change shows up live in the editor with undo, and nothing is uploaded by the app.
+          </p>
+          <ul className="mt-6 grid gap-2 sm:grid-cols-2">
+            {agentTools.map(([tool, label]) => (
+              <li key={tool} className="rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5">
+                <code className="font-mono text-[0.8rem] text-sky-300">{tool}</code>
+                <p className="mt-0.5 text-sm text-white/65">{label}</p>
+              </li>
+            ))}
+          </ul>
+          <a
+            href="/guides/ai-resume-builder-webmcp/"
+            className="mt-7 inline-flex items-center gap-2 rounded-lg text-sm font-semibold text-white underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/40"
+          >
+            How AI agents use Resume Maker 9000
+            <ArrowRightIcon aria-hidden="true" className="size-4" />
+          </a>
+        </section>
+
+        <section aria-labelledby="open-source-heading" className="flex flex-col rounded-[2rem] border border-border/70 bg-card px-6 py-9 sm:px-10 lg:py-11">
+          <p className="inline-flex items-center gap-2 text-sm font-medium text-primary">
+            <GithubMark className="size-4" />
+            Open source
+          </p>
+          <h2 id="open-source-heading" className="mt-3 font-heading text-3xl font-semibold tracking-tight text-balance">
+            Read the code, run it yourself
+          </h2>
+          <p className="mt-4 text-base leading-7 text-muted-foreground">
+            The full source, including templates, the Android and iOS apps, and the agent tools, is public on GitHub. Check exactly how your data is handled, self-host a copy, or send a pull request.
+          </p>
+          <p className="mt-4 inline-flex items-center gap-2 text-sm text-muted-foreground">
+            <ScaleIcon aria-hidden="true" className="size-4 text-primary" />
+            Licensed under GNU AGPL-3.0
+          </p>
+          <div className="mt-auto flex flex-col gap-3 pt-7 sm:flex-row sm:items-center">
+            <a
+              href={REPO_URL}
+              rel="noopener"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-foreground px-4 text-sm font-semibold text-background transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <GithubMark className="size-4" />
+              View on GitHub
+            </a>
+            <a
+              href="/guides/open-source-resume-builder/"
+              className="inline-flex items-center gap-2 rounded-lg text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              About the project
+              <ArrowRightIcon aria-hidden="true" className="size-4" />
+            </a>
+          </div>
+        </section>
+      </div>
+
       <div className="grid gap-8 lg:grid-cols-2">
-        <section aria-labelledby="pdf-workflow-heading" className="rounded-2xl border border-border/70 bg-muted/20 p-6 sm:p-8">
-          <h2 id="pdf-workflow-heading" className="font-heading text-2xl tracking-tight">
+        <section aria-labelledby="pdf-workflow-heading" className="rounded-[2rem] border border-border/70 bg-card p-6 sm:p-10">
+          <h2 id="pdf-workflow-heading" className="font-heading text-2xl font-semibold tracking-tight">
             How the website PDF workflow works
           </h2>
           <ol className="mt-6 space-y-5">
@@ -73,8 +179,8 @@ export function HomepageSeoContent() {
           </ol>
         </section>
 
-        <section aria-labelledby="resume-maker-limits-heading" className="rounded-2xl border border-border/70 bg-muted/20 p-6 sm:p-8">
-          <h2 id="resume-maker-limits-heading" className="font-heading text-2xl tracking-tight">
+        <section aria-labelledby="resume-maker-limits-heading" className="rounded-[2rem] border border-border/70 bg-card p-6 sm:p-10">
+          <h2 id="resume-maker-limits-heading" className="font-heading text-2xl font-semibold tracking-tight">
             Useful limits to know before you start
           </h2>
           <div className="mt-6 space-y-6">
@@ -99,6 +205,17 @@ export function HomepageSeoContent() {
           </div>
         </section>
       </div>
+
+      <footer className="flex flex-col gap-4 border-t border-border pt-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <p>Resume Maker 9000 · Free and open source under AGPL-3.0.</p>
+        <nav aria-label="Guides and project links" className="flex flex-wrap gap-x-5 gap-y-2">
+          <a className="hover:text-foreground" href="/guides/">Guides</a>
+          <a className="hover:text-foreground" href="/guides/make-resume-pdf-online/">Save a resume as PDF</a>
+          <a className="hover:text-foreground" href="/guides/ai-resume-builder-webmcp/">AI agents &amp; WebMCP</a>
+          <a className="hover:text-foreground" href="/guides/open-source-resume-builder/">Open source</a>
+          <a className="hover:text-foreground" href={REPO_URL} rel="noopener">GitHub</a>
+        </nav>
+      </footer>
     </section>
   )
 }

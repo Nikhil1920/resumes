@@ -6,6 +6,8 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+import { seoPagesDevServer } from './seo/vite-plugin.mjs'
+
 const config = defineConfig(({ mode }) => {
   const isCapacitorBuild = mode === 'capacitor'
 
@@ -20,6 +22,7 @@ const config = defineConfig(({ mode }) => {
     publicDir: 'static',
     plugins: [
       devtools(),
+      ...(isCapacitorBuild ? [] : [seoPagesDevServer()]),
       tailwindcss(),
       tanstackStart({
         spa: isCapacitorBuild

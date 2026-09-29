@@ -1,4 +1,6 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
+import { configDefaults } from 'vitest/config'
 import { devtools } from '@tanstack/devtools-vite'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
@@ -20,6 +22,8 @@ const config = defineConfig(({ mode }) => {
       __INCLUDE_WEB_SEO__: JSON.stringify(!isCapacitorBuild),
     },
     publicDir: 'static',
+    // Agent sessions keep git worktrees under .claude/; their tests are not this checkout's.
+    test: { exclude: [...configDefaults.exclude, '.claude/**'] },
     plugins: [
       devtools(),
       ...(isCapacitorBuild ? [] : [seoPagesDevServer()]),

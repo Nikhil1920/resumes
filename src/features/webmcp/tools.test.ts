@@ -84,6 +84,7 @@ describe("resume webmcp tools", () => {
             "set-section-visibility",
             "set-appearance",
             "export-resume",
+            "get-live-session",
         ]);
         for (const tool of tools) {
             expect(tool.description.length).toBeGreaterThan(20);

@@ -20,7 +20,7 @@ const currentPreviewTitle = () =>
 
 const currentPreviewPageSize = (): NativePdfOptions['pageSize'] =>
   typeof document !== 'undefined' &&
-  document.querySelector<HTMLElement>('.resume-preview[data-page-size]')?.dataset.pageSize === 'Letter'
+  document.querySelector<HTMLElement>('.rp-doc[data-page-size]')?.dataset.pageSize === 'Letter'
     ? 'Letter'
     : 'A4'
 

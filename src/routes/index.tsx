@@ -24,7 +24,7 @@ export const Route = createFileRoute('/')({
       {
         name: 'description',
         content:
-          'Create and customize a resume without an account, or let an AI agent build it for you with WebMCP. 10 templates, free and open source, save as PDF.',
+          'Create and customize a resume without an account, or let an AI agent build it for you with WebMCP. 25 templates for every job, free and open source, save as PDF.',
       },
       {
         name: 'robots',
@@ -233,6 +233,10 @@ function DashboardRoute() {
     }
   }, [actions, goToEditor])
 
+  const browseTemplates = React.useCallback((resumeId?: string) => {
+    void navigate({ to: '/templates', search: resumeId ? { resume: resumeId } : {} })
+  }, [navigate])
+
   if (hydration === 'idle' || hydration === 'hydrating') return <DashboardSkeleton />
   if (hydration === 'error') return <DashboardError message={persistenceError} onRetry={() => void actions.hydrate()} />
 
@@ -247,6 +251,7 @@ function DashboardRoute() {
       onExportResume={exportResume}
       onDeleteResume={deleteResume}
       onImportResume={importResume}
+      onBrowseTemplates={browseTemplates}
     />
   )
 }

@@ -6,7 +6,9 @@ import { BrandMark } from '@/components/brand-mark'
 import ThemeToggle from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ResumePreview, toResumePreviewModel, type ResumePreviewModel } from '@/features/resume-preview'
+import { toResumePreviewModel, type ResumeAppearancePatch, type ResumePreviewModel } from '@/features/resume-preview'
+import { ResumePreviewScreen } from '@/features/resume-preview/PreviewScreen'
+import { getResumeTemplate, templateStylePatch } from '@/features/resume-preview/templates/catalog'
 import {
   downloadNativeResumePdf,
   isNativeResumePlatform,
@@ -73,9 +75,22 @@ function ResumePreviewRoute() {
     [document],
   )
 
-  const updateModel = React.useCallback((patch: Partial<Pick<ResumePreviewModel, 'template' | 'titleFont' | 'bodyFont' | 'pageSize' | 'accentColor'>>) => {
+  const updateAppearance = React.useCallback((patch: ResumeAppearancePatch) => {
     actions.updateDocumentSettings(patch)
   }, [actions])
+
+  const selectTemplate = React.useCallback((templateId: string) => {
+    if (document?.settings.template === templateId) return
+    actions.updateDocumentSettings(templateStylePatch(templateId))
+    toast.success(`Switched to ${getResumeTemplate(templateId).name}`, {
+      description: 'Fonts and accent color now follow the template.',
+      action: { label: 'Undo', onClick: () => actions.undo() },
+    })
+  }, [actions, document?.settings.template])
+
+  const openTemplates = React.useCallback(() => {
+    void navigate({ to: '/templates', search: { resume: documentId } })
+  }, [documentId, navigate])
 
   const exportJson = React.useCallback(() => {
     const payload = actions.exportDocument(documentId)
@@ -118,16 +133,20 @@ function ResumePreviewRoute() {
   if (activeDocumentId !== documentId) return <LoadingState />
 
   return (
-    <ResumePreview
+    <ResumePreviewScreen
       model={model}
       onBack={goToDashboard}
       onEdit={goToEditor}
-      onModelChange={updateModel}
+      onSelectTemplate={selectTemplate}
+      onAppearanceChange={updateAppearance}
       onPrint={print}
       onDownload={download}
       onExportJson={exportJson}
       onShare={share}
-      toolbarStart={<BrandMark href="/" showWordmark={false} className="mr-1" onClick={(event) => { event.preventDefault(); goToDashboard() }} />}
+      templatesHref={`/templates?resume=${encodeURIComponent(documentId)}`}
+      onOpenTemplates={openTemplates}
+      downloadLabel={isNativeResumePlatform() ? 'Download PDF' : 'Save as PDF'}
+      toolbarStart={<BrandMark href="/" showWordmark={false} className="mr-1 max-sm:hidden" onClick={(event) => { event.preventDefault(); goToDashboard() }} />}
       toolbarEnd={<ThemeToggle />}
     />
   )

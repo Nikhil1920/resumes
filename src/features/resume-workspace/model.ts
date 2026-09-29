@@ -41,8 +41,12 @@ export interface ResumeLink {
 
 export interface PersonalInfo {
     name: string;
+    /** Optional professional headline shown under the name, e.g. "Senior Product Designer". */
+    headline?: string;
     email: string;
     phone: string;
+    /** Optional city/region line, e.g. "Austin, TX" or "Remote". */
+    location?: string;
     /** Optional headshot: a safe image data URL or https URL, rendered by portrait-capable templates. */
     image?: string;
     titleLinks: ResumeLink[];
@@ -372,11 +376,17 @@ export const DEFAULT_WORKSPACE_SETTINGS: WorkspaceSettings = {
     autosaveDebounceMs: 500,
 };
 
+/**
+ * Font setting that defers to the selected template's own typography.  Older
+ * documents store explicit family names and keep rendering with them.
+ */
+export const TEMPLATE_DEFAULT_FONT = "Template default";
+
 export const DEFAULT_RESUME_SETTINGS: ResumeSettings = {
     pageSize: "A4",
     template: "tenali",
-    titleFont: "Arial",
-    bodyFont: "Arial",
+    titleFont: TEMPLATE_DEFAULT_FONT,
+    bodyFont: TEMPLATE_DEFAULT_FONT,
     accentColor: "#004aad",
 };
 
@@ -757,10 +767,14 @@ const normalizePersonalInfo = (
     const source = asRecord(value);
     const used = new Set<string>();
     const image = normalizePortraitImage(source.image ?? source.portrait);
+    const headline = asString(source.headline ?? source.title ?? source.label);
+    const location = asString(source.location ?? source.address);
     return {
         name: asString(source.name),
+        ...(headline ? { headline } : {}),
         email: asString(source.email),
         phone: asString(source.phone),
+        ...(location ? { location } : {}),
         ...(image ? { image } : {}),
         titleLinks: asArray(source.titleLinks ?? source.title_links).map((link) =>
             normalizeLink(link, "link", used, idFactory)
@@ -1228,6 +1242,13 @@ export const reduceWorkspace = (
                                 : {}),
                             ...(typeof rawPersonalInfo?.phone === "string"
                                 ? { phone: rawPersonalInfo.phone }
+                                : {}),
+                            // Keep in-progress whitespace while typing; empty values clear the field.
+                            ...(typeof rawPersonalInfo?.headline === "string"
+                                ? { headline: rawPersonalInfo.headline }
+                                : {}),
+                            ...(typeof rawPersonalInfo?.location === "string"
+                                ? { location: rawPersonalInfo.location }
                                 : {}),
                         },
                     };

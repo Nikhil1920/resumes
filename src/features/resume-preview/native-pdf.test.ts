@@ -16,7 +16,7 @@ import { downloadNativeResumePdf, shareNativeResumePdf } from './native-pdf'
 describe('native PDF paper size', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    document.body.innerHTML = '<div class="resume-preview" data-page-size="A4"></div>'
+    document.body.innerHTML = '<div class="rp-doc" data-page-size="A4"></div>'
     document.title = 'Sample resume'
   })
 
@@ -24,7 +24,7 @@ describe('native PDF paper size', () => {
     await downloadNativeResumePdf()
     expect(nativePdf.download).toHaveBeenLastCalledWith(expect.objectContaining({ pageSize: 'A4' }))
 
-    document.querySelector<HTMLElement>('.resume-preview')!.dataset.pageSize = 'Letter'
+    document.querySelector<HTMLElement>('.rp-doc')!.dataset.pageSize = 'Letter'
     await downloadNativeResumePdf()
     await shareNativeResumePdf()
     expect(nativePdf.download).toHaveBeenLastCalledWith(expect.objectContaining({ pageSize: 'Letter' }))

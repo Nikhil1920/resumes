@@ -7,6 +7,7 @@ import {
   EyeIcon,
   FilePlus2Icon,
   FileTextIcon,
+  LayoutTemplateIcon,
   LockKeyholeIcon,
   MoreHorizontalIcon,
   PencilIcon,
@@ -23,6 +24,7 @@ import { Progress } from "@/components/ui/progress"
 import { HomepageSeoContent } from "@/components/homepage-seo-content"
 import type { ResumePreviewModel } from "@/features/resume-preview"
 import { ScaledResumePreview } from "@/features/resume-preview/ScaledResumePreview"
+import { RESUME_TEMPLATE_CATALOG } from "@/features/resume-preview/templates/catalog"
 import { cn } from "@/lib/utils"
 
 /** The minimum data the dashboard needs to render one saved resume. */
@@ -47,6 +49,8 @@ export interface DashboardCallbacks {
   onExportResume: (resumeId: string) => void
   onDeleteResume: (resumeId: string) => void
   onImportResume: (file: File) => void | Promise<void>
+  /** Opens the template explorer, optionally to restyle one resume. */
+  onBrowseTemplates?: (resumeId?: string) => void
 }
 
 export interface ResumeDashboardProps extends DashboardCallbacks {
@@ -97,7 +101,8 @@ function ResumeCard({
   onDuplicateResume,
   onExportResume,
   onRequestDelete,
-}: Pick<ResumeDashboardProps, "onEditResume" | "onPreviewResume" | "onDuplicateResume" | "onExportResume"> & {
+  onBrowseTemplates,
+}: Pick<ResumeDashboardProps, "onEditResume" | "onPreviewResume" | "onDuplicateResume" | "onExportResume" | "onBrowseTemplates"> & {
   resume: ResumeCardSummary
   onRequestDelete: (resume: ResumeCardSummary) => void
 }) {
@@ -110,6 +115,7 @@ function ResumeCard({
         {resume.preview ? (
           <ScaledResumePreview
             model={resume.preview}
+            maxPages={1}
             decorative
             className="rounded-t-[3px] shadow-lift transition-transform duration-300 group-hover:-translate-y-1"
           />
@@ -149,6 +155,12 @@ function ResumeCard({
                 <EyeIcon />
                 Preview
               </DropdownMenuItem>
+              {onBrowseTemplates ? (
+                <DropdownMenuItem onClick={() => onBrowseTemplates(resume.id)}>
+                  <LayoutTemplateIcon />
+                  Change template
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem onClick={() => onDuplicateResume(resume.id)}>
                 <CopyIcon />
                 Duplicate
@@ -250,7 +262,7 @@ function HeroPages() {
   )
 }
 
-function Hero({ compact, onCreateResume, onCreateSampleResume }: Pick<DashboardCallbacks, "onCreateResume" | "onCreateSampleResume"> & { compact: boolean }) {
+function Hero({ compact, onCreateResume, onCreateSampleResume, onBrowseTemplates }: Pick<DashboardCallbacks, "onCreateResume" | "onCreateSampleResume" | "onBrowseTemplates"> & { compact: boolean }) {
   return (
     <div className={cn("relative isolate overflow-hidden rounded-[2rem] bg-brand px-6 text-white shadow-lift sm:px-10 lg:px-14", compact ? "py-8 sm:py-10" : "py-10 sm:py-14")}>
       <div aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 -z-10 text-white/[0.07] [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_70%)]" />
@@ -266,7 +278,7 @@ function Hero({ compact, onCreateResume, onCreateSampleResume }: Pick<DashboardC
             Make a resume online, then save it as a PDF.
           </h1>
           <p className={cn("max-w-xl text-base leading-7 text-pretty text-white/75", compact ? "mt-3" : "mt-5 sm:text-lg")}>
-            Create multiple drafts, choose from ten templates, and print or save a PDF when you are ready. No account, no upload, no paywall.
+            Create multiple drafts, choose from {RESUME_TEMPLATE_CATALOG.length} templates for every kind of job, and print or save a multi-page PDF when you are ready. No account, no upload, no paywall.
           </p>
           <div className={cn("flex flex-col gap-3 sm:flex-row", compact ? "mt-6" : "mt-8")}>
             <Button type="button" size="lg" className="h-11 bg-white px-5 text-[0.95rem] text-brand shadow-lift hover:bg-white/90" onClick={onCreateResume}>
@@ -277,6 +289,12 @@ function Hero({ compact, onCreateResume, onCreateSampleResume }: Pick<DashboardC
             <Button type="button" variant="outline" size="lg" className="h-11 border-white/30 bg-white/5 px-5 text-[0.95rem] text-white hover:bg-white/15 hover:text-white dark:border-white/30 dark:bg-white/5 dark:hover:bg-white/15" onClick={onCreateSampleResume}>
               Start with a sample
             </Button>
+            {onBrowseTemplates ? (
+              <Button type="button" variant="ghost" size="lg" className="h-11 px-4 text-[0.95rem] text-white/85 hover:bg-white/10 hover:text-white dark:hover:bg-white/10" onClick={() => onBrowseTemplates()}>
+                <LayoutTemplateIcon />
+                Browse templates
+              </Button>
+            ) : null}
           </div>
           <p className="mt-6 flex items-center gap-2 text-xs text-white/65">
             <LockKeyholeIcon className="size-3.5" aria-hidden="true" />
@@ -300,6 +318,7 @@ export function ResumeDashboard({
   onExportResume,
   onDeleteResume,
   onImportResume,
+  onBrowseTemplates,
 }: ResumeDashboardProps) {
   const importInputId = React.useId().replace(/:/g, "")
   const importInputRef = React.useRef<HTMLInputElement>(null)
@@ -315,7 +334,7 @@ export function ResumeDashboard({
     <>
       <section aria-labelledby="resume-dashboard-heading" className={cn("mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8", __INCLUDE_WEB_SEO__ ? "space-y-12 py-8" : "space-y-8 py-6", className)}>
         {__INCLUDE_WEB_SEO__ ? (
-          <Hero compact={resumes.length > 0} onCreateResume={onCreateResume} onCreateSampleResume={onCreateSampleResume} />
+          <Hero compact={resumes.length > 0} onCreateResume={onCreateResume} onCreateSampleResume={onCreateSampleResume} onBrowseTemplates={onBrowseTemplates} />
         ) : (
           <div>
             <h1 id="resume-dashboard-heading" className="font-heading text-3xl font-semibold tracking-tight">Your resumes</h1>
@@ -330,6 +349,12 @@ export function ResumeDashboard({
               <Button type="button" variant="outline" size="lg" className="px-4" onClick={onCreateSampleResume}>
                 Start with a sample
               </Button>
+              {onBrowseTemplates ? (
+                <Button type="button" variant="ghost" size="lg" className="px-4" onClick={() => onBrowseTemplates()}>
+                  <LayoutTemplateIcon />
+                  Browse templates
+                </Button>
+              ) : null}
             </div>
           </div>
         )}
@@ -363,7 +388,7 @@ export function ResumeDashboard({
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {resumes.map((resume) => (
-                <ResumeCard key={resume.id} resume={resume} onEditResume={onEditResume} onPreviewResume={onPreviewResume} onDuplicateResume={onDuplicateResume} onExportResume={onExportResume} onRequestDelete={setPendingDelete} />
+                <ResumeCard key={resume.id} resume={resume} onEditResume={onEditResume} onPreviewResume={onPreviewResume} onDuplicateResume={onDuplicateResume} onExportResume={onExportResume} onBrowseTemplates={onBrowseTemplates} onRequestDelete={setPendingDelete} />
               ))}
               <NewResumeTile onCreateResume={onCreateResume} />
             </div>

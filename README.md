@@ -6,15 +6,39 @@ Resume Maker 9000 is a local-first resume builder. The app is built with React, 
 
 - Create, rename, duplicate, delete, and switch between multiple resumes.
 - Edit personal details, summary, experience, education, projects, skills, certifications, awards, and languages.
-- Configure visible sections, ordering, page size, template, fonts, and accent color.
+- Choose from 25 templates for different jobs (ATS-first, sidebar, creative, executive, academic, and more), then fine-tune page size, fonts, and accent color.
+- Browse every template in the template explorer (`/templates`) with realistic sample content for the roles it suits, filter by job family, ATS rating, photo, or multi-page support, and apply one to an existing resume.
+- Real multi-page pagination: content is split into A4 or Letter sheets without breaking entries, sections continue with their headings, and multi-page templates add running headers and page numbers. The on-screen preview matches the printed PDF page for page.
+- Configure visible sections and their order.
 - Add, edit, delete, and reorder repeatable entries and links.
 - Autosave to local storage with hydration status, save status, undo, and redo.
 - Import and export individual resumes as versioned JSON backups.
-- Expose the whole create-edit-preview workflow as WebMCP tools so AI agents can drive the app autonomously.
+- Expose the whole create-edit-preview workflow as WebMCP tools so AI agents can drive the app autonomously, including `recommend-templates` and `list-templates` for choosing a template that fits the user's job.
 - Accept legacy Svelte profile-shaped JSON and migrate the old `profiles` local-storage records on first load.
 - Preview and print in the browser, download or share PDFs through the bundled native bridge, and use the app offline after it is installed as a Capacitor app.
 
 Resumes remain on the device by default. No account or server upload is required.
+
+## Templates
+
+Every template is described once in `src/features/resume-preview/templates/catalog.ts`. The catalog drives the renderer, the template picker, the explorer, and the WebMCP tools, so the same metadata that people read is what agents use to choose:
+
+- **Who it is for**: `bestFor` job titles, `industries`, `categories` (job families), and `careerLevels`.
+- **Trade-offs**: an `ats` rating with notes, `pages` guidance (one page, one to two, or multi-page), `photo` support, `strengths`, and `considerations`.
+- **Design**: layout (single column or a left/right sidebar), header, entry, skills and contact styles, portrait placement, and whether continuation pages get a running header and page numbers.
+
+Rendering lives in `src/features/resume-preview/document/`:
+
+- `flows.ts` turns the resume into ordered groups of units that must not be split (a job, a skill group, a paragraph).
+- `ResumeDocument.tsx` lays that content out once, invisibly, measures it, and renders real sheets; `paginate.ts` decides the page breaks.
+- `document.css` holds the page geometry, the shared variants, and one block of rules per template. Sizes are in `pt` and `mm` so screen, browser PDF, and native PDF match.
+
+To add a template:
+
+1. Add a catalog entry with a unique, permanent `id`, honest descriptions, and a `samplePersona` that resembles its intended user (see `templates/personas.ts`).
+2. Add its rules to `document.css` under a `.rp-doc[data-template='<id>']` block. Use `gap` and padding rather than top margins so pagination stays exact.
+3. Add the id to `seo/templates.mjs` (a test keeps it in sync with the catalog).
+4. Run `pnpm test`, then `pnpm verify:pdf-preview http://localhost:3000/` with the dev server running. It prints every template to PDF with a one-page and a multi-page sample and checks that each PDF has the same number of pages as the preview.
 
 ## Local development
 
@@ -33,6 +57,7 @@ pnpm test            # Vitest tests
 pnpm build           # Web build in build/web/client/ and build/web/server/
 pnpm build:capacitor # Native webview build in build/capacitor/client/
 pnpm verify:seo      # Verify public SEO output and native content exclusion
+pnpm verify:pdf-preview http://localhost:3000/  # Print every template to PDF and compare page counts
 pnpm preview         # Serve the web production build locally
 pnpm generate-routes # Regenerate TanStack Router's routeTree.gen.ts
 ```

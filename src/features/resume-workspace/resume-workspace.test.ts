@@ -228,6 +228,29 @@ describe("resume workspace model", () => {
         });
     });
 
+    it("normalizes and edits the optional headline and location", () => {
+        const imported = normalizeResumeDocument(
+            { personal_info: { name: "Ada", headline: " Staff Engineer ", location: " London " } },
+            { idFactory: deterministicIds(), now: clock }
+        );
+        expect(imported.personalInfo).toMatchObject({ headline: "Staff Engineer", location: "London" });
+        expect(createEmptyResumeDocument({ id: "blank" }).personalInfo).not.toHaveProperty("headline");
+
+        const dependencies = { idFactory: deterministicIds(), now: clock };
+        let snapshot = reduceWorkspace(
+            createInitialWorkspaceSnapshot(),
+            { type: "document/create", document: { id: "one" } },
+            dependencies
+        );
+        snapshot = reduceWorkspace(
+            snapshot,
+            { type: "document/update", patch: { personalInfo: { headline: "Data ", location: "Remote" } } },
+            dependencies
+        );
+        expect(snapshot.documents.one.personalInfo).toMatchObject({ headline: "Data ", location: "Remote" });
+        expect(snapshot.documents.one.settings).toMatchObject({ titleFont: "Template default", bodyFont: "Template default" });
+    });
+
     it("rejects invalid accent colors at the state boundary", () => {
         const dependencies = { idFactory: deterministicIds(), now: clock };
         let snapshot = reduceWorkspace(

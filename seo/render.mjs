@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 
 import { AUTHOR, guidePages, guidesIndex, LAST_REVIEWED, REPO_URL, SITE_URL, WEBMCP_SOURCE_URL, webmcpTools } from './pages.mjs'
+import { TEMPLATE_COUNT } from './templates.mjs'
 
 /**
  * Renders every public, crawlable file that is not part of the React app:
@@ -153,7 +154,7 @@ function softwareApplicationData() {
     author: { '@type': 'Person', name: AUTHOR.name, url: AUTHOR.url },
     featureList: [
       'Build resumes without an account',
-      'Ten resume templates with A4 and Letter paper',
+      `${TEMPLATE_COUNT} resume templates with A4 and Letter paper`,
       'Save as PDF through the browser print dialog',
       'Drafts stored locally in the browser',
       'WebMCP tools that let AI agents create and edit resumes autonomously',
@@ -253,7 +254,7 @@ ${renderSiteFooter()}
 function renderLlmsTxt() {
   return `# Resume Maker 9000
 
-> Free, open-source (AGPL-3.0) resume builder at ${SITE_URL}/. No account or upload: drafts stay in the browser's local storage. Ten templates, A4 and Letter paper, and PDF output. The whole create, edit, style, and export workflow is exposed as WebMCP tools, so AI agents can autonomously build and tailor resumes in the user's browser.
+> Free, open-source (AGPL-3.0) resume builder at ${SITE_URL}/. No account or upload: drafts stay in the browser's local storage. ${TEMPLATE_COUNT} templates for every kind of job (including multi-page CVs), A4 and Letter paper, and PDF output. The whole create, edit, style, and export workflow is exposed as WebMCP tools, so AI agents can autonomously build and tailor resumes in the user's browser.
 
 ## Guides
 
@@ -266,6 +267,7 @@ Open ${SITE_URL}/ in a browser with WebMCP (for example Chrome with chrome://fla
 ${webmcpTools.map(([name, purpose]) => `- \`${name}\`: ${purpose}`).join('\n')}
 
 - [WebMCP field reference](${SITE_URL}/guides/ai-resume-builder-webmcp/#fields-heading): section fields, template names, and error handling.
+- [Template explorer](${SITE_URL}/templates): compare all ${TEMPLATE_COUNT} templates with sample content; \`recommend-templates\` and \`list-templates\` expose the same best-fit roles, ATS ratings, and page guidance.
 - [Tool source](${WEBMCP_SOURCE_URL}): tool definitions and input validation.
 
 ## Source

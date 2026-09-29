@@ -35,13 +35,13 @@ const runError = async (name: string, input: Record<string, unknown> = {}) => {
 };
 
 let path = "/";
-const navigations: Array<{ to: string; params?: Record<string, string> }> = [];
+const navigations: Array<{ to: string; params?: Record<string, string>; search?: Record<string, string> }> = [];
 const printCalls: number[] = [];
 const store = createResumeWorkspaceStore({ persistence: null, autoHydrate: false });
 const tools = createResumeTools({
     store,
-    async navigate(to, params) {
-        navigations.push({ to, params });
+    async navigate(to, params, search) {
+        navigations.push({ to, params, ...(search ? { search } : {}) });
         path = to === "/" ? "/" : to.replace("$documentId", params?.documentId ?? "");
     },
     getPath: () => path,
@@ -82,6 +82,9 @@ describe("resume webmcp tools", () => {
             "update-section-entry",
             "delete-section-entry",
             "set-section-visibility",
+            "list-templates",
+            "recommend-templates",
+            "open-template-explorer",
             "set-appearance",
             "export-resume",
         ]);
@@ -323,6 +326,20 @@ describe("resume webmcp tools", () => {
             pageSize: "Letter",
             accentColor: "#123456",
         });
+        const restyled = (await run("set-appearance", { template: "boston" })) as {
+            settings: { template: string; accentColor: string; titleFont: string; bodyFont: string };
+        };
+        expect(restyled.settings).toMatchObject({
+            template: "boston",
+            accentColor: "#1f2a44",
+            titleFont: "Template default",
+            bodyFont: "Template default",
+        });
+        await run("set-appearance", { accentColor: "#654321", titleFont: "Georgia" });
+        const kept = (await run("set-appearance", { template: "oslo", keepCurrentStyle: true })) as {
+            settings: { template: string; accentColor: string; titleFont: string };
+        };
+        expect(kept.settings).toMatchObject({ template: "oslo", accentColor: "#654321", titleFont: "Georgia" });
         await expect(
             runError("set-appearance", { accentColor: "teal" })
         ).resolves.toMatch(/hex color/i);
@@ -392,5 +409,65 @@ describe("resume webmcp tools", () => {
             to: "/resume/$documentId/preview",
             params: { documentId: resumeId },
         });
+    });
+
+    it("lists templates with the metadata agents need to choose", async () => {
+        const all = (await run("list-templates")) as {
+            count: number;
+            templates: Array<{ id: string; bestFor: string[]; ats: { rating: string }; pages: string; description: string }>;
+        };
+        expect(all.count).toBeGreaterThanOrEqual(20);
+        for (const template of all.templates) {
+            expect(template.description.length).toBeGreaterThan(80);
+            expect(template.bestFor.length).toBeGreaterThan(2);
+        }
+        const multi = (await run("list-templates", { multiPage: true })) as { templates: Array<{ id: string; pages: string }> };
+        expect(multi.templates.map((template) => template.id)).toEqual(expect.arrayContaining(["london", "dublin"]));
+        expect(multi.templates.every((template) => template.pages === "multi-page")).toBe(true);
+        const healthcare = (await run("list-templates", { category: "healthcare" })) as { templates: Array<{ id: string }> };
+        expect(healthcare.templates.map((template) => template.id)).toContain("denver");
+        await expect(runError("list-templates", { category: "wizards" })).resolves.toMatch(/category/i);
+    });
+
+    it("recommends templates for a job with readable reasons", async () => {
+        const nurse = (await run("recommend-templates", { jobTitle: "Registered nurse", industry: "hospital" })) as {
+            recommendations: Array<{ id: string; reasons: string[] }>;
+        };
+        expect(nurse.recommendations[0]?.id).toBe("denver");
+        expect(nurse.recommendations[0]?.reasons.length).toBeGreaterThan(0);
+
+        const banker = (await run("recommend-templates", { jobTitle: "Investment banking analyst", atsPriority: true, limit: 3 })) as {
+            recommendations: Array<{ id: string }>;
+        };
+        expect(banker.recommendations).toHaveLength(3);
+        expect(banker.recommendations[0]?.id).toBe("boston");
+
+        const professor = (await run("recommend-templates", { jobTitle: "Assistant professor", pages: "multi-page" })) as {
+            recommendations: Array<{ id: string }>;
+        };
+        expect(professor.recommendations[0]?.id).toBe("dublin");
+
+        await expect(runError("recommend-templates", {})).resolves.toMatch(/jobTitle/);
+    });
+
+    it("applies the template style when creating a resume with a template", async () => {
+        const created = (await run("create-resume", { template: "london" })) as { resumeId: string };
+        const resume = (await run("get-resume", { resumeId: created.resumeId })) as {
+            resume: { settings: { template: string; accentColor: string } };
+        };
+        expect(resume.resume.settings).toMatchObject({ template: "london", accentColor: "#6d1a36" });
+    });
+
+    it("opens the template explorer with search parameters", async () => {
+        const created = (await run("create-resume", {})) as { resumeId: string };
+        navigations.length = 0;
+        const opened = (await run("open-template-explorer", { resumeId: created.resumeId, query: "data scientist" })) as {
+            currentPath: string;
+        };
+        expect(navigations).toEqual([
+            { to: "/templates", params: undefined, search: { resume: created.resumeId, q: "data scientist" } },
+        ]);
+        expect(opened.currentPath).toContain("/templates?");
+        await expect(runError("open-template-explorer", { template: "banana" })).resolves.toMatch(/unknown template/i);
     });
 });

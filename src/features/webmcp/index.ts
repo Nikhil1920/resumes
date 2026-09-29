@@ -19,7 +19,7 @@ import { ensureDocumentModelContext } from "./model-context";
 import { createResumeTools } from "./tools";
 
 /** Rendered resume sections only exist once the preview route has mounted. */
-const PREVIEW_READY_SELECTOR = ".resume-preview__section";
+const PREVIEW_READY_SELECTOR = ".rp-sheet[data-page]";
 
 /**
  * Open the browser print dialog over the rendered preview (or download via
@@ -55,8 +55,12 @@ export const registerResumeWebmcpTools = async (
     const router = getRouter();
     const tools = createResumeTools({
         store: resumeWorkspaceStore,
-        navigate: (to, params) =>
-            router.navigate({ to, params: params as Record<string, string> }),
+        navigate: (to, params, search) =>
+            router.navigate({
+                to,
+                params: params as Record<string, string>,
+                ...(search ? { search } : {}),
+            }),
         getPath: () => router.state.location.pathname,
         printDocument: () =>
             printPreviewDocument(() =>

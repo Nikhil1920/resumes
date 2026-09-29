@@ -104,6 +104,7 @@ describe("resume webmcp tools", () => {
             "set-appearance",
             "export-pdf",
             "export-resume",
+            "get-live-session",
         ]);
         for (const tool of tools) {
             expect(tool.title?.length).toBeGreaterThan(2);
@@ -111,7 +112,7 @@ describe("resume webmcp tools", () => {
             expect(tool.inputSchema).toMatchObject({ type: "object" });
         }
         const readOnly = tools.filter((tool) => tool.annotations?.readOnlyHint).map((tool) => tool.name);
-        expect(readOnly).toEqual(["get-workspace", "get-resume", "open-preview", "go-to-dashboard", "export-resume"]);
+        expect(readOnly).toEqual(["get-workspace", "get-resume", "open-preview", "go-to-dashboard", "export-resume", "get-live-session"]);
     });
 
     it("reports an empty workspace before any resume exists", async () => {

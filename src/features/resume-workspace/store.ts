@@ -42,6 +42,36 @@ export interface WorkspaceHistory {
     future: WorkspaceSnapshot[];
 }
 
+/** IDs and timestamps a reducer call generated, in call order. Replaying them makes a command deterministic. */
+export interface RecordedDependencies {
+    ids: string[];
+    nows: string[];
+}
+
+export type WorkspaceChange =
+    | {
+          kind: "command";
+          command: WorkspaceCommand;
+          before: WorkspaceSnapshot;
+          after: WorkspaceSnapshot;
+          recorded: RecordedDependencies;
+      }
+    | {
+          /** Whole-snapshot changes that bypass the reducer: undo, redo, and imports. */
+          kind: "restore";
+          before: WorkspaceSnapshot;
+          after: WorkspaceSnapshot;
+      };
+
+export type WorkspaceChangeListener = (change: WorkspaceChange) => void;
+
+/** A change that originated outside this store, such as a live-session peer. */
+export interface RemoteWorkspaceUpdate {
+    current(snapshot: WorkspaceSnapshot): WorkspaceSnapshot;
+    /** Applied to every undo/redo snapshot so undo keeps reverting only local edits. */
+    history?(snapshot: WorkspaceSnapshot): WorkspaceSnapshot;
+}
+
 export interface ResumeWorkspaceActions {
     dispatch(command: WorkspaceCommand): void;
     /**
@@ -134,6 +164,11 @@ export interface ResumeWorkspaceActions {
     exportWorkspace(): string;
     importDocument(payload: unknown, options?: { select?: boolean }): string | null;
     importWorkspace(payload: unknown): boolean;
+
+    /** Observe committed local changes. Remote updates are not reported. Returns an unsubscribe function. */
+    subscribeChanges(listener: WorkspaceChangeListener): () => void;
+    /** Apply a remote change without recording undo history or notifying change listeners. */
+    applyRemote(update: RemoteWorkspaceUpdate): void;
 }
 
 export interface WorkspaceState extends WorkspaceSnapshot {
@@ -187,6 +222,17 @@ export const createResumeWorkspaceStore = (
     let saveChain: Promise<void> = Promise.resolve();
     let hydrationPromise: Promise<void> | null = null;
     let store: StoreApi<WorkspaceState>;
+    const changeListeners = new Set<WorkspaceChangeListener>();
+
+    const emitChange = (change: WorkspaceChange) => {
+        for (const listener of changeListeners) {
+            try {
+                listener(change);
+            } catch (error) {
+                console.error("[workspace] change listener failed:", error);
+            }
+        }
+    };
 
     const dependencies: WorkspaceReducerDependencies = {
         idFactory,
@@ -257,8 +303,25 @@ export const createResumeWorkspaceStore = (
     };
 
     const dispatch = (command: WorkspaceCommand, recordHistory = true) => {
-        const next = reduceWorkspace(snapshotFromState(store.getState()), command, dependencies);
-        commitSnapshot(next, recordHistory);
+        const recorded: RecordedDependencies = { ids: [], nows: [] };
+        const recording: WorkspaceReducerDependencies = {
+            ...dependencies,
+            idFactory: (prefix) => {
+                const id = idFactory(prefix);
+                recorded.ids.push(id);
+                return id;
+            },
+            now: () => {
+                const value = now();
+                recorded.nows.push(value);
+                return value;
+            },
+        };
+        const before = snapshotFromState(store.getState());
+        const next = reduceWorkspace(before, command, recording);
+        if (commitSnapshot(next, recordHistory)) {
+            emitChange({ kind: "command", command, before, after: next, recorded });
+        }
     };
 
     const batch = <T,>(run: () => T): T => {
@@ -293,6 +356,23 @@ export const createResumeWorkspaceStore = (
         const after = targetDocument(id);
         const beforeIds = new Set((before ? list(before) : undefined)?.map((item) => item.id));
         return (after ? list(after) : undefined)?.find((item) => !beforeIds.has(item.id))?.id ?? null;
+    };
+
+    const applyRemote = (update: RemoteWorkspaceUpdate) => {
+        const state = store.getState();
+        const next = update.current(snapshotFromState(state));
+        const transform = update.history;
+        mutationRevision += 1;
+        store.setState({
+            ...next,
+            history: transform
+                ? {
+                      past: state.history.past.map(transform),
+                      future: state.history.future.map(transform),
+                  }
+                : state.history,
+        });
+        scheduleSave();
     };
 
     const saveNow = async (): Promise<void> => {
@@ -450,6 +530,7 @@ export const createResumeWorkspaceStore = (
             },
         });
         scheduleSave();
+        emitChange({ kind: "restore", before: current, after: snapshotFromState(store.getState()) });
     };
 
     const redo = () => {
@@ -469,6 +550,7 @@ export const createResumeWorkspaceStore = (
             },
         });
         scheduleSave();
+        emitChange({ kind: "restore", before: current, after: snapshotFromState(store.getState()) });
     };
 
     const actions: ResumeWorkspaceActions = {
@@ -616,8 +698,9 @@ export const createResumeWorkspaceStore = (
                 { idFactory, now, sanitizer: options.sanitizer, preserveEmptyEntries: true }
             );
             const state = store.getState();
-            commitSnapshot({
-                ...snapshotFromState(state),
+            const before = snapshotFromState(state);
+            const committed = commitSnapshot({
+                ...before,
                 documents: { ...state.documents, [id]: imported },
                 activeDocumentId: importOptions.select === false ? state.activeDocumentId : id,
                 currentStep:
@@ -625,6 +708,7 @@ export const createResumeWorkspaceStore = (
                         ? state.currentStep
                         : imported.meta.step,
             });
+            if (committed) emitChange({ kind: "restore", before, after: snapshotFromState(store.getState()) });
             return id;
         },
         importWorkspace(payload) {
@@ -635,9 +719,19 @@ export const createResumeWorkspaceStore = (
                 preserveEmptyEntries: true,
             });
             if (!parsed) return false;
-            commitSnapshot(parsed);
+            const before = snapshotFromState(store.getState());
+            if (commitSnapshot(parsed)) {
+                emitChange({ kind: "restore", before, after: snapshotFromState(store.getState()) });
+            }
             return true;
         },
+        subscribeChanges(listener) {
+            changeListeners.add(listener);
+            return () => {
+                changeListeners.delete(listener);
+            };
+        },
+        applyRemote,
     };
 
     const initial = createInitialWorkspaceSnapshot();

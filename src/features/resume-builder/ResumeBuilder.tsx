@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/lib/use-media-query"
+import { LiveJoiningState, useLiveJoining } from "@/features/live-sync/LiveSession"
 import { toResumePreviewModel } from "@/features/resume-preview/adapter"
 import { getTemplatePortrait } from "@/features/resume-preview/presentation"
 import {
@@ -225,6 +226,7 @@ export function ResumeBuilder({ documentId, panel = "content", onPanelChange, on
     () => (selectedDocument ? toResumePreviewModel(selectedDocument) : null),
     [selectedDocument],
   )
+  const liveJoining = useLiveJoining(documentId)
   const [stepsOpen, setStepsOpen] = React.useState(false)
   const [previewOpen, setPreviewOpen] = React.useState(false)
   const isDesktop = useMediaQuery("(min-width: 1024px)")
@@ -251,11 +253,12 @@ export function ResumeBuilder({ documentId, panel = "content", onPanelChange, on
   }, [actions, activeDocumentId, documentId, hydration, requestedDocumentExists])
 
   React.useEffect(() => {
-    if (hydration === "hydrated" && !requestedDocumentExists && !missingNotified.current) {
+    // A live session may still be delivering this resume from another browser.
+    if (hydration === "hydrated" && !requestedDocumentExists && !liveJoining && !missingNotified.current) {
       missingNotified.current = true
       onMissingDocument?.(documentId)
     }
-  }, [documentId, hydration, onMissingDocument, requestedDocumentExists])
+  }, [documentId, hydration, liveJoining, onMissingDocument, requestedDocumentExists])
 
   // Start each step or panel at the top, including when an agent moves the editor.
   const activeStep = navigation?.current?.id ?? "personal-info"
@@ -295,7 +298,7 @@ export function ResumeBuilder({ documentId, panel = "content", onPanelChange, on
   if (hydration === "idle" || hydration === "hydrating" || (hydration !== "hydrated" && hydration !== "error")) {
     return <LoadingState />
   }
-  if (!requestedDocumentExists) return <EmptyDocumentState onBack={onBack} />
+  if (!requestedDocumentExists) return liveJoining ? <LiveJoiningState /> : <EmptyDocumentState onBack={onBack} />
   // Until the requested id is selected, keep the surface in a loading state
   // so actions can never accidentally edit another resume.
   if (!selectedDocument || !navigation || !completion || !previewModel) return <LoadingState />

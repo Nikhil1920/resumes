@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { LiveJoiningState, LiveSessionBadge, useLiveJoining } from '@/features/live-sync/LiveSession'
 import { toResumePreviewModel, type ResumePreviewModel } from '@/features/resume-preview'
 import { PreviewScreen } from '@/features/resume-preview/PreviewScreen'
 import {
@@ -48,6 +49,7 @@ function ResumePreviewRoute() {
   const activeDocumentId = useResumeWorkspace((state) => state.activeDocumentId)
   const document = useResumeWorkspace((state) => state.documents[documentId] ?? null)
   const requestedDocumentExists = useResumeWorkspace((state) => Boolean(state.documents[documentId]))
+  const liveJoining = useLiveJoining(documentId)
 
   React.useEffect(() => {
     if (
@@ -113,6 +115,7 @@ function ResumePreviewRoute() {
   }, [model])
 
   if (hydration === 'idle' || hydration === 'hydrating') return <LoadingState />
+  if (!model && liveJoining) return <LiveJoiningState />
   if (hydration === 'error' || !model || !document) return <NotFoundState onBack={goToDashboard} />
   if (activeDocumentId !== documentId) return <LoadingState />
 
@@ -128,6 +131,7 @@ function ResumePreviewRoute() {
       onPrint={print}
       onShare={share}
       onExportJson={exportJson}
+      badge={<LiveSessionBadge />}
     />
   )
 }

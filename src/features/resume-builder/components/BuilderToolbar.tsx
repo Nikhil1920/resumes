@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { LiveSessionBadge } from "@/features/live-sync/LiveSession"
 
 import type { EditorPanel } from "../editor-panel"
 import { AgentActivityPill } from "./AgentActivityPill"
@@ -126,6 +127,7 @@ export function BuilderToolbar({
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
+        <LiveSessionBadge className="mr-1" />
         <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
           <Button type="button" variant="ghost" size="icon" className="size-9 sm:size-7" aria-label="Undo last change" title="Undo (Ctrl+Z)" onClick={onUndo} disabled={!canUndo}>
             <Undo2Icon />

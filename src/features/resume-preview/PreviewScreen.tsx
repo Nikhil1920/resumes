@@ -45,6 +45,8 @@ export interface PreviewScreenProps {
   onPrint: () => void
   onShare: () => void
   onExportJson: () => void
+  /** Status shown in the toolbar, such as the live-session badge. */
+  badge?: React.ReactNode
 }
 
 /**
@@ -63,6 +65,7 @@ export function PreviewScreen({
   onPrint,
   onShare,
   onExportJson,
+  badge,
 }: PreviewScreenProps) {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const [panelOpen, setPanelOpen] = React.useState(true)
@@ -96,6 +99,7 @@ export function PreviewScreen({
         </div>
         <div className="min-w-0 flex-1 md:hidden" />
         <AgentActivityPill className="hidden max-w-56 lg:block" />
+        {badge}
         {isDesktop && (
           <Button type="button" variant={panelOpen ? 'secondary' : 'outline'} className="h-9" aria-pressed={panelOpen} onClick={() => setPanelOpen((open) => !open)}>
             {panelOpen ? <PanelRightCloseIcon /> : <PaletteIcon />}

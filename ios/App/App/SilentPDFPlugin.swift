@@ -22,7 +22,7 @@ public class SilentPDFPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDeleg
         let value = call.getString("value") ?? ""
         let title = call.getString("title") ?? "Resume"
 
-        createPDFUsingPrintRenderer(title: title) { pdfURL in
+        createPDFUsingPrintRenderer(title: title, pageSize: call.getString("pageSize") ?? "A4") { pdfURL in
             guard let pdfURL = pdfURL else {
                 print("Failed to create PDF")
                 return
@@ -47,7 +47,7 @@ public class SilentPDFPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDeleg
         let value = call.getString("value") ?? ""
         let title = call.getString("title") ?? "Resume"
 
-        createPDFUsingPrintRenderer(title: title) { pdfURL in
+        createPDFUsingPrintRenderer(title: title, pageSize: call.getString("pageSize") ?? "A4") { pdfURL in
             guard let pdfURL = pdfURL else {
                 print("Failed to create PDF")
                 return
@@ -79,7 +79,7 @@ public class SilentPDFPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDeleg
     }
 
     // Using UIPrintPageRenderer for better quality PDFs
-    func createPDFUsingPrintRenderer(title: String, completion: @escaping (URL?) -> Void) {
+    func createPDFUsingPrintRenderer(title: String, pageSize: String = "A4", completion: @escaping (URL?) -> Void) {
         guard let webView = self.bridge?.webView else {
             completion(nil)
             return
@@ -88,7 +88,9 @@ public class SilentPDFPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDeleg
         let printFormatter = webView.viewPrintFormatter()
         printPageRenderer.addPrintFormatter(printFormatter, startingAtPageAt: 0)
 
-        let paperRect = CGRect(x: 0, y: 0, width: 595.2, height: 841.8)  // A4 size in points
+        let paperRect = pageSize == "Letter"
+            ? CGRect(x: 0, y: 0, width: 612, height: 792)
+            : CGRect(x: 0, y: 0, width: 595.2, height: 841.8)
         let printableRect = paperRect.insetBy(dx: 0, dy: 0)
 
         printPageRenderer.setValue(paperRect, forKey: "paperRect")

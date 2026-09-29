@@ -20,6 +20,7 @@ await writeFile(shellPath, await renderShell())
 
 if (target === 'capacitor') {
   await copyFile(shellPath, indexPath)
+  await copyFile(resolve('native', 'update-webview.html'), resolve(clientDir, 'update-webview.html'))
   await Promise.all([
     rm(resolve(clientDir, 'guides'), { recursive: true, force: true }),
     rm(resolve(clientDir, 'robots.txt'), { force: true }),

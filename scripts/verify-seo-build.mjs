@@ -43,6 +43,11 @@ const capacitorIndex = await readFile(resolve(capacitorClient, 'index.html'), 'u
 const capacitorShell = await readFile(resolve(capacitorClient, '_shell.html'), 'utf8')
 assertExcludes(capacitorIndex, 'resume-pdf-guide', 'Capacitor index excludes the guide')
 assertExcludes(capacitorIndex, 'resume-pdf-homepage', 'Capacitor index excludes web-only homepage copy')
+assertIncludes(capacitorIndex, '<title>Resume Maker 9000</title>', 'Capacitor index uses the app title')
+const webviewUpdatePage = await readFile(resolve(capacitorClient, 'update-webview.html'), 'utf8')
+assertIncludes(webviewUpdatePage, 'Update Android System WebView', 'Capacitor includes an actionable WebView update page')
+assertExcludes(webviewUpdatePage, '<script', 'WebView update page runs without JavaScript or modern app dependencies')
+await assertMissing(resolve(webClient, 'update-webview.html'), 'web output excludes the native WebView update page')
 
 for (const artifact of ['guides', 'robots.txt', 'sitemap.xml', '_headers', '_redirects']) {
   await assertMissing(resolve(capacitorClient, artifact), `Capacitor artifact excludes ${artifact}`)
@@ -54,9 +59,15 @@ for (const marker of [
   'How to make a resume PDF online',
   'Useful limits to know before you start',
   'data-web-seo-content',
+  'Free online resume maker',
+  'Make a resume online, then save it as a PDF.',
+  'Free Online Resume Maker for PDF',
+  'save the finished version as a PDF through your browser',
 ]) {
   assertExcludes(capacitorText, marker, `Capacitor chunks exclude ${marker}`)
 }
+assertIncludes(capacitorText, 'Your resumes', 'Capacitor dashboard uses the app heading')
+assertIncludes(capacitorText, 'Create, edit and keep a version for every opportunity.', 'Capacitor dashboard uses app copy')
 
 await Promise.all([
   assertLocalAssetsExist(webIndex, webClient, 'web homepage'),

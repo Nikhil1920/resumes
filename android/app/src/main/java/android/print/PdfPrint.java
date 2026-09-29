@@ -52,7 +52,8 @@ public class PdfPrint {
             }
             File file = new File(path, fileName);
             file.createNewFile();
-            return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_WRITE);
+            return ParcelFileDescriptor.open(file,
+                    ParcelFileDescriptor.MODE_READ_WRITE | ParcelFileDescriptor.MODE_TRUNCATE);
         } catch (Exception e) {
             Log.e(TAG, "Failed to open ParcelFileDescriptor", e);
         }

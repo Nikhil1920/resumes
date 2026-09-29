@@ -1990,7 +1990,7 @@ const jsonArrayItem = (value: unknown): unknown =>
  * order of `documents` decides dashboard order and which resume becomes
  * active after a delete.
  */
-const jsonEqual = (left: unknown, right: unknown): boolean => {
+export const jsonEqual = (left: unknown, right: unknown): boolean => {
     if (left === right) return true;
     if (!isJsonObject(left) || !isJsonObject(right)) {
         return (

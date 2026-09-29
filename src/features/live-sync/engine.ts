@@ -17,6 +17,7 @@
 
 import {
     createInitialWorkspaceSnapshot,
+    jsonEqual,
     normalizeResumeDocument,
     reduceWorkspace,
     type NormalizationOptions,
@@ -224,7 +225,7 @@ export const opFromChange = (
     }
     const before = change.before.documents[documentId];
     const after = change.after.documents[documentId];
-    if (!after || JSON.stringify(before) === JSON.stringify(after)) return null;
+    if (!after || jsonEqual(before, after)) return null;
     return { cmdId, clientId, command: { type: "live/replace", document: after }, recorded: { ids: [], nows: [] } };
 };
 
@@ -245,5 +246,4 @@ export const withDocument = (
 
 /** Compare resumes ignoring per-viewer navigation. */
 export const sameContent = (left: ResumeDocument | undefined, right: ResumeDocument | undefined) =>
-    JSON.stringify(left && withStep(left, "personal-info")) ===
-    JSON.stringify(right && withStep(right, "personal-info"));
+    jsonEqual(left && withStep(left, "personal-info"), right && withStep(right, "personal-info"));

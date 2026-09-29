@@ -1,3 +1,5 @@
+import { RESUME_TEMPLATE_IDS, TEMPLATE_COUNT } from './templates.mjs'
+
 export const SITE_URL = 'https://resumes.byanr.com'
 export const REPO_URL = 'https://github.com/Nikhil1920/resumes'
 export const WEBMCP_SOURCE_URL = `${REPO_URL}/blob/main/src/features/webmcp/tools.ts`
@@ -20,6 +22,9 @@ export const webmcpTools = [
   ['delete-section-entry', 'Remove one entry.'],
   ['update-awards', 'Write or replace the awards content.'],
   ['set-section-visibility', 'Show, hide, or restore a resume section.'],
+  ['recommend-templates', 'Rank templates for a job title, industry, region, and ATS needs, with reasons.'],
+  ['list-templates', 'Describe every template: best-fit roles, ATS rating, layout, pages, and photo support.'],
+  ['open-template-explorer', 'Open the visual template explorer, optionally to restyle a resume.'],
   ['set-appearance', 'Switch template, page size, fonts, and accent color.'],
   ['set-builder-step', 'Move the editor to a specific section.'],
   ['open-preview', 'Open the full-page print preview.'],
@@ -80,7 +85,7 @@ export const guidePages = [
           </li>
           <li>
             <h3>Choose the page and template</h3>
-            <p>The appearance controls include ten templates, A4 and Letter paper, title and body fonts, and an accent color. The preview uses the same saved draft as the editor, so changes appear without maintaining a second copy.</p>
+            <p>The appearance controls include ${TEMPLATE_COUNT} templates for different jobs, from plain ATS-first layouts to executive and academic CVs that flow across several pages, plus A4 and Letter paper, title and body fonts, and an accent color. The <a href="/templates">template explorer</a> previews each one with sample content for the roles it suits. The preview uses the same saved draft as the editor, so changes appear without maintaining a second copy.</p>
           </li>
           <li>
             <h3>Check the preview</h3>
@@ -157,7 +162,7 @@ export const guidePages = [
           </li>
           <li>
             <h3>It styles the page</h3>
-            <p><code>set-appearance</code> picks one of ten templates, A4 or Letter paper, fonts, and an accent color. <code>set-section-visibility</code> hides sections that do not help this application.</p>
+            <p><code>recommend-templates</code> ranks the ${TEMPLATE_COUNT} templates for the target job and explains why; <code>set-appearance</code> applies the choice with its designed fonts and accent color, or sets A4 or Letter paper. <code>set-section-visibility</code> hides sections that do not help this application.</p>
           </li>
           <li>
             <h3>You review and save the PDF</h3>
@@ -188,7 +193,7 @@ ${toolTable}
             </tbody>
           </table>
         </div>
-        <p><code>set-appearance</code> accepts the templates <code>tenali</code>, <code>tenali-classic</code>, <code>oslo</code>, <code>vienna</code>, <code>kyoto</code>, <code>geneva</code>, <code>austin</code>, <code>zurich</code>, <code>sydney</code>, and <code>berlin</code>, the page sizes <code>A4</code> and <code>Letter</code>, and a hex accent color such as <code>#004aad</code>.</p>
+        <p><code>set-appearance</code> accepts the templates ${RESUME_TEMPLATE_IDS.map((id) => `<code>${id}</code>`).join(', ')}, the page sizes <code>A4</code> and <code>Letter</code>, and a hex accent color such as <code>#004aad</code>. Call <code>list-templates</code> for each template's best-fit roles, ATS rating, layout, and page guidance.</p>
         <p>When an input is invalid, a tool returns a result whose text starts with <code>Error:</code> and lists the accepted values, so the agent can correct the call and retry. The tool definitions and validation live in <a href="${WEBMCP_SOURCE_URL}" rel="noopener">src/features/webmcp/tools.ts on GitHub</a>.</p>
       </section>
 
@@ -265,7 +270,7 @@ agent-browser webmcp invoke export-pdf --params '{}'</code></pre>
         <ul class="checks">
           <li>A React 19 and TanStack Start web app with Tailwind CSS and shadcn/ui components.</li>
           <li>A single Zustand workspace store shared by the dashboard, editor, preview, and AI tools.</li>
-          <li>Ten print-ready resume templates rendered from the same data model.</li>
+          <li>${TEMPLATE_COUNT} print-ready resume templates rendered from the same data model, with real multi-page pagination.</li>
           <li>Capacitor projects for the Android and iOS apps, with native PDF download and share.</li>
           <li>The <a href="/guides/ai-resume-builder-webmcp/">WebMCP tool catalog</a> that lets AI agents drive the app.</li>
           <li>Vitest tests for the workspace model, preview adapter, and agent tools.</li>

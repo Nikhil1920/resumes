@@ -1,68 +1,43 @@
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FieldGrid, FieldGroup } from "../components/FieldGroup"
-import { getTemplateLabel, RESUME_TEMPLATES } from "@/features/resume-preview/presentation"
-import type { PageSize, ResumeSettings } from "@/features/resume-workspace/model"
+import type { ResumePreviewModel } from "@/features/resume-preview"
+import { templateStylePatch } from "@/features/resume-preview/templates/catalog"
+import { StyleControls } from "@/features/resume-preview/ui/StyleControls"
+import { TemplatePicker } from "@/features/resume-preview/ui/TemplatePicker"
+import type { ResumeSettings } from "@/features/resume-workspace/model"
 
 export type ResumeSettingsUpdate = Partial<Pick<ResumeSettings, "template" | "pageSize" | "titleFont" | "bodyFont" | "accentColor">>
 
 export type ResumeSettingsEditorProps = {
-  settings: ResumeSettings
+  /** The resume rendered in template thumbnails and used for the current appearance. */
+  previewModel: ResumePreviewModel
   onChange: (patch: ResumeSettingsUpdate) => void
-  /** Optional template values; a custom template remains valid if omitted. */
-  templates?: readonly string[]
-  titleFonts?: readonly string[]
-  bodyFonts?: readonly string[]
-  disabled?: boolean
   className?: string
 }
 
-const DEFAULT_TEMPLATES = RESUME_TEMPLATES.map((template) => template.value)
-const DEFAULT_FONTS = ["Arial", "Inter", "Georgia", "Helvetica", "Times New Roman"] as const
-
-function FontField({ id, label, value, options, onChange, disabled }: { id: string; label: string; value: string; options: readonly string[]; onChange: (value: string) => void; disabled: boolean }) {
-  const hasCurrentValue = options.includes(value)
+/**
+ * Template gallery plus style controls.  Choosing a template applies its
+ * designed fonts and accent; the style controls then fine-tune them.
+ */
+export function ResumeSettingsEditor({ previewModel, onChange, className }: ResumeSettingsEditorProps) {
   return (
-    <FieldGroup label={label} htmlFor={id}>
-      <Select value={value} onValueChange={(next) => { if (typeof next === "string") onChange(next) }} disabled={disabled}>
-        <SelectTrigger id={id} className="w-full"><SelectValue /></SelectTrigger>
-        <SelectContent>{!hasCurrentValue && <SelectItem value={value}>{value}</SelectItem>}{options.map((font) => <SelectItem key={font} value={font}>{font}</SelectItem>)}</SelectContent>
-      </Select>
-    </FieldGroup>
-  )
-}
-
-/** Controlled presentation settings editor. Values are passed straight to the document settings callback. */
-export function ResumeSettingsEditor({ settings, onChange, templates = DEFAULT_TEMPLATES, titleFonts = DEFAULT_FONTS, bodyFonts = DEFAULT_FONTS, disabled = false, className }: ResumeSettingsEditorProps) {
-  const hasCurrentTemplate = templates.includes(settings.template)
-  return (
-    <section className={className} aria-labelledby="resume-settings-editor-title">
-      <div className="mb-4">
-        <h2 id="resume-settings-editor-title" className="text-lg font-semibold">Resume appearance</h2>
-        <p className="text-sm text-muted-foreground">Choose the page, typography, and accent used by the resume preview.</p>
-      </div>
-      <FieldGrid>
-        <FieldGroup label="Template" htmlFor="resume-template">
-          <Select value={settings.template} onValueChange={(value) => { if (typeof value === "string") onChange({ template: value }) }} disabled={disabled}>
-            <SelectTrigger id="resume-template" className="w-full"><SelectValue /></SelectTrigger>
-            <SelectContent>{!hasCurrentTemplate && <SelectItem value={settings.template}>{getTemplateLabel(settings.template)}</SelectItem>}{templates.map((template) => <SelectItem key={template} value={template}>{getTemplateLabel(template)}</SelectItem>)}</SelectContent>
-          </Select>
-        </FieldGroup>
-        <FieldGroup label="Page size" htmlFor="resume-page-size">
-          <Select value={settings.pageSize} onValueChange={(value) => { if (value === "A4" || value === "Letter") onChange({ pageSize: value as PageSize }) }} disabled={disabled}>
-            <SelectTrigger id="resume-page-size" className="w-full"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="A4">A4</SelectItem><SelectItem value="Letter">Letter</SelectItem></SelectContent>
-          </Select>
-        </FieldGroup>
-        <FontField id="resume-title-font" label="Title font" value={settings.titleFont} options={titleFonts} onChange={(titleFont) => onChange({ titleFont })} disabled={disabled} />
-        <FontField id="resume-body-font" label="Body font" value={settings.bodyFont} options={bodyFonts} onChange={(bodyFont) => onChange({ bodyFont })} disabled={disabled} />
-        <FieldGroup label="Accent color" htmlFor="resume-accent-color" hint="Used for headings and links in supported templates.">
-          <div className="flex items-center gap-2">
-            <Input id="resume-accent-color" type="color" className="h-8 w-12 cursor-pointer p-1" value={settings.accentColor} onChange={(event) => onChange({ accentColor: event.currentTarget.value })} disabled={disabled} aria-label="Accent color" />
-            <Input value={settings.accentColor} readOnly disabled={disabled} aria-label="Accent color value" />
-          </div>
-        </FieldGroup>
-      </FieldGrid>
-    </section>
+    <div className={className}>
+      <section aria-labelledby="resume-template-heading">
+        <h2 id="resume-template-heading" className="text-sm font-semibold">Template</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">Every card shows your own resume. Search by the role you are applying for.</p>
+        <TemplatePicker
+          className="mt-4"
+          model={previewModel}
+          value={previewModel.template}
+          columns={3}
+          onSelect={(template) => {
+            if (template !== previewModel.template) onChange(templateStylePatch(template))
+          }}
+        />
+      </section>
+      <section aria-labelledby="resume-style-heading" className="mt-10 border-t border-border pt-8">
+        <h2 id="resume-style-heading" className="text-sm font-semibold">Style</h2>
+        <p className="mt-0.5 mb-5 text-xs text-muted-foreground">Fine-tune the accent color, fonts, and paper size.</p>
+        <StyleControls model={previewModel} onChange={onChange} className="max-w-md" />
+      </section>
+    </div>
   )
 }

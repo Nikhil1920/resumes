@@ -8,7 +8,7 @@ import { EntryCard } from "../components/EntryCard"
 import { FieldGrid, FieldGroup } from "../components/FieldGroup"
 import type { PersonalInfo, ResumeLink } from "../../resume-workspace/model"
 
-export type PersonalInfoUpdate = Partial<Pick<PersonalInfo, "name" | "email" | "phone" | "image">>
+export type PersonalInfoUpdate = Partial<Pick<PersonalInfo, "name" | "headline" | "email" | "phone" | "location" | "image">>
 export type PersonalInfoLinkUpdate = Partial<Pick<ResumeLink, "title" | "url">>
 
 export type PersonalInfoEditorProps = {
@@ -80,15 +80,23 @@ export function PersonalInfoEditor({
         </div>
       </div>
 
-      <FieldGrid columns={3} className="mt-6">
+      <FieldGrid columns={2} className="mt-6">
         <FieldGroup label="Full name" htmlFor="personal-name" required>
           <Input id="personal-name" value={value.name} disabled={disabled} autoComplete="name" onChange={(event) => onPatch({ name: event.target.value })} />
         </FieldGroup>
+        <FieldGroup label="Headline" htmlFor="personal-headline">
+          <Input id="personal-headline" value={value.headline ?? ""} disabled={disabled} autoComplete="organization-title" placeholder="Target role, e.g. Senior Product Designer" onChange={(event) => onPatch({ headline: event.target.value })} />
+        </FieldGroup>
+      </FieldGrid>
+      <FieldGrid columns={3} className="mt-4">
         <FieldGroup label="Email" htmlFor="personal-email">
           <Input id="personal-email" type="email" value={value.email} disabled={disabled} autoComplete="email" onChange={(event) => onPatch({ email: event.target.value })} />
         </FieldGroup>
         <FieldGroup label="Phone" htmlFor="personal-phone">
           <Input id="personal-phone" type="tel" value={value.phone} disabled={disabled} autoComplete="tel" onChange={(event) => onPatch({ phone: event.target.value })} />
+        </FieldGroup>
+        <FieldGroup label="Location" htmlFor="personal-location">
+          <Input id="personal-location" value={value.location ?? ""} disabled={disabled} autoComplete="address-level2" placeholder="City, Country" onChange={(event) => onPatch({ location: event.target.value })} />
         </FieldGroup>
       </FieldGrid>
 

@@ -1,11 +1,8 @@
-import DOMPurify from 'dompurify'
-import type { CSSProperties, ReactNode } from 'react'
-import { useEffect, useMemo } from 'react'
-import { ArrowLeftIcon, BracesIcon, DownloadIcon, PencilIcon, PrinterIcon, Share2Icon } from 'lucide-react'
+import { useEffect } from 'react'
 
-import { sanitizeRichText } from '../resume-workspace/rich-text'
-import { downloadJsonFile } from '../../lib/download-json'
-import { getResumePreviewTitle, getTemplateLayout, getTemplatePortrait, PREVIEW_TEMPLATE_OPTIONS, type ResumeTemplateLayout } from './presentation'
+import { ResumeDocument } from './document/ResumeDocument'
+import { getResumePreviewTitle } from './presentation'
+import './document/document.css'
 import './preview.css'
 
 /** The built-in section identifiers are deliberately stable: they are used for ordering and persistence. */
@@ -46,7 +43,6 @@ export interface PreviewExperienceItem {
   startDate?: string
   endDate?: string
   descriptionHtml?: string
-  highlights?: Array<{ id: string; html: string }>
 }
 
 export interface PreviewEducationItem {
@@ -131,356 +127,33 @@ export interface ResumePreviewModel {
   accentColor: string
 }
 
-export interface PreviewToolbarProps {
-  model: ResumePreviewModel
-  onBack?: () => void
-  onEdit?: () => void
-  onModelChange?: (patch: Partial<Pick<ResumePreviewModel, 'template' | 'titleFont' | 'bodyFont' | 'pageSize' | 'accentColor'>>) => void
-  onPrint?: () => void
-  onExportJson?: () => void
-  onShare?: () => void
-  onDownload?: () => void
-  start?: ReactNode
-  end?: ReactNode
-}
+export type ResumeAppearancePatch = Partial<Pick<ResumePreviewModel, 'template' | 'titleFont' | 'bodyFont' | 'pageSize' | 'accentColor'>>
 
-export interface ResumePreviewProps extends PreviewToolbarProps {
+export interface ResumePreviewProps {
+  model: ResumePreviewModel
   className?: string
-  showToolbar?: boolean
+  /** Render only the first N pages (thumbnails). */
+  maxPages?: number
+  /** Shown as the call to action on an empty resume. */
+  onEdit?: () => void
+  onPageCountChange?: (count: number) => void
   /** Thumbnails and embedded previews leave the tab title to their host route. */
   manageDocumentTitle?: boolean
-  /** Host-provided chrome rendered at the start and end of the toolbar (e.g. brand, theme toggle). */
-  toolbarStart?: ReactNode
-  toolbarEnd?: ReactNode
 }
 
-const FONT_OPTIONS = ['Inter', 'Arial', 'Georgia', 'Helvetica', 'Times New Roman']
-const SECTION_TITLES: Record<BuiltInSectionId, string> = {
-  summary: 'Profile summary',
-  experience: 'Experience',
-  education: 'Education',
-  projects: 'Projects',
-  skills: 'Skills',
-  certifications: 'Certifications',
-  awards: 'Awards',
-  languages: 'Languages',
-}
-
-const sanitizeOptions = {
-  ALLOWED_TAGS: ['a', 'b', 'br', 'em', 'i', 'li', 'ol', 'p', 'strong', 'u', 'ul'],
-  ALLOWED_ATTR: ['href', 'target', 'rel'],
-  FORBID_ATTR: ['style', 'onerror', 'onclick'],
-}
-
-/** DOMPurify is used in the browser; the dependency-free boundary keeps SSR safe as well. */
-function sanitizeHtml(html: string) {
-  if (typeof DOMPurify.sanitize === 'function') return DOMPurify.sanitize(html, sanitizeOptions)
-  return sanitizeRichText(html)
-}
-
-function SafeHtml({ html, className }: { html?: string; className?: string }) {
-  if (!html?.trim()) return null
+function EmptyResume({ onEdit }: { onEdit?: () => void }) {
   return (
-    <div
-      className={className}
-      dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
-    />
-  )
-}
-
-function formatDateRange(start?: string, end?: string) {
-  if (!start && !end) return null
-  return [start, end || 'Present'].filter(Boolean).join(' – ')
-}
-
-function hasContent(model: ResumePreviewModel) {
-  return Boolean(
-    model.personalInfo.name.trim() ||
-      model.personalInfo.headline?.trim() ||
-      model.personalInfo.email?.trim() ||
-      model.personalInfo.phone?.trim() ||
-      model.sections.some((section) => {
-        if (section.type === 'summary') return Boolean(section.content.html.trim())
-        if (section.type === 'skills') return section.content.groups.some((group) => group.skills.length)
-        return section.content.items.length > 0
-      }),
-  )
-}
-
-function ItemMeta({ children }: { children: ReactNode }) {
-  return <div className="resume-preview__item-meta">{children}</div>
-}
-
-function DateRange({ start, end }: { start?: string; end?: string }) {
-  const range = formatDateRange(start, end)
-  return range ? <span>{range}</span> : null
-}
-
-function isSafeHref(value: string) {
-  return /^(?:https?:|mailto:|tel:|\/|#)/i.test(value.trim())
-}
-
-/** Mirrors the workspace portrait allowlist so hand-built models cannot smuggle an unsafe src. */
-function isSafePortraitSrc(value: string | undefined): value is string {
-  if (!value) return false
-  return /^data:image\/(?:png|jpeg|jpg|webp);base64,/i.test(value) || /^https?:\/\//i.test(value)
-}
-
-function Portrait({ src }: { src?: string }) {
-  if (!isSafePortraitSrc(src)) return null
-  return <img className="resume-preview__portrait" src={src} alt="" />
-}
-
-function PreviewLinkAnchor({ link }: { link: PreviewLink }) {
-  if (!isSafeHref(link.href)) return <span>{link.label}</span>
-  return <a href={link.href} target="_blank" rel="noreferrer">{link.label}</a>
-}
-
-function RenderSection({ section }: { section: PreviewSection }) {
-  const heading = section.title || SECTION_TITLES[section.type]
-  return (
-    <section className={`resume-preview__section resume-preview__section--${section.type}`} aria-labelledby={`${section.id}-title`}>
-      <h2 id={`${section.id}-title`} className="resume-preview__section-title">
-        {heading}
-      </h2>
-
-      {section.type === 'summary' && <SafeHtml html={section.content.html} className="resume-preview__rich-text" />}
-
-      {section.type === 'experience' && (
-        <div className="resume-preview__entries">
-          {section.content.items.map((item) => (
-            <article className="resume-preview__entry" key={item.id}>
-              <div className="resume-preview__entry-heading">
-                <div>
-                  <h3>{item.title}</h3>
-                  <p className="resume-preview__organization">{item.company}{item.location ? ` · ${item.location}` : ''}</p>
-                </div>
-                <ItemMeta><DateRange start={item.startDate} end={item.endDate} /></ItemMeta>
-              </div>
-              <SafeHtml html={item.descriptionHtml} className="resume-preview__rich-text" />
-              {item.highlights && item.highlights.length > 0 && (
-                <ul className="resume-preview__bullet-list">
-                  {item.highlights.map((highlight) => <li key={highlight.id}><SafeHtml html={highlight.html} /></li>)}
-                </ul>
-              )}
-            </article>
-          ))}
-        </div>
-      )}
-
-      {section.type === 'education' && (
-        <div className="resume-preview__entries">
-          {section.content.items.map((item) => (
-            <article className="resume-preview__entry" key={item.id}>
-              <div className="resume-preview__entry-heading">
-                <div><h3>{item.degree}</h3><p className="resume-preview__organization">{item.institution}{item.location ? ` · ${item.location}` : ''}</p></div>
-                <ItemMeta><DateRange start={item.startDate} end={item.endDate} /></ItemMeta>
-              </div>
-              <SafeHtml html={item.descriptionHtml} className="resume-preview__rich-text" />
-            </article>
-          ))}
-        </div>
-      )}
-
-      {section.type === 'projects' && (
-        <div className="resume-preview__entries">
-          {section.content.items.map((item) => (
-            <article className="resume-preview__entry" key={item.id}>
-              <div className="resume-preview__entry-heading">
-                <h3>{item.title}</h3><ItemMeta><DateRange start={item.startDate} end={item.endDate} /></ItemMeta>
-              </div>
-              <SafeHtml html={item.descriptionHtml} className="resume-preview__rich-text" />
-              {(item.skills?.length || item.links?.length) ? <div className="resume-preview__project-footer">
-                {item.skills?.length ? <span>{item.skills.join(' · ')}</span> : null}
-                {item.links?.map((link) => <PreviewLinkAnchor link={link} key={link.id} />)}
-              </div> : null}
-            </article>
-          ))}
-        </div>
-      )}
-
-      {section.type === 'skills' && (
-        <div className="resume-preview__skill-groups">
-          {section.content.groups.map((group) => <div className="resume-preview__skill-group" key={group.id}><h3>{group.name}</h3><p>{group.skills.join(' · ')}</p></div>)}
-        </div>
-      )}
-
-      {section.type === 'certifications' && <ul className="resume-preview__compact-list">
-        {section.content.items.map((item) => <li key={item.id}><strong>{item.name}</strong>{item.issuer ? `, ${item.issuer}` : ''}{item.date ? ` · ${item.date}` : ''}{item.url && isSafeHref(item.url) ? <> · <a href={item.url} target="_blank" rel="noreferrer">Credential</a></> : null}</li>)}
-      </ul>}
-
-      {section.type === 'awards' && <div className="resume-preview__entries">
-        {section.content.items.map((item) => <article className="resume-preview__entry" key={item.id}>{(item.name || item.issuer || item.date) ? <div className="resume-preview__entry-heading"><div>{item.name ? <h3>{item.name}</h3> : null}{item.issuer ? <p className="resume-preview__organization">{item.issuer}</p> : null}</div>{item.date ? <ItemMeta>{item.date}</ItemMeta> : null}</div> : null}<SafeHtml html={item.descriptionHtml} className="resume-preview__rich-text" /></article>)}
-      </div>}
-
-      {section.type === 'languages' && <div className="resume-preview__languages">
-        {section.content.items.map((item) => <div key={item.id}><strong>{item.name}</strong>{item.proficiency ? <span>{item.proficiency}</span> : null}</div>)}
-      </div>}
-    </section>
-  )
-}
-
-function ClassicDateRange({ start, end }: { start?: string; end?: string }) {
-  if (!start && !end) return null
-  return <>{[start, end].filter(Boolean).join(' - ')}</>
-}
-
-function ClassicSection({ section }: { section: PreviewSection }) {
-  const heading = section.title || SECTION_TITLES[section.type]
-
-  if (section.type === 'education') {
-    return <section className="resume-preview__classic-section"><h2>{heading}</h2><ul className="resume-preview__classic-section-list">
-      {section.content.items.map((item) => <li key={item.id}><div className="resume-preview__classic-subheading"><div><strong>{item.institution}</strong><br /><span>{item.degree}</span></div><div className="resume-preview__classic-location-date">{item.location}<br /><span><ClassicDateRange start={item.startDate} end={item.endDate} /></span></div></div><SafeHtml html={item.descriptionHtml} className="resume-preview__classic-description" /></li>)}
-    </ul></section>
-  }
-
-  if (section.type === 'experience') {
-    return <section className="resume-preview__classic-section"><h2>{heading}</h2><ul className="resume-preview__classic-section-list">
-      {section.content.items.map((item) => <li key={item.id}><div className="resume-preview__classic-subheading"><div><strong>{item.title}</strong><br /><span>{item.company}</span></div><div className="resume-preview__classic-location-date"><ClassicDateRange start={item.startDate} end={item.endDate} /><br /><span>{item.location}</span></div></div><SafeHtml html={item.descriptionHtml} className="resume-preview__classic-description" />{item.highlights?.length ? <ul className="resume-preview__classic-description">{item.highlights.map((highlight) => <li key={highlight.id}><SafeHtml html={highlight.html} /></li>)}</ul> : null}</li>)}
-    </ul></section>
-  }
-
-  if (section.type === 'projects') {
-    return <section className="resume-preview__classic-section"><h2>{heading}</h2><ul className="resume-preview__classic-section-list">
-      {section.content.items.map((item) => <li key={item.id}><div className="resume-preview__classic-project-heading"><div><strong>{item.title}</strong>{item.skills?.length ? <> | <em>{item.skills.join(', ')}</em></> : null}</div><div><ClassicDateRange start={item.startDate} end={item.endDate} /></div></div><SafeHtml html={item.descriptionHtml} className="resume-preview__classic-description" />{item.links?.length ? <div className="resume-preview__classic-links">{item.links.map((link) => <PreviewLinkAnchor link={link} key={link.id} />)}</div> : null}</li>)}
-    </ul></section>
-  }
-
-  if (section.type === 'skills') {
-    return <section className="resume-preview__classic-section resume-preview__classic-skills"><h2>{heading}</h2><ul>{section.content.groups.map((group) => <li key={group.id}>{group.name ? <><strong>{group.name}</strong>: </> : null}{group.skills.join(', ')}</li>)}</ul></section>
-  }
-
-  if (section.type === 'certifications') {
-    return <section className="resume-preview__classic-section"><h2>{heading}</h2><div className="resume-preview__classic-description"><ul>{section.content.items.map((item) => <li key={item.id}>{item.name}{item.issuer ? `, ${item.issuer}` : ''}{item.date ? ` - ${item.date}` : ''}{item.url && isSafeHref(item.url) ? <> - <a href={item.url} target="_blank" rel="noreferrer">Credential</a></> : null}</li>)}</ul></div></section>
-  }
-
-  if (section.type === 'awards') {
-    return <section className="resume-preview__classic-section"><h2>{heading}</h2><div className="resume-preview__classic-description">{section.content.items.map((item) => <div key={item.id}>{item.name ? <strong>{item.name}</strong> : null}{item.issuer ? `, ${item.issuer}` : ''}{item.date ? ` - ${item.date}` : ''}<SafeHtml html={item.descriptionHtml} /></div>)}</div></section>
-  }
-
-  if (section.type === 'languages') {
-    return <section className="resume-preview__classic-section"><h2>{heading}</h2><div className="resume-preview__classic-description"><ul>{section.content.items.map((item) => <li key={item.id}>{item.proficiency ? `${item.proficiency} ` : ''}{item.name}</li>)}</ul></div></section>
-  }
-
-  return <section className="resume-preview__classic-section"><h2>{heading}</h2><SafeHtml html={section.content.html} className="resume-preview__classic-description" /></section>
-}
-
-function ClassicResume({ model, sections }: { model: ResumePreviewModel; sections: PreviewSection[] }) {
-  const contactItems: ReactNode[] = []
-  if (model.personalInfo.phone) contactItems.push(<a key="phone" href={`tel:${model.personalInfo.phone.replace(/[^\d+]/g, '')}`}>{model.personalInfo.phone}</a>)
-  if (model.personalInfo.email) contactItems.push(<a key="email" href={`mailto:${encodeURIComponent(model.personalInfo.email)}`}>{model.personalInfo.email}</a>)
-  if (model.personalInfo.location) contactItems.push(<span key="location">{model.personalInfo.location}</span>)
-  contactItems.push(...model.personalInfo.links.map((link) => <PreviewLinkAnchor link={link} key={link.id} />))
-
-  return <>
-    <header className="resume-preview__classic-header"><h1>{model.personalInfo.name || 'Your Name'}</h1>{model.personalInfo.headline ? <p>{model.personalInfo.headline}</p> : null}<div className="resume-preview__classic-contact">{contactItems.map((item, index) => <span key={index}>{index > 0 ? <span className="resume-preview__classic-separator"> | </span> : null}{item}</span>)}</div></header>
-    <div className="resume-preview__classic-content">{sections.map((section) => <ClassicSection section={section} key={section.id} />)}</div>
-  </>
-}
-
-/** Sidebar layouts keep the compact catalog sections in the narrow column and long-form sections in the main column. */
-const SIDEBAR_SECTION_TYPES: ReadonlySet<BuiltInSectionId> = new Set(['skills', 'languages', 'certifications', 'awards'])
-
-function splitSectionsForColumns(sections: PreviewSection[]) {
-  const main: PreviewSection[] = []
-  const sidebar: PreviewSection[] = []
-  for (const section of sections) {
-    if (SIDEBAR_SECTION_TYPES.has(section.type)) sidebar.push(section)
-    else main.push(section)
-  }
-  return { main, sidebar }
-}
-
-function SidebarContact({ model }: { model: ResumePreviewModel }) {
-  const { email, phone, location } = model.personalInfo
-  return (
-    <div className="resume-preview__sidebar-contact">
-      {email ? <a href={`mailto:${encodeURIComponent(email)}`}>{email}</a> : null}
-      {phone ? <a href={`tel:${phone.replace(/[^\d+]/g, '')}`}>{phone}</a> : null}
-      {location ? <span>{location}</span> : null}
-      {model.personalInfo.links.map((link) => <PreviewLinkAnchor link={link} key={link.id} />)}
+    <div className="rp-empty">
+      <div className="rp-empty__mark" aria-hidden="true">✦</div>
+      <h1>Your resume starts here</h1>
+      <p>Add your personal information and at least one section to see a polished preview.</p>
+      {onEdit ? <button type="button" className="rp-empty__button" onClick={onEdit}>Start editing</button> : null}
     </div>
   )
 }
 
-function SidebarResume({ model, sections, layout }: { model: ResumePreviewModel; sections: PreviewSection[]; layout: ResumeTemplateLayout }) {
-  const { main, sidebar } = splitSectionsForColumns(sections)
-  return (
-    <div className={`resume-preview__split resume-preview__split--${layout}`}>
-      <aside className="resume-preview__sidebar" aria-label="Contact and highlights">
-        <header className="resume-preview__sidebar-identity">
-          <Portrait src={model.personalInfo.image} />
-          <h1>{model.personalInfo.name || 'Your Name'}</h1>
-          {model.personalInfo.headline ? <p>{model.personalInfo.headline}</p> : null}
-        </header>
-        <SidebarContact model={model} />
-        {sidebar.map((section) => <RenderSection section={section} key={section.id} />)}
-      </aside>
-      <div className="resume-preview__main">
-        {main.map((section) => <RenderSection section={section} key={section.id} />)}
-      </div>
-    </div>
-  )
-}
-
-function downloadJson(model: ResumePreviewModel) {
-  downloadJsonFile(
-    `${model.personalInfo.name.trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'resume'}.json`,
-    model,
-  )
-}
-
-function shareModel(model: ResumePreviewModel) {
-  if (typeof window === 'undefined') return
-  const shareData = { title: `${model.personalInfo.name || 'Resume'} · Resume`, text: 'View my resume', url: window.location.href }
-  if (navigator.share) void navigator.share(shareData)
-  else if (navigator.clipboard) void navigator.clipboard.writeText(window.location.href)
-}
-
-function downloadResume() {
-  if (typeof window !== 'undefined') window.print()
-}
-
-export function PreviewToolbar({ model, start, end, onBack, onEdit, onModelChange, onPrint, onExportJson, onShare, onDownload }: PreviewToolbarProps) {
-  const print = onPrint || (() => window.print())
-  const exportJson = onExportJson || (() => downloadJson(model))
-  const share = onShare || (() => shareModel(model))
-  const download = onDownload || downloadResume
-  const update = (patch: Parameters<NonNullable<PreviewToolbarProps['onModelChange']>>[0]) => onModelChange?.(patch)
-  return (
-    <div className="resume-preview__toolbar" role="toolbar" aria-label="Resume preview controls">
-      <div className="resume-preview__toolbar-leading">
-        {start}
-        {onBack ? <button type="button" className="resume-preview__text-button" onClick={onBack}><ArrowLeftIcon aria-hidden="true" size={15} />Resumes</button> : null}
-        {onEdit ? <button type="button" className="resume-preview__text-button" onClick={onEdit}><PencilIcon aria-hidden="true" size={15} />Edit resume</button> : null}
-      </div>
-      {onModelChange ? <div className="resume-preview__toolbar-controls">
-        <label>Template<select aria-label="Template" value={model.template} onChange={(event) => update({ template: event.target.value })}>{PREVIEW_TEMPLATE_OPTIONS.map((template) => <option key={template.value} value={template.value}>{template.label}</option>)}</select></label>
-        <label>Title font<select aria-label="Title font" value={model.titleFont} onChange={(event) => update({ titleFont: event.target.value })}>{FONT_OPTIONS.map((font) => <option key={font}>{font}</option>)}</select></label>
-        <label>Body font<select aria-label="Body font" value={model.bodyFont} onChange={(event) => update({ bodyFont: event.target.value })}>{FONT_OPTIONS.map((font) => <option key={font}>{font}</option>)}</select></label>
-        <label>Page<select aria-label="Page size" value={model.pageSize} onChange={(event) => update({ pageSize: event.target.value as ResumePageSize })}><option value="A4">A4</option><option value="Letter">Letter</option></select></label>
-        <label className="resume-preview__color-control">Accent<input aria-label="Accent color" type="color" value={model.accentColor} onChange={(event) => update({ accentColor: event.target.value })} /></label>
-      </div> : null}
-      <div className="resume-preview__toolbar-actions">
-        <button type="button" className="resume-preview__icon-button" onClick={share} aria-label="Share resume"><Share2Icon aria-hidden="true" size={15} />Share</button>
-        <button type="button" className="resume-preview__icon-button" onClick={download} aria-label="Download resume"><DownloadIcon aria-hidden="true" size={15} />Download</button>
-        <button type="button" className="resume-preview__icon-button" onClick={exportJson} aria-label="Export resume as JSON"><BracesIcon aria-hidden="true" size={15} />JSON</button>
-        <button type="button" className="resume-preview__primary-button" onClick={print}><PrinterIcon aria-hidden="true" size={15} />Print</button>
-        {end}
-      </div>
-    </div>
-  )
-}
-
-export function ResumePreview({ model, onBack, onEdit, onModelChange, onPrint, onExportJson, onShare, onDownload, className, showToolbar = true, manageDocumentTitle = true, toolbarStart, toolbarEnd }: ResumePreviewProps) {
-  const style = useMemo(() => ({ '--resume-accent': model.accentColor, '--resume-title-font': model.titleFont, '--resume-body-font': model.bodyFont } as CSSProperties), [model.accentColor, model.bodyFont, model.titleFont])
-  const orderedSections = model.sections.filter((section) => section.visible !== false && section.type in SECTION_TITLES)
-  const populated = hasContent(model)
-  const isClassicTenali = model.template === 'tenali-classic'
-  const templateLayout = getTemplateLayout(model.template)
-  const templatePortrait = getTemplatePortrait(model.template)
-  const useSplitLayout = populated && (templateLayout === 'sidebar-left' || templateLayout === 'sidebar-right')
-
+/** The paginated resume document, without any application chrome. */
+export function ResumePreview({ model, className, maxPages, onEdit, onPageCountChange, manageDocumentTitle = false }: ResumePreviewProps) {
   useEffect(() => {
     if (!manageDocumentTitle) return
     const previousTitle = document.title
@@ -489,32 +162,13 @@ export function ResumePreview({ model, onBack, onEdit, onModelChange, onPrint, o
   }, [manageDocumentTitle, model.personalInfo.name, model.title])
 
   return (
-    <div className={`resume-preview ${className || ''}`.trim()} style={style} data-template={model.template} data-page-size={model.pageSize}>
-      {showToolbar ? <PreviewToolbar model={model} start={toolbarStart} end={toolbarEnd} onBack={onBack} onEdit={onEdit} onModelChange={onModelChange} onPrint={onPrint} onExportJson={onExportJson} onShare={onShare} onDownload={onDownload} /> : null}
-      <main className="resume-preview__workspace">
-        <article
-          className={`resume-preview__page resume-preview__page--${model.pageSize.toLowerCase()}${useSplitLayout ? ' resume-preview__page--split' : ''}`.trim()}
-          aria-label={`${model.personalInfo.name || 'Resume'} preview`}
-        >
-          {!populated ? <div className="resume-preview__empty-state"><div className="resume-preview__empty-mark">✦</div><h1>Your resume starts here</h1><p>Add your personal information and at least one section to see a polished preview.</p>{onEdit ? <button type="button" className="resume-preview__primary-button" onClick={onEdit}>Start editing</button> : null}</div>
-            : useSplitLayout ? <SidebarResume model={model} sections={orderedSections} layout={templateLayout} />
-            : isClassicTenali ? <ClassicResume model={model} sections={orderedSections} />
-            : <>
-              <header className="resume-preview__header">
-                {templatePortrait === 'header' ? <Portrait src={model.personalInfo.image} /> : null}
-                <div><h1>{model.personalInfo.name || 'Your Name'}</h1>{model.personalInfo.headline ? <p className="resume-preview__headline">{model.personalInfo.headline}</p> : null}</div>
-                <div className="resume-preview__contact">
-                  {model.personalInfo.email ? <a href={`mailto:${encodeURIComponent(model.personalInfo.email)}`}>{model.personalInfo.email}</a> : null}
-                  {model.personalInfo.phone ? <a href={`tel:${model.personalInfo.phone.replace(/[^\d+]/g, '')}`}>{model.personalInfo.phone}</a> : null}
-                  {model.personalInfo.location ? <span>{model.personalInfo.location}</span> : null}
-                  {model.personalInfo.links.map((link) => <PreviewLinkAnchor link={link} key={link.id} />)}
-                </div>
-              </header>
-              <div className="resume-preview__content">{orderedSections.map((section) => <RenderSection section={section} key={section.id} />)}</div>
-            </>}
-        </article>
-      </main>
-    </div>
+    <ResumeDocument
+      model={model}
+      className={className}
+      maxPages={maxPages}
+      onPageCountChange={onPageCountChange}
+      emptyState={<EmptyResume onEdit={onEdit} />}
+    />
   )
 }
 

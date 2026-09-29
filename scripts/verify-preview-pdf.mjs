@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path'
 import { spawn } from 'node:child_process'
 
 const argumentsList = process.argv.slice(2).filter((argument) => argument !== '--')
-const appUrl = argumentsList[0] ?? 'http://127.0.0.1:3000/'
+const appUrl = argumentsList[0] ?? 'http://localhost:3000/'
 const outputDirectory = resolve(argumentsList[1] ?? 'tmp/pdfs')
 const chromeCandidates = [
   process.env.CHROME_BIN,
@@ -28,20 +28,6 @@ const chrome = spawn(chromePath, [
   'about:blank',
 ], { stdio: ['ignore', 'ignore', 'pipe'] })
 
-const TEMPLATE_VALUES = [
-  'tenali',
-  'tenali-classic',
-  'oslo',
-  'vienna',
-  'kyoto',
-  'geneva',
-  'austin',
-  'zurich',
-  'sydney',
-  'berlin',
-]
-const SPLIT_TEMPLATES = new Set(['zurich', 'sydney', 'berlin'])
-
 try {
   const endpoint = await readDevToolsEndpoint(chrome)
   const cdp = await connectCdp(endpoint)
@@ -49,6 +35,7 @@ try {
   const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true })
   await cdp.send('Page.enable', {}, sessionId)
   await cdp.send('Runtime.enable', {}, sessionId)
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }, sessionId)
   await waitFor(cdp, sessionId, `document.readyState === 'complete' && [...document.querySelectorAll('button')].some((candidate) => /^(start with a sample|view sample resume)$/i.test(candidate.textContent.trim()))`)
 
   const sampleButton = await evaluate(cdp, sessionId, `(() => {
@@ -69,45 +56,66 @@ try {
     return true
   })()`)
   if (!openedPreview) throw new Error('The editor preview button was not found.')
-  await waitFor(cdp, sessionId, `location.pathname.endsWith('/preview') && Boolean(document.querySelector('.resume-preview__page'))`)
-  const title = await evaluate(cdp, sessionId, 'document.title')
-  if (title !== 'Maya Patel · Product Designer') {
-    throw new Error(`Unexpected preview title: ${JSON.stringify(title)}`)
-  }
+  await waitFor(cdp, sessionId, `location.pathname.endsWith('/preview') && Boolean(document.querySelector('.rp-sheet[data-page]'))`)
+  await waitFor(cdp, sessionId, `document.title === 'Maya Patel · Product Designer'`).catch(async () => {
+    throw new Error(`Unexpected preview title: ${JSON.stringify(await evaluate(cdp, sessionId, 'document.title'))}`)
+  })
 
-  const pdfPaths = []
-  for (const template of TEMPLATE_VALUES) {
-    const switched = await evaluate(cdp, sessionId, `(() => {
-      const select = document.querySelector('select[aria-label="Template"]')
-      if (!select) return false
-      select.value = '${template}'
-      select.dispatchEvent(new Event('change', { bubbles: true }))
-      return true
-    })()`)
-    if (!switched) throw new Error('The template selector was not found.')
-    const splitMarker = SPLIT_TEMPLATES.has(template) ? ' && Boolean(document.querySelector(\'.resume-preview__split\'))' : ''
-    await waitFor(cdp, sessionId, `document.querySelector('.resume-preview')?.dataset.template === '${template}' && Boolean(document.querySelector('.resume-preview__page > :first-child'))${splitMarker}`)
+  // Every template is listed by the preview's template picker.
+  await waitFor(cdp, sessionId, `document.querySelectorAll('[data-template-option]').length > 0`)
+  const templates = await evaluate(cdp, sessionId, `[...new Set([...document.querySelectorAll('[data-template-option]')].map((button) => button.dataset.templateOption))]`)
 
-    const path = join(outputDirectory, `preview-${template}.pdf`)
-    await printPdf(cdp, sessionId, path)
-    pdfPaths.push(path)
-  }
-  await cdp.send('Target.closeTarget', { targetId })
-  cdp.close()
-
-  for (const path of pdfPaths) {
+  const oneSamplePdfs = await printEveryTemplate(cdp, sessionId, templates, join(outputDirectory, 'standard'))
+  for (const { path, pages } of oneSamplePdfs) {
     const info = await commandOutput('pdfinfo', [path])
-    if (!/^Pages:\s+1$/m.test(info)) throw new Error(`${path} did not render as one page.\n${info}`)
+    if (!new RegExp(`^Pages:\\s+${pages}$`, 'm').test(info)) throw new Error(`${path} should have ${pages} page(s) like the preview.\n${info}`)
     if (!/^Title:\s+Maya Patel · Product Designer$/m.test(info)) throw new Error(`${path} did not use the preview title.\n${info}`)
   }
 
-  console.log(`Verified one-page PDFs with the preview title:\n${pdfPaths.join('\n')}`)
+  // A long executive CV exercises pagination, running headers, and page numbers.
+  await evaluate(cdp, sessionId, `location.assign('/templates?template=london')`)
+  await waitFor(cdp, sessionId, `[...document.querySelectorAll('button')].some((button) => button.textContent.trim() === 'Try with sample')`)
+  await evaluate(cdp, sessionId, `[...document.querySelectorAll('button')].find((button) => button.textContent.trim() === 'Try with sample').click()`)
+  await waitFor(cdp, sessionId, `location.pathname.endsWith('/preview') && Boolean(document.querySelector('.rp-sheet[data-page]'))`)
+  const longPdfs = await printEveryTemplate(cdp, sessionId, templates, join(outputDirectory, 'multi-page'))
+  for (const { path, pages } of longPdfs) {
+    const info = await commandOutput('pdfinfo', [path])
+    if (pages < 2) throw new Error(`${path} should paginate the long sample onto several pages.`)
+    if (!new RegExp(`^Pages:\\s+${pages}$`, 'm').test(info)) throw new Error(`${path} should have ${pages} pages like the preview.\n${info}`)
+  }
+
+  await cdp.send('Target.closeTarget', { targetId })
+  cdp.close()
+  console.log(`Verified ${oneSamplePdfs.length + longPdfs.length} PDFs whose page counts match the on-screen preview:\n${[...oneSamplePdfs, ...longPdfs].map(({ path, pages }) => `${path} (${pages})`).join('\n')}`)
 } finally {
   if (chrome.exitCode === null) {
     chrome.kill('SIGTERM')
     await new Promise((resolveExit) => chrome.once('exit', resolveExit))
   }
   await rm(profileDirectory, { recursive: true, force: true })
+}
+
+async function printEveryTemplate(cdp, sessionId, templates, directory) {
+  await mkdir(directory, { recursive: true })
+  await waitFor(cdp, sessionId, `document.querySelectorAll('[data-template-option]').length >= ${templates.length}`)
+  const results = []
+  for (const template of templates) {
+    const switched = await evaluate(cdp, sessionId, `(() => {
+      const button = document.querySelector('[data-template-option="${template}"]')
+      if (!button) return false
+      button.click()
+      return true
+    })()`)
+    if (!switched) throw new Error(`The template picker option for ${template} was not found.`)
+    await waitFor(cdp, sessionId, `document.querySelector('.resume-screen__pages > .rp-doc')?.dataset.template === '${template}' && Boolean(document.querySelector('.resume-screen__pages .rp-sheet[data-page]'))`)
+    // Let fonts settle and pagination re-measure before reading the page count.
+    await evaluate(cdp, sessionId, `document.fonts.ready.then(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 150)))))`)
+    const pages = await evaluate(cdp, sessionId, `document.querySelectorAll('.resume-screen__pages > .rp-doc > .rp-sheet[data-page]').length`)
+    const path = join(directory, `preview-${template}.pdf`)
+    await printPdf(cdp, sessionId, path)
+    results.push({ path, pages })
+  }
+  return results
 }
 
 async function firstExisting(paths) {

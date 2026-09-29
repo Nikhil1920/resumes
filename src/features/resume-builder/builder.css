@@ -77,10 +77,7 @@
 }
 
 .resume-builder__preview-page {
-  border-radius: 4px;
-  box-shadow:
-    0 0 0 1px color-mix(in oklch, var(--foreground) 6%, transparent),
-    0 18px 40px -16px hsl(var(--shadow-color) / .35);
+  padding: 2px 2px 0;
 }
 
 .resume-builder__mobile-preview-cta {

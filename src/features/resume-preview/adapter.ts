@@ -268,8 +268,10 @@ export const toResumePreviewModel = (
     const personalInfo: PreviewPersonalInfo = {
         id: document.meta.id,
         name: text(personalInfoSource.name),
+        headline: optionalText(personalInfoSource.headline),
         email: optionalText(personalInfoSource.email),
         phone: optionalText(personalInfoSource.phone),
+        location: optionalText(personalInfoSource.location),
         ...(image ? { image } : {}),
         links: safeLinks(personalInfoSource.titleLinks),
     };

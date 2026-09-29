@@ -35,7 +35,7 @@ import { cn } from "@/lib/utils"
 import { toResumePreviewModel } from "@/features/resume-preview/adapter"
 import { LiveJoiningState, LiveSessionBadge, useLiveJoining } from "@/features/live-sync/LiveSession"
 import { ScaledResumePreview } from "@/features/resume-preview/ScaledResumePreview"
-import { RESUME_TEMPLATES } from "@/features/resume-preview/presentation"
+import { getTemplateLabel } from "@/features/resume-preview/presentation"
 import {
   useActiveResumeDocument,
   useResumeActions,
@@ -419,7 +419,12 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
     () => selectedDocument ? getCompletion(selectedDocument) : null,
     [selectedDocument],
   )
+  const memoizedPreviewModel = React.useMemo(
+    () => selectedDocument ? toResumePreviewModel(selectedDocument) : null,
+    [selectedDocument],
+  )
   const [panel, setPanel] = React.useState<BuilderPanel>("editor")
+  const [previewPages, setPreviewPages] = React.useState(1)
   const liveJoining = useLiveJoining(documentId)
   const missingNotified = React.useRef(false)
   const previousDocumentId = React.useRef(documentId)
@@ -594,7 +599,8 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
   const previousStep = activeNavigation.previous?.id
 
   const stepIndex = activeNavigation.items.findIndex((item) => item.id === activeStep)
-  const templateLabel = RESUME_TEMPLATES.find((template) => template.value === selectedDocument.settings.template)?.label
+  const templateLabel = getTemplateLabel(selectedDocument.settings.template)
+  const previewModel = memoizedPreviewModel ?? toResumePreviewModel(selectedDocument)
 
   return (
     <div className={cn("resume-builder", className)}>
@@ -673,7 +679,7 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
             {panel === "appearance" && (
               <>
                 <EditorHeader icon={PaletteIcon} eyebrow="Customize" title="Resume appearance" description="Tune the page, typography, and accent used by your live preview." completed={false} />
-                <ResumeSettingsEditor settings={selectedDocument.settings} disabled={isDisabled} className="mt-8" onChange={(patch) => actions.updateDocumentSettings(patch)} />
+                <ResumeSettingsEditor previewModel={previewModel} className="mt-8" onChange={(patch) => actions.updateDocumentSettings(patch)} />
               </>
             )}
           </div>
@@ -689,7 +695,7 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
                 </span>
                 Live preview
               </p>
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">{templateLabel ?? "Template"} · {selectedDocument.settings.pageSize}</p>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">{templateLabel} · {selectedDocument.settings.pageSize} · {previewPages} {previewPages === 1 ? "page" : "pages"}</p>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={() => setPanel("appearance")}>
               <PaletteIcon />
@@ -698,7 +704,9 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
           </div>
           <div className="resume-builder__preview-shell">
             <ScaledResumePreview
-              model={toResumePreviewModel(selectedDocument)}
+              model={previewModel}
+              framed
+              onPageCountChange={setPreviewPages}
               className="resume-builder__preview-page"
               onEdit={() => stepChange("personal-info")}
             />

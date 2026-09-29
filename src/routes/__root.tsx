@@ -1,4 +1,4 @@
-import { HeadContent, Scripts, createRootRoute, useRouterState } from '@tanstack/react-router'
+import { HeadContent, Link, Scripts, createRootRoute, useRouterState } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
 import { AppHeader } from '@/components/app-header'
@@ -53,6 +53,18 @@ function RootDocument({ children }: { children: ReactNode }) {
   )
 }
 
+function HeaderLink({ to, active, children }: { to: '/' | '/templates'; active: boolean; children: ReactNode }) {
+  return (
+    <Link
+      to={to}
+      aria-current={active ? 'page' : undefined}
+      className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${active ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
+    >
+      {children}
+    </Link>
+  )
+}
+
 /** Editor and preview routes bring their own full-width toolbars. */
 const IMMERSIVE_ROUTE = /^\/resume\/[^/]+/
 
@@ -66,7 +78,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <LiveSessionRoot />
       {immersive ? null : (
         <div className="print:hidden">
-          <AppHeader actions={<ThemeToggle />} />
+          <AppHeader actions={<ThemeToggle />}>
+            <HeaderLink to="/" active={pathname === '/'}>Resumes</HeaderLink>
+            <HeaderLink to="/templates" active={pathname.startsWith('/templates')}>Templates</HeaderLink>
+          </AppHeader>
         </div>
       )}
       <div className="w-full min-w-0 print:p-0">{children}</div>

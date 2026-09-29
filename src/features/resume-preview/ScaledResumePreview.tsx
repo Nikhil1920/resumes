@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils'
 import { ResumePreview, type ResumePreviewModel } from './index'
 
 /** CSS pixel widths of the printable page sizes (96dpi). */
-const PAGE_WIDTH_PX = { A4: 793.7, Letter: 816.4 } as const
+export const PAGE_WIDTH_PX = { A4: 793.7, Letter: 816 } as const
+export const PAGE_HEIGHT_PX = { A4: 1122.5, Letter: 1056 } as const
 
 export interface ScaledResumePreviewProps {
   model: ResumePreviewModel
@@ -13,13 +14,18 @@ export interface ScaledResumePreviewProps {
   onEdit?: () => void
   /** Purely decorative thumbnails are hidden from assistive tech and made inert. */
   decorative?: boolean
+  /** Render only the first N pages (all pages are still measured). */
+  maxPages?: number
+  /** Give each sheet its own paper shadow (for multi-page previews). */
+  framed?: boolean
+  onPageCountChange?: (count: number) => void
 }
 
 /**
- * Renders the real resume page at print width, then zooms it to fit the width
- * of its container so thumbnails and the live preview always match the PDF.
+ * Renders the real resume pages at print size, then zooms them to fit the
+ * width of the container so thumbnails and live previews always match the PDF.
  */
-export function ScaledResumePreview({ model, className, onEdit, decorative = false }: ScaledResumePreviewProps) {
+export function ScaledResumePreview({ model, className, onEdit, decorative = false, maxPages, framed = false, onPageCountChange }: ScaledResumePreviewProps) {
   const frameRef = React.useRef<HTMLDivElement>(null)
   const pageWidth = PAGE_WIDTH_PX[model.pageSize] ?? PAGE_WIDTH_PX.A4
   const [scale, setScale] = React.useState(0.36)
@@ -40,12 +46,12 @@ export function ScaledResumePreview({ model, className, onEdit, decorative = fal
   return (
     <div
       ref={frameRef}
-      className={cn('resume-scaled', className)}
+      className={cn('resume-scaled', framed && 'resume-scaled--framed', className)}
       aria-hidden={decorative || undefined}
       inert={decorative || undefined}
     >
       <div className="resume-scaled__canvas" style={{ width: pageWidth, zoom: scale }}>
-        <ResumePreview model={model} showToolbar={false} manageDocumentTitle={false} onEdit={onEdit} />
+        <ResumePreview model={model} maxPages={maxPages} onEdit={onEdit} onPageCountChange={onPageCountChange} />
       </div>
     </div>
   )

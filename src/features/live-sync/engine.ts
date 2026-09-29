@@ -64,6 +64,7 @@ const DOCUMENT_COMMANDS = new Set<WorkspaceCommand["type"]>([
     "section/remove",
     "section/rename",
     "section/reorder",
+    "section/set-order",
     "section/visibility",
     "entry/create",
     "entry/update",
@@ -81,16 +82,17 @@ const DOCUMENT_COMMANDS = new Set<WorkspaceCommand["type"]>([
     "document/settings/update",
 ]);
 
+/** The explicit target document-scoped commands may carry (WebMCP tools always set it). */
+const explicitTarget = (command: WorkspaceCommand): string | undefined =>
+    "documentId" in command && typeof command.documentId === "string" ? command.documentId : undefined;
+
 /** The document a command edits, or null when it should not be shared. */
 export const commandTarget = (
     command: WorkspaceCommand,
     before: WorkspaceSnapshot
 ): string | null => {
     if (!DOCUMENT_COMMANDS.has(command.type)) return null;
-    if (command.type === "document/update") {
-        return command.documentId ?? before.activeDocumentId;
-    }
-    return before.activeDocumentId;
+    return explicitTarget(command) ?? before.activeDocumentId;
 };
 
 /**
@@ -145,8 +147,10 @@ export const applyOp = (
     if (op.command.type === "live/replace") {
         return normalizeIncomingDocument(op.command.document, documentId, sanitizer);
     }
-    const command: WorkspaceCommand =
-        op.command.type === "document/update" ? { ...op.command, documentId } : op.command;
+    // Retarget at this peer's copy; a sender's explicit id must not point elsewhere.
+    const command = (
+        explicitTarget(op.command) === undefined ? op.command : { ...op.command, documentId }
+    ) as WorkspaceCommand;
     const snapshot: WorkspaceSnapshot = {
         ...createInitialWorkspaceSnapshot(),
         documents: { [documentId]: document },

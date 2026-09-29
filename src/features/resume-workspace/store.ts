@@ -79,47 +79,84 @@ export interface RemoteWorkspaceUpdate {
 
 export interface ResumeWorkspaceActions {
     dispatch(command: WorkspaceCommand): void;
+    /**
+     * Run several actions as one undoable change.  Nested batches fold into
+     * the outermost one; the callback must be synchronous.
+     */
+    batch<T>(run: () => T): T;
     createDocument(input?: CreateDocumentInput): string;
     selectDocument(documentId: string | null): void;
     updateDocument(patch: DocumentPatch, documentId?: string): void;
     deleteDocument(documentId: string): void;
     duplicateDocument(documentId?: string): string | null;
 
-    addSection(sectionId: BuiltInSectionId): void;
-    removeSection(sectionId: BuiltInSectionId): void;
-    renameSection(sectionId: BuiltInSectionId, title: string): void;
-    reorderSections(fromIndex: number, toIndex: number): void;
+    // Every document-scoped action takes an optional trailing documentId and
+    // otherwise acts on the active document.
+    addSection(sectionId: BuiltInSectionId, documentId?: string): void;
+    removeSection(sectionId: BuiltInSectionId, documentId?: string): void;
+    renameSection(sectionId: BuiltInSectionId, title: string, documentId?: string): void;
+    reorderSections(fromIndex: number, toIndex: number, documentId?: string): void;
+    setSectionOrder(order: BuiltInSectionId[], documentId?: string): void;
 
-    createEntry(section: RepeatableSection, entry?: RepeatableEntryInput): string | null;
+    createEntry(
+        section: RepeatableSection,
+        entry?: RepeatableEntryInput,
+        documentId?: string
+    ): string | null;
     updateEntry(
         section: RepeatableSection,
         entryId: string,
-        patch: Record<string, unknown>
+        patch: Record<string, unknown>,
+        documentId?: string
     ): void;
-    deleteEntry(section: RepeatableSection, entryId: string): void;
-    duplicateEntry(section: RepeatableSection, entryId: string): string | null;
-    reorderEntries(section: RepeatableSection, fromIndex: number, toIndex: number): void;
+    deleteEntry(section: RepeatableSection, entryId: string, documentId?: string): void;
+    duplicateEntry(
+        section: RepeatableSection,
+        entryId: string,
+        documentId?: string
+    ): string | null;
+    reorderEntries(
+        section: RepeatableSection,
+        fromIndex: number,
+        toIndex: number,
+        documentId?: string
+    ): void;
 
-    createLink(link?: { id?: string; title?: string; url?: string }): string | null;
-    updateLink(linkId: string, patch: { title?: string; url?: string }): void;
-    deleteLink(linkId: string): void;
-    reorderLinks(fromIndex: number, toIndex: number): void;
+    createLink(
+        link?: { id?: string; title?: string; url?: string },
+        documentId?: string
+    ): string | null;
+    updateLink(linkId: string, patch: { title?: string; url?: string }, documentId?: string): void;
+    deleteLink(linkId: string, documentId?: string): void;
+    reorderLinks(fromIndex: number, toIndex: number, documentId?: string): void;
     createProjectLink(
         projectId: string,
-        link?: { id?: string; title?: string; url?: string }
+        link?: { id?: string; title?: string; url?: string },
+        documentId?: string
     ): string | null;
     updateProjectLink(
         projectId: string,
         linkId: string,
-        patch: { title?: string; url?: string }
+        patch: { title?: string; url?: string },
+        documentId?: string
     ): void;
-    deleteProjectLink(projectId: string, linkId: string): void;
-    reorderProjectLinks(projectId: string, fromIndex: number, toIndex: number): void;
+    deleteProjectLink(projectId: string, linkId: string, documentId?: string): void;
+    reorderProjectLinks(
+        projectId: string,
+        fromIndex: number,
+        toIndex: number,
+        documentId?: string
+    ): void;
 
     updateSettings(patch: Partial<WorkspaceSettings>): void;
-    updateDocumentSettings(patch: Partial<ResumeSettings>): void;
+    updateDocumentSettings(patch: Partial<ResumeSettings>, documentId?: string): void;
+    /** Navigation only: changes the step without adding an undo entry. */
     setCurrentStep(step: ResumeStep): void;
-    setSectionVisibility(sectionId: BuiltInSectionId, visible: boolean): void;
+    setSectionVisibility(
+        sectionId: BuiltInSectionId,
+        visible: boolean,
+        documentId?: string
+    ): void;
 
     undo(): void;
     redo(): void;
@@ -236,23 +273,38 @@ export const createResumeWorkspaceStore = (
         }, delay);
     };
 
+    // While a batch runs, only the snapshot before its first recorded change is
+    // kept; it becomes the batch's single undo entry when the batch ends.
+    let batchDepth = 0;
+    let batchBase: WorkspaceSnapshot | null = null;
+
+    const pushHistory = (snapshot: WorkspaceSnapshot) => {
+        const state = store.getState();
+        store.setState({
+            history: {
+                past: [...state.history.past, snapshot].slice(-historyLimit),
+                future: [],
+            },
+        });
+    };
+
     const commitSnapshot = (next: WorkspaceSnapshot, recordHistory = true) => {
         const current = snapshotFromState(store.getState());
         if (snapshotsEqual(current, next)) return false;
-        const state = store.getState();
-        const history = recordHistory
-            ? {
-                  past: [...state.history.past, current].slice(-historyLimit),
-                  future: [],
-              }
-            : state.history;
+        if (recordHistory) {
+            if (batchDepth > 0) {
+                batchBase ??= current;
+            } else {
+                pushHistory(current);
+            }
+        }
         mutationRevision += 1;
-        store.setState({ ...next, history });
+        store.setState({ ...next });
         scheduleSave();
         return true;
     };
 
-    const dispatch = (command: WorkspaceCommand) => {
+    const dispatch = (command: WorkspaceCommand, recordHistory = true) => {
         const recorded: RecordedDependencies = { ids: [], nows: [] };
         const recording: WorkspaceReducerDependencies = {
             ...dependencies,
@@ -269,9 +321,43 @@ export const createResumeWorkspaceStore = (
         };
         const before = snapshotFromState(store.getState());
         const next = reduceWorkspace(before, command, recording);
-        if (commitSnapshot(next)) {
+        if (commitSnapshot(next, recordHistory)) {
             emitChange({ kind: "command", command, before, after: next, recorded });
         }
+    };
+
+    const batch = <T,>(run: () => T): T => {
+        batchDepth += 1;
+        try {
+            return run();
+        } finally {
+            batchDepth -= 1;
+            if (batchDepth === 0 && batchBase) {
+                const base = batchBase;
+                batchBase = null;
+                pushHistory(base);
+            }
+        }
+    };
+
+    const targetDocument = (documentId?: string) => {
+        const state = store.getState();
+        const id = documentId ?? state.activeDocumentId;
+        return id ? state.documents[id] : undefined;
+    };
+
+    /** Dispatch a create-style command and return the id it added to `list`. */
+    const createAndFindId = (
+        command: WorkspaceCommand,
+        documentId: string | undefined,
+        list: (document: ResumeDocument) => ReadonlyArray<{ id: string }> | undefined
+    ): string | null => {
+        const id = documentId ?? store.getState().activeDocumentId ?? undefined;
+        const before = targetDocument(id);
+        dispatch(command);
+        const after = targetDocument(id);
+        const beforeIds = new Set((before ? list(before) : undefined)?.map((item) => item.id));
+        return (after ? list(after) : undefined)?.find((item) => !beforeIds.has(item.id))?.id ?? null;
     };
 
     const applyRemote = (update: RemoteWorkspaceUpdate) => {
@@ -464,7 +550,8 @@ export const createResumeWorkspaceStore = (
     };
 
     const actions: ResumeWorkspaceActions = {
-        dispatch,
+        dispatch: (command) => dispatch(command),
+        batch,
         createDocument(input) {
             dispatch({ type: "document/create", document: input });
             return store.getState().activeDocumentId ?? "";
@@ -484,94 +571,87 @@ export const createResumeWorkspaceStore = (
             dispatch({ type: "document/duplicate", documentId: sourceId });
             return store.getState().activeDocumentId;
         },
-        addSection(sectionId) {
-            dispatch({ type: "section/add", sectionId });
+        addSection(sectionId, documentId) {
+            dispatch({ type: "section/add", sectionId, documentId });
         },
-        removeSection(sectionId) {
-            dispatch({ type: "section/remove", sectionId });
+        removeSection(sectionId, documentId) {
+            dispatch({ type: "section/remove", sectionId, documentId });
         },
-        renameSection(sectionId, title) {
-            dispatch({ type: "section/rename", sectionId, title });
+        renameSection(sectionId, title, documentId) {
+            dispatch({ type: "section/rename", sectionId, title, documentId });
         },
-        reorderSections(fromIndex, toIndex) {
-            dispatch({ type: "section/reorder", fromIndex, toIndex });
+        reorderSections(fromIndex, toIndex, documentId) {
+            dispatch({ type: "section/reorder", fromIndex, toIndex, documentId });
         },
-        createEntry(section, entry) {
-            const before = store.getState().documents[store.getState().activeDocumentId ?? ""];
-            dispatch({ type: "entry/create", section, entry });
-            const after = store.getState().documents[store.getState().activeDocumentId ?? ""];
-            const beforeIds = new Set((before?.[section] as { id: string }[] | undefined)?.map((item) => item.id));
-            return (
-                (after?.[section] as { id: string }[] | undefined)?.find(
-                    (item) => !beforeIds.has(item.id)
-                )?.id ?? null
+        setSectionOrder(order, documentId) {
+            dispatch({ type: "section/set-order", order, documentId });
+        },
+        createEntry(section, entry, documentId) {
+            return createAndFindId(
+                { type: "entry/create", section, entry, documentId },
+                documentId,
+                (document) => document[section]
             );
         },
-        updateEntry(section, entryId, patch) {
-            dispatch({ type: "entry/update", section, entryId, patch });
+        updateEntry(section, entryId, patch, documentId) {
+            dispatch({ type: "entry/update", section, entryId, patch, documentId });
         },
-        deleteEntry(section, entryId) {
-            dispatch({ type: "entry/delete", section, entryId });
+        deleteEntry(section, entryId, documentId) {
+            dispatch({ type: "entry/delete", section, entryId, documentId });
         },
-        duplicateEntry(section, entryId) {
-            const before = store.getState().documents[store.getState().activeDocumentId ?? ""];
-            dispatch({ type: "entry/duplicate", section, entryId });
-            const after = store.getState().documents[store.getState().activeDocumentId ?? ""];
-            const beforeIds = new Set((before?.[section] as { id: string }[] | undefined)?.map((item) => item.id));
-            return (
-                (after?.[section] as { id: string }[] | undefined)?.find(
-                    (item) => !beforeIds.has(item.id)
-                )?.id ?? null
+        duplicateEntry(section, entryId, documentId) {
+            return createAndFindId(
+                { type: "entry/duplicate", section, entryId, documentId },
+                documentId,
+                (document) => document[section]
             );
         },
-        reorderEntries(section, fromIndex, toIndex) {
-            dispatch({ type: "entry/reorder", section, fromIndex, toIndex });
+        reorderEntries(section, fromIndex, toIndex, documentId) {
+            dispatch({ type: "entry/reorder", section, fromIndex, toIndex, documentId });
         },
-        createLink(link) {
-            const before = store.getState().documents[store.getState().activeDocumentId ?? ""];
-            dispatch({ type: "personal-link/create", link });
-            const after = store.getState().documents[store.getState().activeDocumentId ?? ""];
-            const beforeIds = new Set(before?.personalInfo.titleLinks.map((item) => item.id));
-            return after?.personalInfo.titleLinks.find((item) => !beforeIds.has(item.id))?.id ?? null;
+        createLink(link, documentId) {
+            return createAndFindId(
+                { type: "personal-link/create", link, documentId },
+                documentId,
+                (document) => document.personalInfo.titleLinks
+            );
         },
-        updateLink(linkId, patch) {
-            dispatch({ type: "personal-link/update", linkId, patch });
+        updateLink(linkId, patch, documentId) {
+            dispatch({ type: "personal-link/update", linkId, patch, documentId });
         },
-        deleteLink(linkId) {
-            dispatch({ type: "personal-link/delete", linkId });
+        deleteLink(linkId, documentId) {
+            dispatch({ type: "personal-link/delete", linkId, documentId });
         },
-        reorderLinks(fromIndex, toIndex) {
-            dispatch({ type: "personal-link/reorder", fromIndex, toIndex });
+        reorderLinks(fromIndex, toIndex, documentId) {
+            dispatch({ type: "personal-link/reorder", fromIndex, toIndex, documentId });
         },
-        createProjectLink(projectId, link) {
-            const before = store.getState().documents[store.getState().activeDocumentId ?? ""];
-            dispatch({ type: "project-link/create", projectId, link });
-            const after = store.getState().documents[store.getState().activeDocumentId ?? ""];
-            const beforeProject = before?.projects.find((item) => item.id === projectId);
-            const afterProject = after?.projects.find((item) => item.id === projectId);
-            const beforeIds = new Set(beforeProject?.links.map((item) => item.id));
-            return afterProject?.links.find((item) => !beforeIds.has(item.id))?.id ?? null;
+        createProjectLink(projectId, link, documentId) {
+            return createAndFindId(
+                { type: "project-link/create", projectId, link, documentId },
+                documentId,
+                (document) => document.projects.find((item) => item.id === projectId)?.links
+            );
         },
-        updateProjectLink(projectId, linkId, patch) {
-            dispatch({ type: "project-link/update", projectId, linkId, patch });
+        updateProjectLink(projectId, linkId, patch, documentId) {
+            dispatch({ type: "project-link/update", projectId, linkId, patch, documentId });
         },
-        deleteProjectLink(projectId, linkId) {
-            dispatch({ type: "project-link/delete", projectId, linkId });
+        deleteProjectLink(projectId, linkId, documentId) {
+            dispatch({ type: "project-link/delete", projectId, linkId, documentId });
         },
-        reorderProjectLinks(projectId, fromIndex, toIndex) {
-            dispatch({ type: "project-link/reorder", projectId, fromIndex, toIndex });
+        reorderProjectLinks(projectId, fromIndex, toIndex, documentId) {
+            dispatch({ type: "project-link/reorder", projectId, fromIndex, toIndex, documentId });
         },
         updateSettings(patch) {
             dispatch({ type: "settings/update", patch });
         },
-        updateDocumentSettings(patch) {
-            dispatch({ type: "document/settings/update", patch });
+        updateDocumentSettings(patch, documentId) {
+            dispatch({ type: "document/settings/update", patch, documentId });
         },
         setCurrentStep(step) {
-            dispatch({ type: "step/set", step });
+            dispatch({ type: "step/set", step }, false);
         },
-        setSectionVisibility(sectionId, visible) {
-            dispatch({ type: "section/visibility", sectionId, visible });
+        setSectionVisibility(sectionId, visible, documentId) {
+            dispatch({ type: "section/visibility", sectionId, visible, documentId });
         },
         undo,
         redo,

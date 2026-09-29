@@ -129,6 +129,17 @@
   box-shadow: 0 0 0 2px rgba(15, 23, 42, .06), 0 30px 70px -28px rgba(15, 23, 42, .4);
 }
 
+/* Live preview in the editor: every section is a shortcut to its editor step. */
+.resume-scaled--interactive [data-section] {
+  cursor: pointer;
+  border-radius: 6px;
+  transition: box-shadow .15s ease, background-color .15s ease;
+}
+.resume-scaled--interactive [data-section]:hover {
+  background-color: color-mix(in srgb, var(--rp-accent) 5%, transparent);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--rp-accent) 22%, transparent);
+}
+
 /* --- Print ----------------------------------------------------------------- */
 
 @media print {

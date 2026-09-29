@@ -229,92 +229,105 @@ export type RepeatableEntryInput =
 
 export type ResumeLinkInput = Partial<ResumeLink>;
 
+/**
+ * Document-scoped commands accept an explicit `documentId`.  When omitted they
+ * act on the active document, which is what the editor UI relies on; agents
+ * pass the id so an edit can never land on whichever resume happens to be
+ * selected by the time the command runs.
+ */
+type Targeted<T> = T & { documentId?: string };
+
 export type WorkspaceCommand =
     | { type: "document/create"; document?: CreateDocumentInput }
     | { type: "document/select"; documentId: string | null }
     | { type: "document/update"; documentId?: string; patch: DocumentPatch }
     | { type: "document/delete"; documentId: string }
     | { type: "document/duplicate"; documentId: string; newId?: string }
-    | { type: "section/add"; sectionId: BuiltInSectionId }
-    | { type: "section/remove"; sectionId: BuiltInSectionId }
-    | {
+    | Targeted<{ type: "section/add"; sectionId: BuiltInSectionId }>
+    | Targeted<{ type: "section/remove"; sectionId: BuiltInSectionId }>
+    | Targeted<{
           type: "section/rename";
           sectionId: BuiltInSectionId;
           title: string;
-      }
-    | {
+      }>
+    | Targeted<{
           type: "section/reorder";
           fromIndex: number;
           toIndex: number;
-      }
-    | {
+      }>
+    | Targeted<{
+          /** Sections named in `order` move to the front in that order; the rest keep their relative order. */
+          type: "section/set-order";
+          order: BuiltInSectionId[];
+      }>
+    | Targeted<{
           type: "entry/create";
           section: RepeatableSection;
           entry?: RepeatableEntryInput;
-      }
-    | {
+      }>
+    | Targeted<{
           type: "entry/update";
           section: RepeatableSection;
           entryId: string;
           patch: Record<string, unknown>;
-      }
-    | {
+      }>
+    | Targeted<{
           type: "entry/delete";
           section: RepeatableSection;
           entryId: string;
-      }
-    | {
+      }>
+    | Targeted<{
           type: "entry/duplicate";
           section: RepeatableSection;
           entryId: string;
-      }
-    | {
+      }>
+    | Targeted<{
           type: "entry/reorder";
           section: RepeatableSection;
           fromIndex: number;
           toIndex: number;
-      }
-    | { type: "personal-link/create"; link?: ResumeLinkInput }
-    | {
+      }>
+    | Targeted<{ type: "personal-link/create"; link?: ResumeLinkInput }>
+    | Targeted<{
           type: "personal-link/update";
           linkId: string;
           patch: ResumeLinkInput;
-      }
-    | { type: "personal-link/delete"; linkId: string }
-    | {
+      }>
+    | Targeted<{ type: "personal-link/delete"; linkId: string }>
+    | Targeted<{
           type: "personal-link/reorder";
           fromIndex: number;
           toIndex: number;
-      }
-    | {
+      }>
+    | Targeted<{
           type: "project-link/create";
           projectId: string;
           link?: ResumeLinkInput;
-      }
-    | {
+      }>
+    | Targeted<{
           type: "project-link/update";
           projectId: string;
           linkId: string;
           patch: ResumeLinkInput;
-      }
-    | {
+      }>
+    | Targeted<{
           type: "project-link/delete";
           projectId: string;
           linkId: string;
-      }
-    | {
+      }>
+    | Targeted<{
           type: "project-link/reorder";
           projectId: string;
           fromIndex: number;
           toIndex: number;
-      }
-    | {
+      }>
+    | Targeted<{
           type: "section/visibility";
           sectionId: BuiltInSectionId;
           visible: boolean;
-      }
+      }>
     | { type: "settings/update"; patch: Partial<WorkspaceSettings> }
-    | { type: "document/settings/update"; patch: Partial<ResumeSettings> }
+    | Targeted<{ type: "document/settings/update"; patch: Partial<ResumeSettings> }>
     | { type: "step/set"; step: ResumeStep };
 
 const BUILT_IN_SECTION_DETAILS: Record<
@@ -955,6 +968,23 @@ const withUpdatedDocument = (
     };
 };
 
+/**
+ * Hiding or removing a section can invalidate the editor's current step.  Only
+ * the active document drives `currentStep`, so edits to a background document
+ * leave the open editor where it is.
+ */
+const withValidCurrentStep = (
+    snapshot: WorkspaceSnapshot,
+    documentId: string
+): WorkspaceSnapshot => {
+    const document = snapshot.documents[documentId];
+    if (!document || snapshot.activeDocumentId !== documentId) return snapshot;
+    return {
+        ...snapshot,
+        currentStep: resolveValidResumeStep(document, snapshot.currentStep),
+    };
+};
+
 const reorder = <T>(items: readonly T[], fromIndex: number, toIndex: number): T[] => {
     if (
         fromIndex < 0 ||
@@ -1304,7 +1334,7 @@ export const reduceWorkspace = (
             };
         }
         case "section/add": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1322,7 +1352,7 @@ export const reduceWorkspace = (
             );
         }
         case "section/remove": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             const next = withUpdatedDocument(
                 snapshot,
@@ -1340,19 +1370,10 @@ export const reduceWorkspace = (
                 },
                 now
             );
-            const activeDocument = next.documents[documentId];
-            return activeDocument
-                ? {
-                      ...next,
-                      currentStep: resolveValidResumeStep(
-                          activeDocument,
-                          next.currentStep
-                      ),
-                  }
-                : next;
+            return withValidCurrentStep(next, documentId);
         }
         case "section/rename": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1369,7 +1390,7 @@ export const reduceWorkspace = (
             );
         }
         case "section/reorder": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1385,8 +1406,33 @@ export const reduceWorkspace = (
                 now
             );
         }
+        case "section/set-order": {
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
+            if (!documentId) return snapshot;
+            return withUpdatedDocument(
+                snapshot,
+                documentId,
+                (document) => {
+                    const byId = new Map(
+                        document.sections.map((section) => [section.id, section])
+                    );
+                    const leading = Array.from(new Set(action.order))
+                        .map((id) => byId.get(id))
+                        .filter((section): section is SectionLayout => Boolean(section));
+                    const leadingIds = new Set(leading.map((section) => section.id));
+                    const sections = [
+                        ...leading,
+                        ...document.sections.filter((section) => !leadingIds.has(section.id)),
+                    ];
+                    return sections.every((section, index) => section === document.sections[index])
+                        ? document
+                        : { ...document, sections };
+                },
+                now
+            );
+        }
         case "entry/create": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1429,7 +1475,7 @@ export const reduceWorkspace = (
             );
         }
         case "entry/update": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1446,7 +1492,7 @@ export const reduceWorkspace = (
             );
         }
         case "entry/delete": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1461,7 +1507,7 @@ export const reduceWorkspace = (
             );
         }
         case "entry/duplicate": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1472,7 +1518,7 @@ export const reduceWorkspace = (
             );
         }
         case "entry/reorder": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1489,7 +1535,7 @@ export const reduceWorkspace = (
             );
         }
         case "personal-link/create": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1515,7 +1561,7 @@ export const reduceWorkspace = (
             );
         }
         case "personal-link/update": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1539,7 +1585,7 @@ export const reduceWorkspace = (
             );
         }
         case "personal-link/delete": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1557,7 +1603,7 @@ export const reduceWorkspace = (
             );
         }
         case "personal-link/reorder": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1577,7 +1623,7 @@ export const reduceWorkspace = (
             );
         }
         case "project-link/create": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1606,7 +1652,7 @@ export const reduceWorkspace = (
             );
         }
         case "project-link/update": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1648,7 +1694,7 @@ export const reduceWorkspace = (
             );
         }
         case "project-link/delete": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1670,7 +1716,7 @@ export const reduceWorkspace = (
             );
         }
         case "project-link/reorder": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1694,7 +1740,7 @@ export const reduceWorkspace = (
             );
         }
         case "section/visibility": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             const next = withUpdatedDocument(
                 snapshot,
@@ -1714,16 +1760,7 @@ export const reduceWorkspace = (
                 },
                 now
             );
-            const activeDocument = next.documents[documentId];
-            return activeDocument
-                ? {
-                      ...next,
-                      currentStep: resolveValidResumeStep(
-                          activeDocument,
-                          next.currentStep
-                      ),
-                  }
-                : next;
+            return withValidCurrentStep(next, documentId);
         }
         case "settings/update":
             return {
@@ -1739,7 +1776,7 @@ export const reduceWorkspace = (
                 },
             };
         case "document/settings/update": {
-            const documentId = snapshot.activeDocumentId;
+            const documentId = action.documentId ?? snapshot.activeDocumentId;
             if (!documentId) return snapshot;
             return withUpdatedDocument(
                 snapshot,
@@ -1772,15 +1809,16 @@ export const reduceWorkspace = (
             }
             const document = snapshot.documents[documentId];
             const step = resolveValidResumeStep(document, action.step);
-            return withUpdatedDocument(
-                { ...snapshot, currentStep: step },
-                documentId,
-                (document) => ({
-                    ...document,
-                    meta: { ...document.meta, step },
-                }),
-                now
-            );
+            // Moving between steps is navigation, not an edit, so updatedAt
+            // keeps reflecting the last content change.
+            return {
+                ...snapshot,
+                currentStep: step,
+                documents: {
+                    ...snapshot.documents,
+                    [documentId]: { ...document, meta: { ...document.meta, step } },
+                },
+            };
         }
     }
 };

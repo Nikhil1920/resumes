@@ -2,46 +2,34 @@ import * as React from "react"
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
-  BadgeCheckIcon,
-  BriefcaseBusinessIcon,
   CheckIcon,
   EyeIcon,
-  FileTextIcon,
-  FolderKanbanIcon,
-  GraduationCapIcon,
-  LanguagesIcon,
-  LayoutListIcon,
   LoaderCircleIcon,
-  PaletteIcon,
-  PencilLineIcon,
-  Redo2Icon,
-  SaveIcon,
-  TrophyIcon,
   TriangleAlertIcon,
-  Undo2Icon,
-  UserRoundIcon,
-  WrenchIcon,
   type LucideIcon,
 } from "lucide-react"
 
-import { BrandMark } from "@/components/brand-mark"
-import ThemeToggle from "@/components/ThemeToggle"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
+import { useMediaQuery } from "@/lib/use-media-query"
+import { LiveJoiningState, useLiveJoining } from "@/features/live-sync/LiveSession"
 import { toResumePreviewModel } from "@/features/resume-preview/adapter"
-import { LiveJoiningState, LiveSessionBadge, useLiveJoining } from "@/features/live-sync/LiveSession"
-import { ScaledResumePreview } from "@/features/resume-preview/ScaledResumePreview"
-import { getTemplateLabel } from "@/features/resume-preview/presentation"
+import { getTemplatePortrait } from "@/features/resume-preview/presentation"
 import {
   useActiveResumeDocument,
   useResumeActions,
   useResumeWorkspace,
 } from "@/features/resume-workspace/store"
-import { getCompletion, getNavigation, type BuiltInSectionId, type NavigationItem, type ResumeStep, type SectionLayout } from "@/features/resume-workspace/model"
+import {
+  getCompletion,
+  getNavigation,
+  type BuiltInSectionId,
+  type NavigationItem,
+  type ResumeStep,
+  type SectionLayout,
+} from "@/features/resume-workspace/model"
 import {
   AwardsEditor,
   CertificationsEditor,
@@ -57,39 +45,25 @@ import {
   ProjectsEditor,
   SummaryEditor,
 } from "./editors"
-import { AutosaveStatus, type AutosaveState } from "./components/AutosaveStatus"
+import { AgentActivityPill } from "./components/AgentActivityPill"
+import type { AutosaveState } from "./components/AutosaveStatus"
+import { BuilderToolbar } from "./components/BuilderToolbar"
+import { LivePreviewDrawer, LivePreviewPane } from "./components/LivePreview"
+import { DesktopSidebar, MobileStepBar, StepsDrawer } from "./components/StepNavigation"
+import type { EditorPanel } from "./editor-panel"
+import { CUSTOMIZE_PANELS, stepIcon } from "./steps"
 import "./builder.css"
 
 export interface ResumeBuilderProps {
   /** The document to select once workspace hydration has completed. */
   documentId: string
+  /** The open panel; the route keeps it in the URL so agents and reloads can restore it. */
+  panel?: EditorPanel
+  onPanelChange?: (panel: EditorPanel) => void
   onBack?: () => void
   onOpenPreview?: () => void
   onMissingDocument?: (documentId: string) => void
   className?: string
-}
-
-type BuilderPanel = "editor" | "sections" | "appearance"
-
-const STEP_ICONS: Record<ResumeStep, LucideIcon> = {
-  "personal-info": UserRoundIcon,
-  summary: FileTextIcon,
-  experience: BriefcaseBusinessIcon,
-  education: GraduationCapIcon,
-  projects: FolderKanbanIcon,
-  skills: WrenchIcon,
-  certifications: BadgeCheckIcon,
-  awards: TrophyIcon,
-  languages: LanguagesIcon,
-}
-
-const panelLabels: Record<Exclude<BuilderPanel, "editor">, string> = {
-  sections: "Sections",
-  appearance: "Appearance",
-}
-
-function sectionIcon(step: ResumeStep) {
-  return STEP_ICONS[step] ?? FileTextIcon
 }
 
 function saveState(save: "idle" | "pending" | "saving" | "saved" | "error"): AutosaveState {
@@ -99,276 +73,39 @@ function saveState(save: "idle" | "pending" | "saving" | "saved" | "error"): Aut
   return "idle"
 }
 
-function MobileStepNavigation({
-  items,
-  panel,
-  onStepChange,
-  onPanelChange,
-}: {
-  items: NavigationItem[]
-  panel: BuilderPanel
-  onStepChange: (step: ResumeStep) => void
-  onPanelChange: (panel: BuilderPanel) => void
-}) {
-  const chip = (active: boolean) => cn(
-    "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-    active
-      ? "border-primary bg-primary text-primary-foreground"
-      : "border-border bg-card text-muted-foreground hover:text-foreground",
-  )
-  return (
-    <nav className="resume-builder__mobile-nav" aria-label="Resume sections">
-      <div className="flex min-w-max items-center gap-1.5">
-        {items.map((item) => {
-          const Icon = sectionIcon(item.id)
-          const active = panel === "editor" && item.active
-          return (
-            <button
-              key={item.id}
-              type="button"
-              aria-current={active ? "step" : undefined}
-              aria-label={`${item.title}${item.completed ? " (complete)" : ""}`}
-              onClick={() => onStepChange(item.id)}
-              className={chip(active)}
-            >
-              <Icon className="size-3.5" aria-hidden="true" />
-              <span>{item.title}</span>
-              {item.completed && <CheckIcon className="size-3.5" aria-hidden="true" />}
-            </button>
-          )
-        })}
-        <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
-        {(Object.keys(panelLabels) as Array<Exclude<BuilderPanel, "editor">>).map((nextPanel) => {
-          const Icon = nextPanel === "sections" ? LayoutListIcon : PaletteIcon
-          return (
-            <button key={nextPanel} type="button" aria-pressed={panel === nextPanel} onClick={() => onPanelChange(nextPanel)} className={chip(panel === nextPanel)}>
-              <Icon className="size-3.5" aria-hidden="true" />
-              {panelLabels[nextPanel]}
-            </button>
-          )
-        })}
-      </div>
-    </nav>
-  )
-}
+const isEditableTarget = (target: EventTarget | null) =>
+  target instanceof HTMLElement &&
+  (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
 
-function SidebarItem({
+function EditorHeading({
   icon: Icon,
-  label,
-  active,
-  completed,
-  onClick,
-  ariaCurrent,
-  ariaPressed,
-}: {
-  icon: LucideIcon
-  label: string
-  active: boolean
-  completed?: boolean
-  onClick: () => void
-  ariaCurrent?: "step"
-  ariaPressed?: boolean
-}) {
-  return (
-    <button
-      type="button"
-      aria-current={ariaCurrent}
-      aria-pressed={ariaPressed}
-      onClick={onClick}
-      className={cn(
-        "group relative flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-        active ? "bg-card font-medium text-foreground shadow-soft ring-1 ring-border" : "text-muted-foreground hover:bg-card/70 hover:text-foreground",
-      )}
-    >
-      <span className={cn(
-        "flex size-7 shrink-0 items-center justify-center rounded-md transition-colors",
-        active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover:text-foreground",
-      )}>
-        <Icon className="size-3.5" aria-hidden="true" />
-      </span>
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {completed !== undefined && (
-        completed
-          ? <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary"><CheckIcon className="size-2.5" strokeWidth={3} aria-label="Complete" /></span>
-          : <span className="size-1.5 shrink-0 rounded-full bg-border" aria-hidden="true" />
-      )}
-    </button>
-  )
-}
-
-function DesktopSidebar({
-  completion,
-  items,
-  panel,
-  onStepChange,
-  onPanelChange,
-}: {
-  completion: { percent: number; completed: number; total: number }
-  items: NavigationItem[]
-  panel: BuilderPanel
-  onStepChange: (step: ResumeStep) => void
-  onPanelChange: (panel: BuilderPanel) => void
-}) {
-  return (
-    <aside className="resume-builder__sidebar hidden lg:flex" aria-label="Resume builder navigation">
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="p-3">
-          <div className="rounded-xl border border-border bg-card p-3 shadow-soft">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-xs font-medium text-muted-foreground">Resume progress</span>
-              <span className="font-heading text-lg font-semibold tabular-nums text-foreground">{completion.percent}%</span>
-            </div>
-            <Progress value={completion.percent} className="mt-2 h-1.5" aria-label={`${completion.percent}% complete`} />
-            <p className="mt-2 text-[0.7rem] text-muted-foreground">{completion.completed} of {completion.total} sections complete</p>
-          </div>
-        </div>
-
-        <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-4" aria-label="Resume sections">
-          <p className="mb-1.5 px-2 text-[0.68rem] font-semibold tracking-[0.12em] text-muted-foreground uppercase">Content</p>
-          <div className="space-y-0.5">
-            {items.map((item) => (
-              <SidebarItem
-                key={item.id}
-                icon={sectionIcon(item.id)}
-                label={item.title}
-                active={panel === "editor" && item.active}
-                completed={item.completed}
-                ariaCurrent={panel === "editor" && item.active ? "step" : undefined}
-                onClick={() => onStepChange(item.id)}
-              />
-            ))}
-          </div>
-
-          <p className="mt-5 mb-1.5 px-2 text-[0.68rem] font-semibold tracking-[0.12em] text-muted-foreground uppercase">Customize</p>
-          <div className="space-y-0.5">
-            {(Object.keys(panelLabels) as Array<Exclude<BuilderPanel, "editor">>).map((nextPanel) => (
-              <SidebarItem
-                key={nextPanel}
-                icon={nextPanel === "sections" ? LayoutListIcon : PaletteIcon}
-                label={panelLabels[nextPanel]}
-                active={panel === nextPanel}
-                ariaPressed={panel === nextPanel}
-                onClick={() => onPanelChange(panel === nextPanel ? "editor" : nextPanel)}
-              />
-            ))}
-          </div>
-        </nav>
-      </div>
-    </aside>
-  )
-}
-
-function WorkspaceToolbar({
-  documentName,
-  save,
-  lastSavedAt,
-  saveError,
-  canUndo,
-  canRedo,
-  onBack,
-  onOpenPreview,
-  onNameChange,
-  onUndo,
-  onRedo,
-  onSave,
-}: {
-  documentName: string
-  save: AutosaveState
-  lastSavedAt: string | null
-  saveError: string | null
-  canUndo: boolean
-  canRedo: boolean
-  onBack?: () => void
-  onOpenPreview?: () => void
-  onNameChange: (name: string) => void
-  onUndo: () => void
-  onRedo: () => void
-  onSave: () => void
-}) {
-  return (
-    <header className="resume-builder__toolbar">
-      <div className="flex min-w-0 flex-1 items-center gap-1.5">
-        <BrandMark
-          href="/"
-          showWordmark={false}
-          className="mr-1 hidden sm:inline-flex"
-          onClick={(event) => {
-            if (!onBack) return
-            event.preventDefault()
-            onBack()
-          }}
-        />
-        {onBack && (
-          <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" aria-label="Back to resumes" title="Back to resumes" onClick={onBack}>
-            <ArrowLeftIcon />
-            <span className="hidden md:inline">Resumes</span>
-          </Button>
-        )}
-        <span className="hidden h-5 w-px bg-border md:block" aria-hidden="true" />
-        <div className="relative min-w-0 flex-1 sm:flex-none">
-          <PencilLineIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <Input
-            aria-label="Resume name"
-            value={documentName}
-            onChange={(event) => onNameChange(event.currentTarget.value)}
-            placeholder="Untitled resume"
-            className="h-8 w-full min-w-0 border-transparent bg-transparent pl-8 text-sm font-semibold shadow-none hover:border-border hover:bg-card focus-visible:bg-card sm:w-72 dark:bg-transparent"
-          />
-        </div>
-        <AutosaveStatus state={save} lastSavedAt={lastSavedAt} errorMessage={saveError ?? undefined} className="ml-1 hidden md:inline-flex" />
-      </div>
-
-      <div className="flex items-center gap-1">
-        <LiveSessionBadge className="mr-1" />
-        <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
-          <Button type="button" variant="ghost" size="icon-sm" aria-label="Undo last change" title="Undo" onClick={onUndo} disabled={!canUndo}>
-            <Undo2Icon />
-          </Button>
-          <Button type="button" variant="ghost" size="icon-sm" aria-label="Redo last change" title="Redo" onClick={onRedo} disabled={!canRedo}>
-            <Redo2Icon />
-          </Button>
-          <Button type="button" variant="ghost" size="icon-sm" className="hidden sm:inline-flex" aria-label="Save now" title="Save now" onClick={onSave}>
-            <SaveIcon />
-          </Button>
-        </div>
-        {onOpenPreview && (
-          <Button type="button" className="ml-1 hidden px-3 sm:inline-flex" onClick={onOpenPreview}>
-            <EyeIcon />
-            Preview
-          </Button>
-        )}
-        <ThemeToggle />
-      </div>
-    </header>
-  )
-}
-
-function EditorHeader({
+  eyebrow,
   title,
   description,
   completed,
-  icon: Icon,
-  eyebrow,
+  action,
 }: {
+  icon: LucideIcon
+  eyebrow: string
   title: string
   description: string
-  completed: boolean
-  icon: LucideIcon
-  eyebrow?: string
+  completed?: boolean
+  action?: React.ReactNode
 }) {
   return (
     <div className="flex items-start gap-4">
       <span className="hidden size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground ring-1 ring-primary/15 sm:flex" aria-hidden="true">
         <Icon className="size-5" />
       </span>
-      <div className="min-w-0">
-        {eyebrow && <p className="text-xs font-semibold tracking-wide text-primary">{eyebrow}</p>}
-        <div className="mt-0.5 flex flex-wrap items-center gap-2">
-          <h1 className="font-heading text-2xl font-semibold tracking-tight">{title}</h1>
+      <div className="min-w-0 flex-1">
+        <p className="hidden text-xs font-semibold tracking-wide text-primary lg:block">{eyebrow}</p>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 lg:mt-0.5">
+          <h1 className="font-heading text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
           {completed && <Badge variant="secondary" className="gap-1 bg-primary/10 text-primary"><CheckIcon /> Complete</Badge>}
         </div>
         <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>
       </div>
+      {action}
     </div>
   )
 }
@@ -401,39 +138,107 @@ function LoadingState() {
   )
 }
 
-export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocument, className }: ResumeBuilderProps) {
+/** Prev / preview / next, pinned above the home indicator on phones and tablets. */
+function MobileBottomBar({
+  panel,
+  previous,
+  next,
+  onStepChange,
+  onPanelChange,
+  onShowPreview,
+  onFinish,
+}: {
+  panel: EditorPanel
+  previous: NavigationItem | null
+  next: NavigationItem | null
+  onStepChange: (step: ResumeStep) => void
+  onPanelChange: (panel: EditorPanel) => void
+  onShowPreview: () => void
+  onFinish?: () => void
+}) {
+  return (
+    <nav className="resume-builder__bottombar lg:hidden" aria-label="Step navigation">
+      {panel === "content" ? (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 w-11 shrink-0 px-0 sm:w-auto sm:px-3"
+            onClick={() => previous && onStepChange(previous.id)}
+            disabled={!previous}
+            aria-label={previous ? `Previous: ${previous.title}` : "Previous step"}
+          >
+            <ArrowLeftIcon />
+            <span className="hidden max-w-32 truncate sm:inline">{previous?.title ?? "Previous"}</span>
+          </Button>
+          <Button type="button" variant="secondary" className="h-11 flex-1 px-3" onClick={onShowPreview}>
+            <EyeIcon />
+            Preview
+          </Button>
+          {next ? (
+            <Button type="button" className="h-11 max-w-[48%] flex-1 px-3" onClick={() => onStepChange(next.id)} aria-label={`Next: ${next.title}`}>
+              <span className="truncate">{next.title}</span>
+              <ArrowRightIcon />
+            </Button>
+          ) : (
+            <Button type="button" className="h-11 flex-1 px-3" onClick={onFinish} disabled={!onFinish}>
+              Finish
+              <CheckIcon />
+            </Button>
+          )}
+        </>
+      ) : (
+        <>
+          <Button type="button" variant="outline" className="h-11 flex-1" onClick={() => onPanelChange("content")}>
+            <ArrowLeftIcon />
+            Back to editing
+          </Button>
+          <Button type="button" className="h-11 flex-1" onClick={onShowPreview}>
+            <EyeIcon />
+            Preview
+          </Button>
+        </>
+      )}
+    </nav>
+  )
+}
+
+export function ResumeBuilder({ documentId, panel = "content", onPanelChange, onBack, onOpenPreview, onMissingDocument, className }: ResumeBuilderProps) {
   const actions = useResumeActions()
   const hydration = useResumeWorkspace((state) => state.persistence.hydration)
   const activeDocumentId = useResumeWorkspace((state) => state.activeDocumentId)
   const requestedDocumentExists = useResumeWorkspace((state) => Boolean(state.documents[documentId]))
   const document = useActiveResumeDocument()
   const currentStep = useResumeWorkspace((state) => state.currentStep)
-  const history = useResumeWorkspace((state) => state.history)
+  const canUndo = useResumeWorkspace((state) => state.history.past.length > 0)
+  const canRedo = useResumeWorkspace((state) => state.history.future.length > 0)
   const persistence = useResumeWorkspace((state) => state.persistence)
   const selectedDocument = activeDocumentId === documentId ? document : null
   const navigation = React.useMemo(
-    () => selectedDocument ? getNavigation(selectedDocument, currentStep) : null,
+    () => (selectedDocument ? getNavigation(selectedDocument, currentStep) : null),
     [currentStep, selectedDocument],
   )
   const completion = React.useMemo(
-    () => selectedDocument ? getCompletion(selectedDocument) : null,
+    () => (selectedDocument ? getCompletion(selectedDocument) : null),
     [selectedDocument],
   )
-  const memoizedPreviewModel = React.useMemo(
-    () => selectedDocument ? toResumePreviewModel(selectedDocument) : null,
+  const previewModel = React.useMemo(
+    () => (selectedDocument ? toResumePreviewModel(selectedDocument) : null),
     [selectedDocument],
   )
-  const [panel, setPanel] = React.useState<BuilderPanel>("editor")
-  const [previewPages, setPreviewPages] = React.useState(1)
   const liveJoining = useLiveJoining(documentId)
+  const [stepsOpen, setStepsOpen] = React.useState(false)
+  const [previewOpen, setPreviewOpen] = React.useState(false)
+  const isDesktop = useMediaQuery("(min-width: 1024px)")
+  const isWide = useMediaQuery("(min-width: 1280px)")
   const missingNotified = React.useRef(false)
   const previousDocumentId = React.useRef(documentId)
+  const setPanel = React.useCallback((next: EditorPanel) => onPanelChange?.(next), [onPanelChange])
 
   React.useEffect(() => {
     if (previousDocumentId.current !== documentId) {
       previousDocumentId.current = documentId
       missingNotified.current = false
-      setPanel("editor")
     }
   }, [documentId])
 
@@ -455,55 +260,69 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
     }
   }, [documentId, hydration, liveJoining, onMissingDocument, requestedDocumentExists])
 
-  // useActiveResumeDocument follows the selected global document. Until the
-  // requested id is selected, keep the surface in a loading state so actions
-  // can never accidentally edit another resume.
-  const activeNavigation = selectedDocument ? navigation : null
+  // Start each step or panel at the top, including when an agent moves the editor.
+  const activeStep = navigation?.current?.id ?? "personal-info"
+  React.useEffect(() => {
+    if (typeof window !== "undefined") window.scrollTo({ top: 0 })
+  }, [activeStep, panel])
+
+  // The docked preview replaces the sheet once the screen is wide enough.
+  React.useEffect(() => {
+    if (isWide) setPreviewOpen(false)
+    if (isDesktop) setStepsOpen(false)
+  }, [isDesktop, isWide])
+
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey) return
+      const key = event.key.toLowerCase()
+      if (key === "s") {
+        event.preventDefault()
+        void actions.saveNow().catch(() => undefined)
+        return
+      }
+      // Text fields keep the browser's own undo while typing.
+      if (isEditableTarget(event.target)) return
+      if (key === "z" && !event.shiftKey) {
+        event.preventDefault()
+        actions.undo()
+      } else if ((key === "z" && event.shiftKey) || key === "y") {
+        event.preventDefault()
+        actions.redo()
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [actions])
 
   if (hydration === "idle" || hydration === "hydrating" || (hydration !== "hydrated" && hydration !== "error")) {
     return <LoadingState />
   }
   if (!requestedDocumentExists) return liveJoining ? <LiveJoiningState /> : <EmptyDocumentState onBack={onBack} />
-  if (!selectedDocument || !activeNavigation) return <LoadingState />
+  // Until the requested id is selected, keep the surface in a loading state
+  // so actions can never accidentally edit another resume.
+  if (!selectedDocument || !navigation || !completion || !previewModel) return <LoadingState />
 
-  const activeStep = activeNavigation.current?.id ?? "personal-info"
   const isDisabled = persistence.hydration === "hydrating"
-  const activeItem = activeNavigation.current
+  const activeItem = navigation.current
+  const stepIndex = navigation.items.findIndex((item) => item.id === activeStep)
+  const id = documentId
 
   const stepChange = (step: ResumeStep) => {
-    setPanel("editor")
+    if (panel !== "content") setPanel("content")
     actions.setCurrentStep(step)
   }
 
   const handleSectionReorder = (nextSections: SectionLayout[]) => {
-    const currentSections = selectedDocument.sections
-    const firstChanged = currentSections.findIndex((section, index) => section.id !== nextSections[index]?.id)
-    if (firstChanged < 0) return
-
-    let lastChanged = currentSections.length - 1
-    while (lastChanged > firstChanged && currentSections[lastChanged]?.id === nextSections[lastChanged]?.id) {
-      lastChanged -= 1
-    }
-
-    // SectionList emits the result of one arrayMove. Comparing the two ends
-    // of the changed range identifies whether that item moved up or down.
-    if (currentSections[firstChanged]?.id === nextSections[lastChanged]?.id) {
-      actions.reorderSections(firstChanged, lastChanged)
-      return
-    }
-    if (currentSections[lastChanged]?.id === nextSections[firstChanged]?.id) {
-      actions.reorderSections(lastChanged, firstChanged)
-    }
+    actions.setSectionOrder(nextSections.map((section) => section.id), id)
   }
 
   const removeSection = (sectionId: BuiltInSectionId) => {
-    const remaining = selectedDocument.sections.filter((section) => section.id !== sectionId)
-    actions.removeSection(sectionId)
-    if (activeStep === sectionId) actions.setCurrentStep(remaining[0]?.id ?? "personal-info")
+    actions.removeSection(sectionId, id)
   }
 
   const addSection = (sectionId: BuiltInSectionId) => {
-    actions.addSection(sectionId)
+    actions.addSection(sectionId, id)
     stepChange(sectionId)
   }
 
@@ -514,24 +333,26 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
           <PersonalInfoEditor
             value={selectedDocument.personalInfo}
             disabled={isDisabled}
-            onPatch={(patch) => actions.updateDocument({ personalInfo: patch }, documentId)}
-            onPatchLink={(linkId, patch) => actions.updateLink(linkId, patch)}
-            onCreateLink={() => { actions.createLink() }}
-            onDeleteLink={(linkId) => actions.deleteLink(linkId)}
-            onReorderLink={(fromIndex, toIndex) => actions.reorderLinks(fromIndex, toIndex)}
+            templateShowsPhoto={getTemplatePortrait(selectedDocument.settings.template) !== null}
+            onPatch={(patch) => actions.updateDocument({ personalInfo: patch }, id)}
+            onPatchLink={(linkId, patch) => actions.updateLink(linkId, patch, id)}
+            onCreateLink={() => actions.createLink(undefined, id)}
+            onDeleteLink={(linkId) => actions.deleteLink(linkId, id)}
+            onReorderLink={(fromIndex, toIndex) => actions.reorderLinks(fromIndex, toIndex, id)}
           />
         )
       case "summary":
-        return <SummaryEditor value={selectedDocument.summary} disabled={isDisabled} onPatch={(value) => actions.updateDocument({ summary: value }, documentId)} />
+        return <SummaryEditor value={selectedDocument.summary} disabled={isDisabled} onPatch={(value) => actions.updateDocument({ summary: value }, id)} />
       case "experience":
         return (
           <ExperienceEditor
             entries={selectedDocument.experience}
             disabled={isDisabled}
-            onPatch={(entryId, patch) => actions.updateEntry("experience", entryId, patch as Record<string, unknown>)}
-            onCreate={() => { actions.createEntry("experience") }}
-            onDelete={(entryId) => actions.deleteEntry("experience", entryId)}
-            onReorder={(fromIndex, toIndex) => actions.reorderEntries("experience", fromIndex, toIndex)}
+            onPatch={(entryId, patch) => actions.updateEntry("experience", entryId, patch, id)}
+            onCreate={() => actions.createEntry("experience", undefined, id)}
+            onDelete={(entryId) => actions.deleteEntry("experience", entryId, id)}
+            onDuplicate={(entryId) => actions.duplicateEntry("experience", entryId, id)}
+            onReorder={(fromIndex, toIndex) => actions.reorderEntries("experience", fromIndex, toIndex, id)}
           />
         )
       case "education":
@@ -539,10 +360,11 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
           <EducationEditor
             entries={selectedDocument.education}
             disabled={isDisabled}
-            onPatch={(entryId, patch) => actions.updateEntry("education", entryId, patch as Record<string, unknown>)}
-            onCreate={() => { actions.createEntry("education") }}
-            onDelete={(entryId) => actions.deleteEntry("education", entryId)}
-            onReorder={(fromIndex, toIndex) => actions.reorderEntries("education", fromIndex, toIndex)}
+            onPatch={(entryId, patch) => actions.updateEntry("education", entryId, patch, id)}
+            onCreate={() => actions.createEntry("education", undefined, id)}
+            onDelete={(entryId) => actions.deleteEntry("education", entryId, id)}
+            onDuplicate={(entryId) => actions.duplicateEntry("education", entryId, id)}
+            onReorder={(fromIndex, toIndex) => actions.reorderEntries("education", fromIndex, toIndex, id)}
           />
         )
       case "projects":
@@ -550,14 +372,15 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
           <ProjectsEditor
             entries={selectedDocument.projects}
             disabled={isDisabled}
-            onPatch={(entryId, patch) => actions.updateEntry("projects", entryId, patch as Record<string, unknown>)}
-            onPatchLink={(entryId, linkId, patch) => actions.updateProjectLink(entryId, linkId, patch)}
-            onCreate={() => { actions.createEntry("projects") }}
-            onCreateLink={(entryId) => { actions.createProjectLink(entryId) }}
-            onDelete={(entryId) => actions.deleteEntry("projects", entryId)}
-            onDeleteLink={(entryId, linkId) => actions.deleteProjectLink(entryId, linkId)}
-            onReorder={(fromIndex, toIndex) => actions.reorderEntries("projects", fromIndex, toIndex)}
-            onReorderLink={(entryId, fromIndex, toIndex) => actions.reorderProjectLinks(entryId, fromIndex, toIndex)}
+            onPatch={(entryId, patch) => actions.updateEntry("projects", entryId, patch, id)}
+            onPatchLink={(entryId, linkId, patch) => actions.updateProjectLink(entryId, linkId, patch, id)}
+            onCreate={() => actions.createEntry("projects", undefined, id)}
+            onCreateLink={(entryId) => actions.createProjectLink(entryId, undefined, id)}
+            onDelete={(entryId) => actions.deleteEntry("projects", entryId, id)}
+            onDeleteLink={(entryId, linkId) => actions.deleteProjectLink(entryId, linkId, id)}
+            onDuplicate={(entryId) => actions.duplicateEntry("projects", entryId, id)}
+            onReorder={(fromIndex, toIndex) => actions.reorderEntries("projects", fromIndex, toIndex, id)}
+            onReorderLink={(entryId, fromIndex, toIndex) => actions.reorderProjectLinks(entryId, fromIndex, toIndex, id)}
           />
         )
       case "skills":
@@ -565,9 +388,10 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
           <SkillsEditor
             skills={selectedDocument.skills}
             disabled={isDisabled}
-            onAdd={() => { actions.createEntry("skills") }}
-            onUpdate={(entryId, patch) => actions.updateEntry("skills", entryId, patch as Record<string, unknown>)}
-            onRemove={(entryId) => actions.deleteEntry("skills", entryId)}
+            onCreate={(skills) => actions.batch(() => skills.forEach((skill) => actions.createEntry("skills", skill, id)))}
+            onUpdate={(entryId, patch) => actions.updateEntry("skills", entryId, patch, id)}
+            onUpdateMany={(entryIds, patch) => actions.batch(() => entryIds.forEach((entryId) => actions.updateEntry("skills", entryId, patch, id)))}
+            onRemove={(entryIds) => actions.batch(() => entryIds.forEach((entryId) => actions.deleteEntry("skills", entryId, id)))}
           />
         )
       case "certifications":
@@ -575,153 +399,170 @@ export function ResumeBuilder({ documentId, onBack, onOpenPreview, onMissingDocu
           <CertificationsEditor
             certifications={selectedDocument.certifications}
             disabled={isDisabled}
-            onAdd={() => { actions.createEntry("certifications") }}
-            onUpdate={(entryId, patch) => actions.updateEntry("certifications", entryId, patch as Record<string, unknown>)}
-            onRemove={(entryId) => actions.deleteEntry("certifications", entryId)}
+            onAdd={() => actions.createEntry("certifications", undefined, id)}
+            onUpdate={(entryId, patch) => actions.updateEntry("certifications", entryId, patch, id)}
+            onRemove={(entryId) => actions.deleteEntry("certifications", entryId, id)}
+            onDuplicate={(entryId) => actions.duplicateEntry("certifications", entryId, id)}
+            onReorder={(fromIndex, toIndex) => actions.reorderEntries("certifications", fromIndex, toIndex, id)}
           />
         )
       case "awards":
-        return <AwardsEditor awards={selectedDocument.awards} disabled={isDisabled} onChange={(awards) => actions.updateDocument({ awards }, documentId)} />
+        return <AwardsEditor awards={selectedDocument.awards} disabled={isDisabled} onChange={(awards) => actions.updateDocument({ awards }, id)} />
       case "languages":
         return (
           <LanguagesEditor
             languages={selectedDocument.languages}
             disabled={isDisabled}
-            onAdd={() => { actions.createEntry("languages") }}
-            onUpdate={(entryId, patch) => actions.updateEntry("languages", entryId, patch as Record<string, unknown>)}
-            onRemove={(entryId) => actions.deleteEntry("languages", entryId)}
+            onAdd={() => actions.createEntry("languages", undefined, id)}
+            onUpdate={(entryId, patch) => actions.updateEntry("languages", entryId, patch, id)}
+            onRemove={(entryId) => actions.deleteEntry("languages", entryId, id)}
+            onReorder={(fromIndex, toIndex) => actions.reorderEntries("languages", fromIndex, toIndex, id)}
           />
         )
     }
   })()
 
-  const nextStep = activeNavigation.next?.id
-  const previousStep = activeNavigation.previous?.id
-
-  const stepIndex = activeNavigation.items.findIndex((item) => item.id === activeStep)
-  const templateLabel = getTemplateLabel(selectedDocument.settings.template)
-  const previewModel = memoizedPreviewModel ?? toResumePreviewModel(selectedDocument)
+  const customize = CUSTOMIZE_PANELS.find((item) => item.id === panel)
+  const openPreviewSurface = () => setPreviewOpen(true)
+  const jumpToSection = (section: string) => {
+    const target = navigation.items.find((item) => item.id === section)
+    if (target) stepChange(target.id)
+  }
 
   return (
-    <div className={cn("resume-builder", className)}>
-      <WorkspaceToolbar
+    <div className={cn("resume-builder", className)} data-panel={panel}>
+      <BuilderToolbar
         documentName={selectedDocument.meta.name}
         save={saveState(persistence.save)}
         lastSavedAt={persistence.lastSavedAt}
         saveError={persistence.error}
-        canUndo={history.past.length > 0}
-        canRedo={history.future.length > 0}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        panel={panel}
         onBack={onBack}
         onOpenPreview={onOpenPreview}
-        onNameChange={(name) => actions.updateDocument({ meta: { name } }, documentId)}
+        onShowLivePreview={openPreviewSurface}
+        onNameChange={(name) => actions.updateDocument({ meta: { name } }, id)}
         onUndo={actions.undo}
         onRedo={actions.redo}
         onSave={() => { void actions.saveNow().catch(() => undefined) }}
+        onPanelChange={setPanel}
       />
 
-      <MobileStepNavigation items={activeNavigation.items} panel={panel} onStepChange={stepChange} onPanelChange={setPanel} />
+      <MobileStepBar items={navigation.items} panel={panel} completion={completion} onOpen={() => setStepsOpen(true)} />
 
       <div className="resume-builder__layout">
         <DesktopSidebar
-          completion={completion ?? { percent: 0, completed: 0, total: 0 }}
-          items={activeNavigation.items}
+          completion={completion}
+          items={navigation.items}
           panel={panel}
-          onStepChange={stepChange}
-          onPanelChange={setPanel}
+          onSelectStep={stepChange}
+          onSelectPanel={setPanel}
         />
 
         <main className="resume-builder__editor-pane">
           <div className="mx-auto w-full max-w-3xl">
-            {panel === "editor" && activeItem && (
+            {panel === "content" && activeItem && (
               <>
-                <EditorHeader
-                  icon={sectionIcon(activeStep)}
-                  eyebrow={`Section ${stepIndex + 1} of ${activeNavigation.items.length}`}
+                <EditorHeading
+                  icon={stepIcon(activeStep)}
+                  eyebrow={`Step ${stepIndex + 1} of ${navigation.items.length}`}
                   title={activeItem.title}
                   description={activeItem.description}
                   completed={activeItem.completed}
                 />
-                <div className="mt-8">{editor}</div>
-                <div className="mt-10 flex items-center justify-between gap-3 border-t border-border pt-5">
-                  <Button type="button" variant="outline" size="lg" className="px-3" onClick={() => previousStep && stepChange(previousStep)} disabled={!previousStep}>
+                <div className="mt-6 sm:mt-8">{editor}</div>
+                <div className="mt-10 hidden items-center justify-between gap-3 border-t border-border pt-5 lg:flex">
+                  <Button type="button" variant="outline" size="lg" className="px-3" onClick={() => navigation.previous && stepChange(navigation.previous.id)} disabled={!navigation.previous}>
                     <ArrowLeftIcon />
-                    <span className="hidden sm:inline">{activeNavigation.previous?.title ?? "Previous"}</span>
+                    {navigation.previous?.title ?? "Previous"}
                   </Button>
-                  <div className="hidden items-center gap-1 sm:flex" aria-hidden="true">
-                    {activeNavigation.items.map((item, index) => (
+                  <div className="flex items-center gap-1" aria-hidden="true">
+                    {navigation.items.map((item, index) => (
                       <span key={item.id} className={cn("h-1.5 rounded-full transition-all", index === stepIndex ? "w-5 bg-primary" : item.completed ? "w-1.5 bg-primary/40" : "w-1.5 bg-border")} />
                     ))}
                   </div>
-                  <Button type="button" size="lg" className="px-3" onClick={() => nextStep ? stepChange(nextStep) : onOpenPreview?.()} disabled={!nextStep && !onOpenPreview}>
-                    <span className="hidden sm:inline">{activeNavigation.next ? activeNavigation.next.title : "Preview resume"}</span>
+                  <Button type="button" size="lg" className="px-3" onClick={() => (navigation.next ? stepChange(navigation.next.id) : onOpenPreview?.())} disabled={!navigation.next && !onOpenPreview}>
+                    {navigation.next ? navigation.next.title : "Preview resume"}
                     <ArrowRightIcon />
                   </Button>
                 </div>
               </>
             )}
 
-            {panel === "sections" && (
+            {customize && (
               <>
-                <EditorHeader icon={LayoutListIcon} eyebrow="Customize" title="Resume sections" description="Choose which sections appear and drag them into the order you want." completed={false} />
-                <SectionConfigurationEditor
-                  sections={selectedDocument.sections}
-                  disabled={isDisabled}
-                  className="mt-8"
-                  onAdd={addSection}
-                  onReorder={handleSectionReorder}
-                  onRename={(sectionId, title) => actions.renameSection(sectionId, title)}
-                  onToggleEnabled={(sectionId, enabled) => actions.setSectionVisibility(sectionId, enabled)}
-                  onRemove={removeSection}
+                <EditorHeading
+                  icon={customize.icon}
+                  eyebrow="Customize"
+                  title={customize.id === "sections" ? "Resume sections" : "Template & style"}
+                  description={customize.id === "sections"
+                    ? "Choose which sections appear, rename them, and drag them into the order you want."
+                    : "Pick a template and tune the page, typography, and accent color."}
+                  action={
+                    <Button type="button" variant="outline" className="hidden shrink-0 lg:inline-flex" onClick={() => setPanel("content")}>
+                      <CheckIcon />
+                      Done
+                    </Button>
+                  }
                 />
-              </>
-            )}
-
-            {panel === "appearance" && (
-              <>
-                <EditorHeader icon={PaletteIcon} eyebrow="Customize" title="Resume appearance" description="Tune the page, typography, and accent used by your live preview." completed={false} />
-                <ResumeSettingsEditor previewModel={previewModel} className="mt-8" onChange={(patch) => actions.updateDocumentSettings(patch)} />
+                {panel === "sections" ? (
+                  <SectionConfigurationEditor
+                    sections={selectedDocument.sections}
+                    disabled={isDisabled}
+                    className="mt-6 sm:mt-8"
+                    onAdd={addSection}
+                    onReorder={handleSectionReorder}
+                    onRename={(sectionId, title) => actions.renameSection(sectionId, title, id)}
+                    onToggleEnabled={(sectionId, enabled) => actions.setSectionVisibility(sectionId, enabled, id)}
+                    onRemove={removeSection}
+                  />
+                ) : (
+                  <ResumeSettingsEditor
+                    previewModel={previewModel}
+                    className="mt-6 sm:mt-8"
+                    onChange={(patch) => actions.updateDocumentSettings(patch, id)}
+                  />
+                )}
               </>
             )}
           </div>
         </main>
 
-        <aside className="resume-builder__preview-pane hidden xl:flex" aria-label="Live resume preview">
-          <div className="flex items-center justify-between gap-3 px-1 pb-3">
-            <div className="min-w-0">
-              <p className="flex items-center gap-2 text-sm font-semibold">
-                <span className="relative flex size-2" aria-hidden="true">
-                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:hidden" />
-                  <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-                </span>
-                Live preview
-              </p>
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">{templateLabel} · {selectedDocument.settings.pageSize} · {previewPages} {previewPages === 1 ? "page" : "pages"}</p>
-            </div>
-            <Button type="button" variant="outline" size="sm" onClick={() => setPanel("appearance")}>
-              <PaletteIcon />
-              Style
-            </Button>
-          </div>
-          <div className="resume-builder__preview-shell">
-            <ScaledResumePreview
-              model={previewModel}
-              framed
-              onPageCountChange={setPreviewPages}
-              className="resume-builder__preview-page"
-              onEdit={() => stepChange("personal-info")}
-            />
-          </div>
-        </aside>
+        <LivePreviewPane model={previewModel} onSectionClick={jumpToSection} onOpenAppearance={() => setPanel("appearance")} />
       </div>
 
-      {onOpenPreview && (
-        <div className="resume-builder__mobile-preview-cta xl:hidden">
-          <Button type="button" size="lg" className="h-11 w-full shadow-lift" onClick={onOpenPreview}>
-            <EyeIcon />
-            Open full preview
-          </Button>
-        </div>
-      )}
+      <AgentActivityPill className="resume-builder__agent-toast sm:hidden" />
+
+      <MobileBottomBar
+        panel={panel}
+        previous={navigation.previous}
+        next={navigation.next}
+        onStepChange={stepChange}
+        onPanelChange={setPanel}
+        onShowPreview={openPreviewSurface}
+        onFinish={onOpenPreview}
+      />
+
+      <StepsDrawer
+        open={stepsOpen}
+        onOpenChange={setStepsOpen}
+        completion={completion}
+        items={navigation.items}
+        panel={panel}
+        onSelectStep={stepChange}
+        onSelectPanel={setPanel}
+      />
+
+      <LivePreviewDrawer
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        side={isDesktop ? "right" : "bottom"}
+        model={previewModel}
+        onSectionClick={jumpToSection}
+        onOpenAppearance={() => setPanel("appearance")}
+        onOpenFullPreview={onOpenPreview}
+      />
     </div>
   )
 }

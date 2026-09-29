@@ -1,4 +1,3 @@
-import { FieldGroup } from "../components/FieldGroup"
 import { RichTextEditor } from "../components/RichTextEditor"
 
 export type AwardsEditorProps = {
@@ -12,14 +11,20 @@ export type AwardsEditorProps = {
 /** Controlled rich-text editor for the document-wide awards section. */
 export function AwardsEditor({ awards, onChange, disabled = false, className }: AwardsEditorProps) {
   return (
-    <section className={className} aria-labelledby="awards-editor-title">
-      <div className="mb-4">
-        <h2 id="awards-editor-title" className="text-lg font-semibold">Awards and recognition</h2>
-        <p className="text-sm text-muted-foreground">Add notable awards, honors, or recognition. Basic formatting is supported.</p>
-      </div>
-      <FieldGroup label="Awards" htmlFor="resume-awards" hint="Keep entries concise and focused on the impact or achievement.">
-        <RichTextEditor id="resume-awards" value={awards} onChange={onChange} disabled={disabled} aria-label="Awards and recognition" placeholder="Describe awards and recognition…" />
-      </FieldGroup>
+    <section className={className} aria-label="Awards">
+      <RichTextEditor
+        id="resume-awards"
+        value={awards}
+        onChange={onChange}
+        disabled={disabled}
+        aria-label="Awards and recognition"
+        aria-describedby="resume-awards-hint"
+        placeholder="Designer of the Year, Northstar Labs, 2024…"
+        className="[&_[role=textbox]]:min-h-40"
+      />
+      <p id="resume-awards-hint" className="mt-2 text-xs text-muted-foreground">
+        Use the bulleted list button for several awards. Keep each one short: the award, who gave it, and the year.
+      </p>
     </section>
   )
 }

@@ -35,16 +35,19 @@ const runError = async (name: string, input: Record<string, unknown> = {}) => {
 };
 
 let path = "/";
+let search: Record<string, string> = {};
 const navigations: Array<{ to: string; params?: Record<string, string>; search?: Record<string, string> }> = [];
 const printCalls: number[] = [];
 const store = createResumeWorkspaceStore({ persistence: null, autoHydrate: false });
 const tools = createResumeTools({
     store,
-    async navigate(to, params, search) {
-        navigations.push({ to, params, ...(search ? { search } : {}) });
+    async navigate(to, params, nextSearch) {
+        navigations.push({ to, params, ...(nextSearch && Object.keys(nextSearch).length ? { search: nextSearch } : {}) });
         path = to === "/" ? "/" : to.replace("$documentId", params?.documentId ?? "");
+        search = nextSearch ?? {};
     },
     getPath: () => path,
+    getSearch: () => search,
     printDocument: async () => {
         printCalls.push(Date.now());
     },
@@ -54,6 +57,7 @@ beforeEach(() => {
     navigations.length = 0;
     printCalls.length = 0;
     path = "/";
+    search = {};
     // Reset workspace state between tests without persistence.
     store.setState({
         ...store.getState(),
@@ -70,29 +74,48 @@ describe("resume webmcp tools", () => {
             "get-workspace",
             "get-resume",
             "create-resume",
+            "create-sample-resume",
+            "import-resume",
+            "duplicate-resume",
+            "update-resume-details",
             "delete-resume",
             "set-builder-step",
+            "open-editor-panel",
             "open-preview",
-            "export-pdf",
             "go-to-dashboard",
+            "undo",
+            "redo",
             "update-personal-info",
             "update-summary",
             "update-awards",
             "add-section-entry",
             "update-section-entry",
             "delete-section-entry",
+            "move-section-entry",
+            "duplicate-section-entry",
+            "add-link",
+            "update-link",
+            "delete-link",
+            "move-link",
             "set-section-visibility",
+            "rename-section",
+            "reorder-sections",
+            "remove-section",
             "list-templates",
             "recommend-templates",
             "open-template-explorer",
             "set-appearance",
+            "export-pdf",
             "export-resume",
             "get-live-session",
         ]);
         for (const tool of tools) {
+            expect(tool.title?.length).toBeGreaterThan(2);
             expect(tool.description.length).toBeGreaterThan(20);
             expect(tool.inputSchema).toMatchObject({ type: "object" });
         }
+        const readOnly = tools.filter((tool) => tool.annotations?.readOnlyHint).map((tool) => tool.name);
+        expect(readOnly).toEqual(["get-workspace", "get-resume", "open-preview", "go-to-dashboard", "list-templates", "recommend-templates", "export-resume", "get-live-session"]);
     });
 
     it("reports an empty workspace before any resume exists", async () => {
@@ -410,6 +433,249 @@ describe("resume webmcp tools", () => {
             to: "/resume/$documentId/preview",
             params: { documentId: resumeId },
         });
+    });
+
+    it("creates sample, imported, and duplicated resumes and opens them", async () => {
+        const sample = (await run("create-sample-resume")) as { resumeId: string; name: string };
+        expect(sample.name).toMatch(/maya patel/i);
+        expect(path).toBe(`/resume/${sample.resumeId}`);
+
+        const imported = (await run("import-resume", {
+            resume: {
+                name: "Imported role",
+                summary: "<p>Hello</p>",
+                experience: [{ company: "Acme", title: "Engineer" }],
+                skills: [{ name: "Go" }, { name: "SQL" }],
+                sections: ["summary", "experience", "skills"],
+            },
+        })) as { resumeId: string; name: string; sections: Array<{ id: string }> };
+        expect(imported.name).toBe("Imported role");
+        expect(imported.sections.map((section) => section.id)).toEqual(["summary", "experience", "skills"]);
+        expect(store.getState().activeDocumentId).toBe(imported.resumeId);
+        expect(store.getState().documents[imported.resumeId]?.skills).toHaveLength(2);
+
+        const fromJson = (await run("import-resume", {
+            json: JSON.stringify({ personalInfo: { name: "Json Person" } }),
+        })) as { resumeId: string };
+        expect(store.getState().documents[fromJson.resumeId]?.personalInfo.name).toBe("Json Person");
+        await expect(runError("import-resume", { json: "{nope" })).resolves.toMatch(/not valid json/i);
+        await expect(runError("import-resume", {})).resolves.toMatch(/provide the resume document/i);
+
+        const copy = (await run("duplicate-resume", {
+            resumeId: imported.resumeId,
+            name: "Tailored copy",
+        })) as { resumeId: string; sourceResumeId: string; name: string };
+        expect(copy.sourceResumeId).toBe(imported.resumeId);
+        expect(copy.name).toBe("Tailored copy");
+        expect(store.getState().documents[copy.resumeId]?.experience[0]?.company).toBe("Acme");
+        expect(path).toBe(`/resume/${copy.resumeId}`);
+    });
+
+    it("renames a resume and validates details", async () => {
+        const { resumeId } = (await run("create-resume", { name: "Draft" })) as { resumeId: string };
+        const renamed = (await run("update-resume-details", {
+            name: "Staff Engineer, Acme",
+            description: "For the Acme application",
+        })) as { name: string; description: string };
+        expect(renamed).toMatchObject({ name: "Staff Engineer, Acme", description: "For the Acme application" });
+        expect(store.getState().documents[resumeId]?.meta.name).toBe("Staff Engineer, Acme");
+        await expect(runError("update-resume-details", {})).resolves.toMatch(/at least one of: name, description/i);
+    });
+
+    it("opens editor panels through the URL and reports them", async () => {
+        const { resumeId } = (await run("create-resume", {})) as { resumeId: string };
+        const opened = (await run("open-editor-panel", { panel: "appearance" })) as { editPath: string };
+        expect(opened.editPath).toBe(`/resume/${resumeId}?panel=appearance`);
+        expect(search).toEqual({ panel: "appearance" });
+        const workspace = (await run("get-workspace")) as { location: string; editorPanel: string };
+        expect(workspace).toMatchObject({ location: "editor", editorPanel: "appearance" });
+        await run("set-builder-step", { step: "experience" });
+        expect(search).toEqual({});
+        expect(store.getState().currentStep).toBe("experience");
+        await expect(runError("open-editor-panel", { panel: "styles" })).resolves.toMatch(/content, sections, appearance/);
+    });
+
+    it("undoes and redoes agent changes, one batch at a time", async () => {
+        await run("create-resume", {});
+        await run("add-section-entry", {
+            section: "skills",
+            entries: [{ name: "Go" }, { name: "Rust" }, { name: "SQL", category: "Data" }],
+        });
+        const resumeId = store.getState().activeDocumentId ?? "";
+        expect(store.getState().documents[resumeId]?.skills).toHaveLength(3);
+        const undone = (await run("undo")) as { canRedo: boolean };
+        expect(undone.canRedo).toBe(true);
+        expect(store.getState().documents[resumeId]?.skills).toHaveLength(0);
+        await run("redo");
+        expect(store.getState().documents[resumeId]?.skills.map((skill) => skill.name)).toEqual(["Go", "Rust", "SQL"]);
+        await expect(runError("redo")).resolves.toMatch(/nothing to redo/i);
+    });
+
+    it("sets and removes the photo with validation", async () => {
+        const { resumeId } = (await run("create-resume", {})) as { resumeId: string };
+        const withPhoto = (await run("update-personal-info", {
+            image: "https://example.com/me.jpg",
+        })) as { personalInfo: { hasImage: boolean } };
+        expect(withPhoto.personalInfo.hasImage).toBe(true);
+        await expect(runError("update-personal-info", { image: "javascript:alert(1)" })).resolves.toMatch(/"image" must be/);
+        await run("update-personal-info", { image: "" });
+        expect(store.getState().documents[resumeId]?.personalInfo.image).toBeUndefined();
+    });
+
+    it("adds entries in batches, at positions, and shows their section", async () => {
+        const { resumeId } = (await run("create-resume", {})) as { resumeId: string };
+        const first = (await run("add-section-entry", {
+            section: "certifications",
+            entry: { name: "AWS Developer", url: "aws.amazon.com/cert" },
+        })) as { entryId: string; sectionVisibility: string; warnings: string[] };
+        expect(first.sectionVisibility).toBe("added");
+        expect(first.warnings[0]).toMatch(/plain text/);
+        const batch = (await run("add-section-entry", {
+            section: "certifications",
+            entries: [{ name: "CKA" }, { name: "CKAD" }],
+            position: 0,
+        })) as { entryIds: string[] };
+        expect(batch.entryIds).toHaveLength(2);
+        expect(store.getState().documents[resumeId]?.certifications.map((entry) => entry.name)).toEqual([
+            "CKA",
+            "CKAD",
+            "AWS Developer",
+        ]);
+        await expect(
+            runError("add-section-entry", { section: "skills", entries: [{ name: "Go" }, { category: "x" }] })
+        ).resolves.toMatch(/entries\[1\]: A skills entry requires "name"/);
+        expect(store.getState().documents[resumeId]?.skills).toHaveLength(0);
+    });
+
+    it("moves and duplicates entries", async () => {
+        await run("create-resume", {});
+        const { entryIds } = (await run("add-section-entry", {
+            section: "experience",
+            entries: [
+                { company: "A", title: "One" },
+                { company: "B", title: "Two" },
+                { company: "C", title: "Three" },
+            ],
+        })) as { entryIds: string[] };
+        const moved = (await run("move-section-entry", {
+            section: "experience",
+            entryId: entryIds[2],
+            direction: "top",
+        })) as { order: string[] };
+        expect(moved.order).toEqual([entryIds[2], entryIds[0], entryIds[1]]);
+        const byIndex = (await run("move-section-entry", {
+            section: "experience",
+            entryId: entryIds[2],
+            toIndex: 2,
+        })) as { order: string[] };
+        expect(byIndex.order).toEqual([entryIds[0], entryIds[1], entryIds[2]]);
+        await expect(
+            runError("move-section-entry", { section: "experience", entryId: entryIds[0], toIndex: 9 })
+        ).resolves.toMatch(/from 0 to 2/);
+        await expect(
+            runError("move-section-entry", { section: "experience", entryId: entryIds[0] })
+        ).resolves.toMatch(/exactly one of "toIndex"/);
+
+        const copy = (await run("duplicate-section-entry", {
+            section: "experience",
+            entryId: entryIds[0],
+        })) as { entryId: string; entry: { company: string } };
+        expect(copy.entryId).not.toBe(entryIds[0]);
+        expect(copy.entry.company).toBe("A");
+        const resumeId = store.getState().activeDocumentId ?? "";
+        expect(store.getState().documents[resumeId]?.experience.map((entry) => entry.id)).toEqual([
+            entryIds[0],
+            copy.entryId,
+            entryIds[1],
+            entryIds[2],
+        ]);
+    });
+
+    it("manages headline and project links individually", async () => {
+        const { resumeId } = (await run("create-resume", {})) as { resumeId: string };
+        const github = (await run("add-link", { title: "GitHub", url: "https://github.com/me" })) as { linkId: string };
+        const site = (await run("add-link", { title: "Site", url: "https://me.dev", position: 0 })) as {
+            linkId: string;
+            links: Array<{ id: string }>;
+        };
+        expect(site.links.map((link) => link.id)).toEqual([site.linkId, github.linkId]);
+        await run("update-link", { linkId: github.linkId, title: "Code" });
+        await run("move-link", { linkId: github.linkId, direction: "up" });
+        expect(store.getState().documents[resumeId]?.personalInfo.titleLinks.map((link) => link.title)).toEqual([
+            "Code",
+            "Site",
+        ]);
+        await run("delete-link", { linkId: site.linkId });
+        expect(store.getState().documents[resumeId]?.personalInfo.titleLinks).toHaveLength(1);
+
+        const project = (await run("add-section-entry", {
+            section: "projects",
+            entry: { title: "Tool" },
+        })) as { entryId: string };
+        const repo = (await run("add-link", {
+            projectId: project.entryId,
+            title: "Repo",
+            url: "https://github.com/me/tool",
+        })) as { linkId: string; projectId: string };
+        expect(repo.projectId).toBe(project.entryId);
+        await run("update-link", { projectId: project.entryId, linkId: repo.linkId, url: "https://github.com/me/tool2" });
+        expect(store.getState().documents[resumeId]?.projects[0]?.links[0]?.url).toBe("https://github.com/me/tool2");
+        await expect(runError("add-link", { projectId: "project-nope", url: "https://x.dev" })).resolves.toMatch(
+            new RegExp(`Project ids: ${project.entryId}`)
+        );
+        await expect(runError("delete-link", { linkId: "link-nope" })).resolves.toMatch(/Link ids: /);
+    });
+
+    it("renames, reorders, and removes sections", async () => {
+        const { resumeId } = (await run("create-resume", {
+            sections: ["summary", "experience", "education", "skills"],
+        })) as { resumeId: string };
+        await run("rename-section", { section: "experience", title: "Work history" });
+        const reordered = (await run("reorder-sections", { order: ["skills", "experience"] })) as {
+            sections: Array<{ id: string; title: string }>;
+        };
+        expect(reordered.sections.map((section) => section.id)).toEqual(["skills", "experience", "summary", "education"]);
+        expect(reordered.sections[1]?.title).toBe("Work history");
+        await run("remove-section", { section: "education" });
+        expect(store.getState().documents[resumeId]?.sections.map((section) => section.id)).toEqual([
+            "skills",
+            "experience",
+            "summary",
+        ]);
+        await expect(runError("rename-section", { section: "awards", title: "Honors" })).resolves.toMatch(
+            /not part of this resume's layout/
+        );
+        await expect(runError("create-resume", { sections: ["hobbies"] })).resolves.toMatch(/"sections\[\]" must be one of/);
+    });
+
+    it("edits a background resume without switching the open one", async () => {
+        const background = (await run("create-resume", { name: "Background" })) as { resumeId: string };
+        const open = (await run("create-resume", { name: "Open" })) as { resumeId: string };
+        expect(path).toBe(`/resume/${open.resumeId}`);
+        await run("add-section-entry", {
+            resumeId: background.resumeId,
+            section: "skills",
+            entry: { name: "Go" },
+        });
+        await run("update-summary", { resumeId: background.resumeId, summary: "Background summary" });
+        const state = store.getState();
+        expect(state.activeDocumentId).toBe(open.resumeId);
+        expect(state.currentStep).toBe("personal-info");
+        expect(state.documents[background.resumeId]?.skills.map((skill) => skill.name)).toEqual(["Go"]);
+        expect(state.documents[background.resumeId]?.sections.some((section) => section.id === "summary")).toBe(true);
+        expect(state.documents[open.resumeId]?.skills).toEqual([]);
+    });
+
+    it("follows the agent's edits in the open editor without adding undo steps", async () => {
+        const { resumeId } = (await run("create-resume", {})) as { resumeId: string };
+        const pastBefore = store.getState().history.past.length;
+        await run("add-section-entry", { section: "education", entry: { institution: "MIT" } });
+        expect(store.getState().currentStep).toBe("education");
+        expect(store.getState().history.past.length).toBe(pastBefore + 1);
+        // No following while another panel is open.
+        await run("open-editor-panel", { resumeId, panel: "sections" });
+        await run("update-personal-info", { name: "Someone" });
+        expect(store.getState().currentStep).toBe("education");
     });
 
     it("lists templates with the metadata agents need to choose", async () => {

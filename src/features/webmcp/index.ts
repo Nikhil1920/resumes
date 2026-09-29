@@ -17,6 +17,7 @@ import {
 
 import { liveSessionStore } from "@/features/live-sync/session";
 
+import { withActivityTracking } from "./activity";
 import { ensureDocumentModelContext } from "./model-context";
 import { createResumeTools } from "./tools";
 
@@ -61,9 +62,10 @@ export const registerResumeWebmcpTools = async (
             router.navigate({
                 to,
                 params: params as Record<string, string>,
-                ...(search ? { search } : {}),
+                search: (search ?? {}) as Record<string, string>,
             }),
         getPath: () => router.state.location.pathname,
+        getSearch: () => router.state.location.search as Record<string, unknown>,
         printDocument: () =>
             printPreviewDocument(() =>
                 router.state.location.pathname.endsWith("/preview")
@@ -81,7 +83,7 @@ export const registerResumeWebmcpTools = async (
                 })),
             };
         },
-    });
+    }).map(withActivityTracking);
     await Promise.all(
         tools.map((tool) =>
             modelContext.registerTool(tool, { signal }).catch((error) => {
@@ -111,6 +113,7 @@ export function WebmcpTools(): null {
 
 export { ensureDocumentModelContext, createModelContextFallback } from "./model-context";
 export { createResumeTools } from "./tools";
+export { agentActivityStore, useAgentActivity, type AgentActivityEntry } from "./activity";
 export type {
     ModelContextLike,
     WebmcpToolDefinition,

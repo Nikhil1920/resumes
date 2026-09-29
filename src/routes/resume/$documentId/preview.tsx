@@ -78,17 +78,17 @@ function ResumePreviewRoute() {
   )
 
   const updateAppearance = React.useCallback((patch: ResumeAppearancePatch) => {
-    actions.updateDocumentSettings(patch)
-  }, [actions])
+    actions.updateDocumentSettings(patch, documentId)
+  }, [actions, documentId])
 
   const selectTemplate = React.useCallback((templateId: string) => {
     if (document?.settings.template === templateId) return
-    actions.updateDocumentSettings(templateStylePatch(templateId))
+    actions.updateDocumentSettings(templateStylePatch(templateId), documentId)
     toast.success(`Switched to ${getResumeTemplate(templateId).name}`, {
       description: 'Fonts and accent color now follow the template.',
       action: { label: 'Undo', onClick: () => actions.undo() },
     })
-  }, [actions, document?.settings.template])
+  }, [actions, document?.settings.template, documentId])
 
   const openTemplates = React.useCallback(() => {
     void navigate({ to: '/templates', search: { resume: documentId } })

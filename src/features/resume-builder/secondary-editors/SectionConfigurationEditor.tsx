@@ -1,9 +1,7 @@
-import { PlusIcon } from "lucide-react"
+import { LockIcon, PlusIcon } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { SectionList } from "../components/SectionList"
+import { stepIcon } from "../steps"
 import { BUILT_IN_SECTIONS, type BuiltInSectionId, type SectionLayout } from "@/features/resume-workspace/model"
 
 export type SectionConfigurationEditorProps = {
@@ -19,54 +17,78 @@ export type SectionConfigurationEditorProps = {
 }
 
 /**
- * Presents the selected layout and available built-in sections. SectionList
- * owns only transient drag/rename interaction state; section data remains
+ * The ordered layout plus the built-in sections not yet on the resume.
+ * SectionList owns only transient drag/rename state; section data remains
  * controlled by the resume workspace.
  */
 export function SectionConfigurationEditor({ sections, onAdd, onReorder, onRename, onToggleEnabled, onRemove, disabled = false, className }: SectionConfigurationEditorProps) {
   const selectedIds = new Set(sections.map((section) => section.id))
   const available = BUILT_IN_SECTIONS.filter((section) => !selectedIds.has(section.id))
+  const PersonalIcon = stepIcon("personal-info")
 
   return (
-    <section className={className} aria-labelledby="section-configuration-editor-title">
-      <div className="mb-4">
-        <h2 id="section-configuration-editor-title" className="text-lg font-semibold">Resume sections</h2>
-        <p className="text-sm text-muted-foreground">Choose which sections appear and drag them into the order you want.</p>
-      </div>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.7fr)]">
-        <div>
-          <h3 className="mb-2 text-sm font-medium">Selected sections</h3>
-          <SectionList
-            items={sections}
-            getId={(section) => section.id}
-            getLabel={(section) => section.title}
-            isEnabled={(section) => section.visible}
-            onReorder={onReorder}
-            onRename={onRename ? (section, title) => onRename(section.id, title) : undefined}
-            onToggleEnabled={onToggleEnabled ? (section, enabled) => onToggleEnabled(section.id, enabled) : undefined}
-            onRemove={onRemove ? (section) => onRemove(section.id) : undefined}
-            disabled={disabled}
-            emptyState="No sections selected. Add one from the available sections."
-            renderItem={(section) => <span className="flex items-center gap-2"><span>{section.title}</span>{!section.visible && <Badge variant="outline">Hidden</Badge>}</span>}
-          />
+    <div className={className}>
+      <section aria-labelledby="layout-heading">
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <h2 id="layout-heading" className="text-sm font-semibold">On your resume</h2>
+          <p className="text-xs text-muted-foreground">Top to bottom</p>
         </div>
-        <Card size="sm" className="h-fit">
-          <CardHeader>
-            <CardTitle className="text-sm">Available sections</CardTitle>
-            <CardDescription>Add a built-in section to the selected layout.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {available.length === 0 ? (
-              <p className="text-sm text-muted-foreground">All built-in sections are selected.</p>
-            ) : available.map((section) => (
-              <div key={section.id} className="flex items-center justify-between gap-2 rounded-lg border p-2">
-                <div className="min-w-0"><p className="truncate text-sm font-medium">{section.title}</p><p className="truncate text-xs text-muted-foreground">{section.description}</p></div>
-                <Button type="button" variant="outline" size="sm" onClick={() => onAdd(section.id)} disabled={disabled}><PlusIcon /> Add</Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    </section>
+        <div className="mb-2 flex items-center gap-1.5 rounded-xl border border-dashed border-border py-1.5 pr-3 pl-1 text-muted-foreground">
+          <span className="flex size-10 shrink-0 items-center justify-center sm:size-8" aria-hidden="true"><LockIcon className="size-3.5" /></span>
+          <span className="hidden size-8 shrink-0 items-center justify-center rounded-lg bg-muted sm:flex" aria-hidden="true"><PersonalIcon className="size-4" /></span>
+          <div className="min-w-0 flex-1 px-1">
+            <p className="truncate text-sm font-medium text-foreground">Personal info</p>
+            <p className="truncate text-xs">Always first: your name, contact details, and links</p>
+          </div>
+        </div>
+        <SectionList
+          items={sections}
+          getId={(section) => section.id}
+          getLabel={(section) => section.title}
+          getDescription={(section) => section.description}
+          getIcon={(section) => stepIcon(section.id)}
+          isEnabled={(section) => section.visible}
+          onReorder={onReorder}
+          onRename={onRename ? (section, title) => onRename(section.id, title) : undefined}
+          onToggleEnabled={onToggleEnabled ? (section, enabled) => onToggleEnabled(section.id, enabled) : undefined}
+          onRemove={onRemove ? (section) => onRemove(section.id) : undefined}
+          disabled={disabled}
+          emptyState="No sections yet. Add one below."
+        />
+      </section>
+
+      <section className="mt-8" aria-labelledby="available-heading">
+        <h2 id="available-heading" className="mb-3 text-sm font-semibold">Add a section</h2>
+        {available.length === 0 ? (
+          <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">Every section is already on your resume.</p>
+        ) : (
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {available.map((section) => {
+              const Icon = stepIcon(section.id)
+              return (
+                <li key={section.id}>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => onAdd(section.id)}
+                    className="group flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left shadow-soft transition-colors hover:border-primary/40 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+                  >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground" aria-hidden="true">
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{section.title}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{section.description}</span>
+                    </span>
+                    <PlusIcon className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" aria-hidden="true" />
+                    <span className="sr-only">Add {section.title}</span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </section>
+    </div>
   )
 }

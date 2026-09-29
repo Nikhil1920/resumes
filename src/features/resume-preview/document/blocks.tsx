@@ -307,18 +307,18 @@ export function GroupBlock({ slice, model, design }: { slice: GroupSlice; model:
   const { group, index, from, to } = slice
   const unitKey = (item: number) => `${index}:${item}`
   if (group.kind === 'header') {
-    return <div className="rp-group rp-group--header" data-rp-group={index}><DocumentHeader model={model} design={design} unit={unitKey(0)} /></div>
+    return <div className="rp-group rp-group--header" data-rp-group={index} data-section="personal-info"><DocumentHeader model={model} design={design} unit={unitKey(0)} /></div>
   }
   if (group.kind === 'identity') {
-    return <div className="rp-group rp-group--identity" data-rp-group={index}><SidebarIdentity model={model} design={design} unit={unitKey(0)} /></div>
+    return <div className="rp-group rp-group--identity" data-rp-group={index} data-section="personal-info"><SidebarIdentity model={model} design={design} unit={unitKey(0)} /></div>
   }
   if (group.kind === 'contact') {
-    return <div className="rp-group rp-group--contact" data-rp-group={index}><SidebarContact model={model} design={design} unit={unitKey(0)} /></div>
+    return <div className="rp-group rp-group--contact" data-rp-group={index} data-section="personal-info"><SidebarContact model={model} design={design} unit={unitKey(0)} /></div>
   }
   const continued = from > 0
   const units = group.units.slice(from, to)
   return (
-    <section className={`rp-group rp-section rp-section--${group.section.type}${continued ? ' rp-section--continued' : ''}`} data-rp-group={index}>
+    <section className={`rp-group rp-section rp-section--${group.section.type}${continued ? ' rp-section--continued' : ''}`} data-rp-group={index} data-section={group.section.type}>
       <h2 className="rp-section__title">
         <span className="rp-section__label">{group.title}</span>
         {continued ? <span className="rp-section__continued">continued</span> : null}

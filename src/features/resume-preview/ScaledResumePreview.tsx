@@ -19,13 +19,18 @@ export interface ScaledResumePreviewProps {
   /** Give each sheet its own paper shadow (for multi-page previews). */
   framed?: boolean
   onPageCountChange?: (count: number) => void
+  /**
+   * Clicking a section of the page reports its step id ("personal-info",
+   * "experience", ...), so a live preview can jump the editor there.
+   */
+  onSectionClick?: (section: string) => void
 }
 
 /**
  * Renders the real resume pages at print size, then zooms them to fit the
  * width of the container so thumbnails and live previews always match the PDF.
  */
-export function ScaledResumePreview({ model, className, onEdit, decorative = false, maxPages, framed = false, onPageCountChange }: ScaledResumePreviewProps) {
+export function ScaledResumePreview({ model, className, onEdit, decorative = false, maxPages, framed = false, onPageCountChange, onSectionClick }: ScaledResumePreviewProps) {
   const frameRef = React.useRef<HTMLDivElement>(null)
   const pageWidth = PAGE_WIDTH_PX[model.pageSize] ?? PAGE_WIDTH_PX.A4
   const [scale, setScale] = React.useState(0.36)
@@ -43,12 +48,24 @@ export function ScaledResumePreview({ model, className, onEdit, decorative = fal
     return () => observer.disconnect()
   }, [pageWidth])
 
+  const handleClick = onSectionClick
+    ? (event: React.MouseEvent<HTMLDivElement>) => {
+        const target = event.target as HTMLElement
+        const section = target.closest<HTMLElement>('[data-section]')?.dataset.section
+        if (!section) return
+        // Links inside the page would leave the editor; editing wins here.
+        event.preventDefault()
+        onSectionClick(section)
+      }
+    : undefined
+
   return (
     <div
       ref={frameRef}
-      className={cn('resume-scaled', framed && 'resume-scaled--framed', className)}
+      className={cn('resume-scaled', framed && 'resume-scaled--framed', onSectionClick && 'resume-scaled--interactive', className)}
       aria-hidden={decorative || undefined}
       inert={decorative || undefined}
+      onClick={handleClick}
     >
       <div className="resume-scaled__canvas" style={{ width: pageWidth, zoom: scale }}>
         <ResumePreview model={model} maxPages={maxPages} onEdit={onEdit} onPageCountChange={onPageCountChange} />

@@ -9,11 +9,13 @@ Resume Maker 9000 is a local-first resume builder. The app is built with React, 
 - Choose from 25 templates for different jobs (ATS-first, sidebar, creative, executive, academic, and more), then fine-tune page size, fonts, and accent color.
 - Browse every template in the template explorer (`/templates`) with realistic sample content for the roles it suits, filter by job family, ATS rating, photo, or multi-page support, and apply one to an existing resume.
 - Real multi-page pagination: content is split into A4 or Letter sheets without breaking entries, sections continue with their headings, and multi-page templates add running headers and page numbers. The on-screen preview matches the printed PDF page for page.
-- Configure visible sections and their order.
-- Add, edit, delete, and reorder repeatable entries and links.
+- Configure visible sections, their order, and their headings.
+- Add, edit, duplicate, delete, and reorder repeatable entries and links; skills are edited as chips grouped by category.
+- Click any part of the live preview to jump to its editor step.
+- A mobile-first editor: a step picker sheet, a thumb-reach bottom bar, a live preview sheet, 44px touch targets, and 16px fields so phones do not zoom.
 - Autosave to local storage with hydration status, save status, undo, and redo.
 - Import and export individual resumes as versioned JSON backups.
-- Expose the whole create-edit-preview workflow as WebMCP tools so AI agents can drive the app autonomously, including `recommend-templates` and `list-templates` for choosing a template that fits the user's job.
+- Expose every editor control as WebMCP tools so AI agents can drive the app autonomously, including `recommend-templates` and `list-templates` for choosing a template that fits the user's job. The editor shows what an agent is doing and follows it to the section it edits, and agent edits undo like manual ones.
 - Share a resume live between an agent's headless browser and the user's own browser through a relay on the same machine, with no remote server.
 - Accept legacy Svelte profile-shaped JSON and migrate the old `profiles` local-storage records on first load.
 - Preview and print in the browser, download or share PDFs through the bundled native bridge, and use the app offline after it is installed as a Capacitor app.

@@ -654,3 +654,92 @@ describe("resume workspace store", () => {
         expect(store.getState().documents.safe).toBeDefined();
     });
 });
+
+describe("document-targeted commands and history", () => {
+    const createStore = () =>
+        createResumeWorkspaceStore({
+            persistence: null,
+            idFactory: deterministicIds(),
+            now: clock,
+            autoHydrate: false,
+        });
+
+    it("edits an explicit document without touching the active one", () => {
+        const store = createStore();
+        const { actions } = store.getState();
+        actions.createDocument({ id: "background" });
+        actions.createDocument({ id: "open", sections: ["summary", "skills"] });
+        expect(store.getState().activeDocumentId).toBe("open");
+
+        const entryId = actions.createEntry("skills", { name: "Go" }, "background");
+        actions.renameSection("experience", "Work history", "background");
+        actions.setSectionVisibility("skills", false, "background");
+        actions.updateDocumentSettings({ template: "oslo" }, "background");
+        const linkId = actions.createLink({ title: "Site", url: "https://example.com" }, "background");
+
+        const state = store.getState();
+        expect(state.activeDocumentId).toBe("open");
+        expect(state.documents.background.skills.map((skill) => skill.id)).toEqual([entryId]);
+        expect(state.documents.background.sections.find((section) => section.id === "experience")?.title).toBe("Work history");
+        expect(state.documents.background.settings.template).toBe("oslo");
+        expect(state.documents.background.personalInfo.titleLinks.map((link) => link.id)).toEqual([linkId]);
+        expect(state.documents.open.skills).toEqual([]);
+        expect(state.documents.open.settings.template).toBe("tenali");
+    });
+
+    it("keeps the open editor's step when a background document hides that section", () => {
+        const store = createStore();
+        const { actions } = store.getState();
+        actions.createDocument({ id: "background", sections: ["skills"] });
+        actions.createDocument({ id: "open", sections: ["skills"] });
+        actions.setCurrentStep("skills");
+        actions.setSectionVisibility("skills", false, "background");
+        expect(store.getState().currentStep).toBe("skills");
+        actions.setSectionVisibility("skills", false);
+        expect(store.getState().currentStep).toBe("personal-info");
+    });
+
+    it("moves named sections to the front and keeps the rest in order", () => {
+        const store = createStore();
+        const { actions } = store.getState();
+        actions.createDocument({ id: "one", sections: ["summary", "experience", "education", "skills"] });
+        actions.setSectionOrder(["skills", "experience", "skills"]);
+        expect(store.getState().documents.one.sections.map((section) => section.id)).toEqual([
+            "skills",
+            "experience",
+            "summary",
+            "education",
+        ]);
+    });
+
+    it("treats step changes as navigation rather than undoable edits", () => {
+        const store = createStore();
+        const { actions } = store.getState();
+        actions.createDocument({ id: "one", sections: ["summary"] });
+        const pastBefore = store.getState().history.past.length;
+        const updatedAt = store.getState().documents.one.meta.updatedAt;
+        actions.setCurrentStep("summary");
+        expect(store.getState().currentStep).toBe("summary");
+        expect(store.getState().documents.one.meta.step).toBe("summary");
+        expect(store.getState().history.past.length).toBe(pastBefore);
+        expect(store.getState().documents.one.meta.updatedAt).toBe(updatedAt);
+    });
+
+    it("records a batch as a single undo entry", () => {
+        const store = createStore();
+        const { actions } = store.getState();
+        actions.createDocument({ id: "one" });
+        const pastBefore = store.getState().history.past.length;
+        const ids = actions.batch(() => [
+            actions.createEntry("skills", { name: "Go" }),
+            actions.createEntry("skills", { name: "Rust" }),
+            actions.batch(() => actions.createEntry("skills", { name: "Zig" })),
+        ]);
+        expect(ids.every(Boolean)).toBe(true);
+        expect(store.getState().history.past.length).toBe(pastBefore + 1);
+        actions.undo();
+        expect(store.getState().documents.one.skills).toEqual([]);
+        actions.redo();
+        expect(store.getState().documents.one.skills.map((skill) => skill.name)).toEqual(["Go", "Rust", "Zig"]);
+    });
+});

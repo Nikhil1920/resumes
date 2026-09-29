@@ -912,9 +912,6 @@ export const createEmptyResumeDocument = (
     );
 };
 
-const cloneSnapshot = (snapshot: WorkspaceSnapshot): WorkspaceSnapshot =>
-    JSON.parse(JSON.stringify(snapshot)) as WorkspaceSnapshot;
-
 export const createInitialWorkspaceSnapshot = (): WorkspaceSnapshot => ({
     documents: {},
     activeDocumentId: null,
@@ -1131,16 +1128,20 @@ const normalizePersonalLink = (
     };
 };
 
-/** Pure state transition used by the Zustand command layer and by tests. */
+/**
+ * Pure state transition used by the Zustand command layer and by tests.  It
+ * never mutates `snapshot`: changed branches are rebuilt with spreads and
+ * everything else is returned by reference, so undo history can share
+ * unchanged documents (and their portrait data URLs) instead of copying them.
+ */
 export const reduceWorkspace = (
-    input: WorkspaceSnapshot,
+    snapshot: WorkspaceSnapshot,
     action: WorkspaceCommand,
     dependencies: WorkspaceReducerDependencies = {
         idFactory: defaultIdFactory,
         now: defaultNow,
     }
 ): WorkspaceSnapshot => {
-    const snapshot = cloneSnapshot(input);
     const idFactory = dependencies.idFactory;
     const now = dependencies.now();
     const normalization = {
@@ -1953,8 +1954,86 @@ export const getDashboardSummaries = (
         isActive: document.meta.id === snapshot.activeDocumentId,
     }));
 
-/** Simple structural comparison used by the history layer. */
+/** The value JSON.stringify writes for a non-object, or undefined where it drops one. */
+const jsonScalar = (value: unknown): unknown => {
+    switch (typeof value) {
+        case "number":
+            return Number.isFinite(value) ? value : null;
+        case "undefined":
+        case "function":
+        case "symbol":
+            return undefined;
+        default:
+            return value;
+    }
+};
+
+const isJsonObject = (value: unknown): value is object =>
+    value !== null && typeof value === "object";
+
+/** Own keys in the order JSON.stringify writes them, skipping values it drops. */
+const jsonKeys = (value: object): string[] =>
+    Object.keys(value).filter((key) => {
+        const item = (value as Record<string, unknown>)[key];
+        return isJsonObject(item) || jsonScalar(item) !== undefined;
+    });
+
+/** JSON writes dropped array items, and holes, as null. */
+const jsonArrayItem = (value: unknown): unknown =>
+    isJsonObject(value) ? value : (jsonScalar(value) ?? null);
+
+/**
+ * True exactly when JSON.stringify would write the same text for both values,
+ * without serializing them.  Shared references are equal without being
+ * walked, so comparing two snapshots that share structure only visits the
+ * branches a command rebuilt.  Key order counts, as it does in the JSON: the
+ * order of `documents` decides dashboard order and which resume becomes
+ * active after a delete.
+ */
+const jsonEqual = (left: unknown, right: unknown): boolean => {
+    if (left === right) return true;
+    if (!isJsonObject(left) || !isJsonObject(right)) {
+        return (
+            !isJsonObject(left) &&
+            !isJsonObject(right) &&
+            jsonScalar(left) === jsonScalar(right)
+        );
+    }
+    if (Array.isArray(left) || Array.isArray(right)) {
+        if (!Array.isArray(left) || !Array.isArray(right)) return false;
+        if (left.length !== right.length) return false;
+        for (let index = 0; index < left.length; index += 1) {
+            if (!jsonEqual(jsonArrayItem(left[index]), jsonArrayItem(right[index]))) {
+                return false;
+            }
+        }
+        return true;
+    }
+    const leftKeys = jsonKeys(left);
+    const rightKeys = jsonKeys(right);
+    if (leftKeys.length !== rightKeys.length) return false;
+    for (let index = 0; index < leftKeys.length; index += 1) {
+        const key = leftKeys[index];
+        if (key !== rightKeys[index]) return false;
+        if (
+            !jsonEqual(
+                (left as Record<string, unknown>)[key],
+                (right as Record<string, unknown>)[key]
+            )
+        ) {
+            return false;
+        }
+    }
+    return true;
+};
+
+/**
+ * Structural comparison used by the history layer on every committed change.
+ * Equivalent to comparing the snapshots' JSON, but because the reducer shares
+ * untouched documents and settings by reference, it never serializes the
+ * workspace or its portrait data URLs.
+ */
 export const snapshotsEqual = (
     left: WorkspaceSnapshot,
     right: WorkspaceSnapshot
-): boolean => JSON.stringify(left) === JSON.stringify(right);
+): boolean => jsonEqual(left, right);
